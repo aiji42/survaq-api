@@ -4,3 +4,8 @@ compatibility_date = "2022-09-02"
 
 [vars]
 MICROCMS_API_TOKEN = ""
+
+[[kv_namespaces]]
+binding = "PRODUCT"
+id = "fca0f76054404b31bc5601f0ddd0b60a"
+preview_id = "7dad63bcb8024c259bf3983c2519faec"

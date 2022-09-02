@@ -1,40 +1,24 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `wrangler dev src/index.ts` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `wrangler publish src/index.ts --name my-worker` to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
-
-export interface Env {
-	// Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
-	PRODUCT: KVNamespace;
-	//
-	// Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
-	// MY_DURABLE_OBJECT: DurableObjectNamespace;
-	//
-	// Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
-	// MY_BUCKET: R2Bucket;
-}
-
-
 import { createClient } from 'microcms-js-sdk'
 import { Hono } from 'hono'
-const app = new Hono()
+import { Bindings } from "../bindings";
+
+const app = new Hono<{ Bindings: Bindings }>()
 
 app.get('/products/:id', async (c) => {
+  const id = c.req.param('id')
+  let product = await c.env.PRODUCT.get<ProductOnMicroCMS>(id, 'json')
+  if (product) return c.json(product)
+
   const cmsClient = createClient({
     serviceDomain: "survaq-shopify",
     apiKey: c.env.MICROCMS_API_TOKEN,
   });
-  const res = await cmsClient.getListDetail({
+  product = await cmsClient.getListDetail<ProductOnMicroCMS>({
     endpoint: "products",
     contentId: c.req.param('id'),
   })
-
-  return c.json(res)
+  c.executionCtx.waitUntil(c.env.PRODUCT.put(id, JSON.stringify(product)))
+  return c.json(product)
 })
 
 export default app
