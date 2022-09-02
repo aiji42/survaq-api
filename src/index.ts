@@ -1,24 +1,24 @@
-import { createClient } from 'microcms-js-sdk'
-import { Hono } from 'hono'
+import { Hono } from "hono";
 import { Bindings } from "../bindings";
 
-const app = new Hono<{ Bindings: Bindings }>()
+const app = new Hono<{ Bindings: Bindings }>();
 
-app.get('/products/:id', async (c) => {
-  const id = c.req.param('id')
-  let product = await c.env.PRODUCT.get<ProductOnMicroCMS>(id, 'json')
-  if (product) return c.json(product)
+app.get("/products/:id", async (c) => {
+  const product = await c.env.PRODUCT.get<ProductOnMicroCMS>(
+    c.req.param("id"),
+    "json"
+  );
 
-  const cmsClient = createClient({
-    serviceDomain: "survaq-shopify",
-    apiKey: c.env.MICROCMS_API_TOKEN,
-  });
-  product = await cmsClient.getListDetail<ProductOnMicroCMS>({
-    endpoint: "products",
-    contentId: c.req.param('id'),
-  })
-  c.executionCtx.waitUntil(c.env.PRODUCT.put(id, JSON.stringify(product)))
-  return c.json(product)
-})
+  return c.json(product);
+});
 
-export default app
+app.post("/products/:id", async (c) => {
+  await c.env.PRODUCT.put(
+    c.req.param("id"),
+    JSON.stringify(await c.req.json())
+  );
+
+  return c.json({ succeed: true });
+});
+
+export default app;
