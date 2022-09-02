@@ -10,7 +10,7 @@
 
 export interface Env {
 	// Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
-	// MY_KV_NAMESPACE: KVNamespace;
+	PRODUCT: KVNamespace;
 	//
 	// Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
 	// MY_DURABLE_OBJECT: DurableObjectNamespace;
@@ -19,9 +19,22 @@ export interface Env {
 	// MY_BUCKET: R2Bucket;
 }
 
+
+import { createClient } from 'microcms-js-sdk'
 import { Hono } from 'hono'
 const app = new Hono()
 
-app.get('/', (c) => c.text('Hello! Hono!'))
+app.get('/products/:id', async (c) => {
+  const cmsClient = createClient({
+    serviceDomain: "survaq-shopify",
+    apiKey: c.env.MICROCMS_API_TOKEN,
+  });
+  const res = await cmsClient.getListDetail({
+    endpoint: "products",
+    contentId: c.req.param('id'),
+  })
+
+  return c.json(res)
+})
 
 export default app

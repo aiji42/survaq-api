@@ -1,3 +1,6 @@
 name = "survaq-api"
 main = "src/index.ts"
 compatibility_date = "2022-09-02"
+
+[vars]
+MICROCMS_API_TOKEN = ""
