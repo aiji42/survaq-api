@@ -9,30 +9,34 @@ const cmsClient = createClient({
 
 const server = fastify({ logger: true });
 
-server.get<{ Params: { id: string } }>("/products/:id", async (request) => {
-  const id = request.params.id;
-  const {
-    contents: [product],
-  } = await cmsClient.getList<ProductOnMicroCMS>({
-    endpoint: "products",
-    queries: {
-      filters: "productIds[contains]" + id,
-    },
-  });
-  if (!product?.id) return { supporter: 0, totalPrice: 0 };
+server.get<{ Params: { id: string } }>(
+  "/products/:id",
+  async (request, reply) => {
+    const id = request.params.id;
+    const {
+      contents: [product],
+    } = await cmsClient.getList<ProductOnMicroCMS>({
+      endpoint: "products",
+      queries: {
+        filters: "productIds[contains]" + id,
+      },
+    });
+    if (!product) return reply.code(404).send({ message: "not found" });
 
-  const fundingBQ = await getFundingByBigQuery(product.id);
+    const fundingBQ = await getFundingByBigQuery(product.id);
 
-  return {
-    ...product,
-    variants: product.variants?.filter((v) => v.productId === id) ?? [],
-    foundation: {
-      ...product?.foundation,
-      supporter: fundingBQ.supporter + (product?.foundation.supporter ?? 0),
-      totalPrice: fundingBQ.totalPrice + (product?.foundation.totalPrice ?? 0),
-    },
-  };
-});
+    return {
+      ...product,
+      variants: product.variants?.filter((v) => v.productId === id) ?? [],
+      foundation: {
+        ...product?.foundation,
+        supporter: fundingBQ.supporter + (product?.foundation.supporter ?? 0),
+        totalPrice:
+          fundingBQ.totalPrice + (product?.foundation.totalPrice ?? 0),
+      },
+    };
+  }
+);
 
 const start = async () => {
   try {
