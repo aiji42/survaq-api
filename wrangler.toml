@@ -4,3 +4,9 @@ compatibility_date = "2022-09-02"
 
 [vars]
 ORIGIN = "0.0.0.0:3001"
+
+[env.production]
+name = "survaq-api-production"
+
+[env.production.vars]
+ORIGIN = "survaq-api-b3eeccanjq-an.a.run.app"

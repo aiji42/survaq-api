@@ -6,7 +6,8 @@
   "scripts": {
     "dev:worker": "wrangler dev",
     "dev:server": "tsx watch src/index.ts",
-    "build:server": "tsup"
+    "build:server": "tsup",
+    "deploy:worker": "wrangler publish -e production"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^3.16.0",
