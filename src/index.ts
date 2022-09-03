@@ -24,9 +24,13 @@ server.get<{ Params: { id: string } }>("/products/:id", async (request) => {
   const fundingBQ = await getFundingByBigQuery(product.id);
 
   return {
-    closeOn: product?.foundation.closeOn,
-    supporter: fundingBQ.supporter + (product?.foundation.supporter ?? 0),
-    totalPrice: fundingBQ.totalPrice + (product?.foundation.totalPrice ?? 0),
+    ...product,
+    variants: product.variants?.filter((v) => v.productId === id) ?? [],
+    foundation: {
+      ...product?.foundation,
+      supporter: fundingBQ.supporter + (product?.foundation.supporter ?? 0),
+      totalPrice: fundingBQ.totalPrice + (product?.foundation.totalPrice ?? 0),
+    },
   };
 });
 
