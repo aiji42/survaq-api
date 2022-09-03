@@ -19,7 +19,9 @@ server.get<{ Params: { id: string } }>("/products/:id", async (request) => {
       filters: "productIds[contains]" + id,
     },
   });
-  const fundingBQ = await getFundingByBigQuery(id);
+  if (!product?.id) return { supporter: 0, totalPrice: 0 };
+
+  const fundingBQ = await getFundingByBigQuery(product.id);
 
   return {
     closeOn: product?.foundation.closeOn,

@@ -15,10 +15,10 @@ const bigQueryClient = new BigQuery({
 });
 
 export const getFundingByBigQuery = async (
-  productId: string
+  productGroupId: string
 ): Promise<{ supporter: number; totalPrice: number }> => {
   const [[bq]] = await bigQueryClient.query({
-    query: sql.format(query, [Number(productId)]),
+    query: sql.format(query, [productGroupId]),
   });
 
   return {
@@ -32,6 +32,7 @@ const query = `
     sum(original_total_price) AS price,
     count(distinct order_id) AS supporters
   FROM shopify.line_items li
-  WHERE product_id = "gid://shopify/Product/?"
-  GROUP BY product_id
+  LEFT JOIN shopify.products p
+    ON li.product_id = p.id
+  WHERE productGroupId = ?
 `;
