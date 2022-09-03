@@ -8,7 +8,11 @@ app.get("/products/:id", async (c) => {
   const url = new URL(c.req.url);
   url.host = c.env.ORIGIN;
   const req = await fetch(new Request(url.toString(), c.req), {
-    cf: { cacheTtlByStatus: { "200-299": 86400, 404: 1, "500-599": 0 } },
+    cf: {
+      cacheTtlByStatus: { "200-299": 1800, 404: 1, "500-599": 0 },
+      cacheEverything: true,
+      cacheKey: c.req.url,
+    },
   });
 
   if (req.status >= 200 && req.status < 300) {
