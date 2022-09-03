@@ -1,24 +1,43 @@
-import { Hono } from "hono";
-import { Bindings } from "../bindings";
+import fastify from "fastify";
+import { createClient } from "microcms-js-sdk";
+import { getFundingByBigQuery } from "../libs/getFundingByBigQuery";
 
-const app = new Hono<{ Bindings: Bindings }>();
-
-app.get("/products/:id", async (c) => {
-  const product = await c.env.PRODUCT.get<ProductOnMicroCMS>(
-    c.req.param("id"),
-    "json"
-  );
-
-  return c.json(product);
+const cmsClient = createClient({
+  serviceDomain: "survaq-shopify",
+  apiKey: process.env.MICROCMS_API_TOKEN,
 });
 
-app.post("/products/:id", async (c) => {
-  await c.env.PRODUCT.put(
-    c.req.param("id"),
-    JSON.stringify(await c.req.json())
-  );
+const server = fastify({ logger: true });
 
-  return c.json({ succeed: true });
+server.get<{ Params: { id: string } }>("/products/:id", async (request) => {
+  const id = request.params.id;
+  const {
+    contents: [product],
+  } = await cmsClient.getList<ProductOnMicroCMS>({
+    endpoint: "products",
+    queries: {
+      filters: "productIds[contains]" + id,
+    },
+  });
+  const fundingBQ = await getFundingByBigQuery(id);
+
+  return {
+    closeOn: product?.foundation.closeOn,
+    supporter: fundingBQ.supporter + (product?.foundation.supporter ?? 0),
+    totalPrice: fundingBQ.totalPrice + (product?.foundation.totalPrice ?? 0),
+  };
 });
 
-export default app;
+const start = async () => {
+  try {
+    await server.listen({
+      host: "0.0.0.0",
+      port: Number(process.env.PORT ?? 3000),
+    });
+  } catch (err) {
+    server.log.error(err);
+    process.exit(1);
+  }
+};
+
+start();
