@@ -7,11 +7,6 @@ const credentials = process.env.BIGQUERY_CREDENTIALS
 
 const bigQueryClient = new BigQuery({
   credentials,
-  scopes: [
-    "https://www.googleapis.com/auth/drive",
-    "https://www.googleapis.com/auth/bigquery",
-  ],
-  projectId: credentials.project_id,
 });
 
 export const getFundingByBigQuery = async (
