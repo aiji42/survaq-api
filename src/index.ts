@@ -19,6 +19,16 @@ server.get<{ Params: { id: string } }>(
       endpoint: "products",
       queries: {
         filters: "productIds[contains]" + id,
+        fields: [
+          "id",
+          "productIds",
+          "productCode",
+          "productName",
+          "rule",
+          "variants",
+          "skuLabel",
+          "foundation",
+        ],
       },
     });
     if (!product) return reply.code(404).send({ message: "not found" });
