@@ -23,6 +23,26 @@ declare type Variant = {
   skuSelectable: number;
 };
 
+declare type PageData = {
+  title?: string;
+  description?: string;
+  customHead?: string;
+  logo?: Image;
+  favicon?: Image;
+  body?: string;
+  customBody?: string;
+  productId?: string;
+  domain?: string;
+  ogpImageUrl?: string;
+  ogpShortTitle?: string;
+};
+
+declare type Image = {
+  url: string;
+  height: number;
+  width: number;
+};
+
 declare type ProductOnMicroCMS = {
   id: string;
   productIds: string;
@@ -32,4 +52,5 @@ declare type ProductOnMicroCMS = {
   skuLabel?: string;
   foundation: Foundation;
   rule: Rule;
+  pageData?: PageData;
 };
