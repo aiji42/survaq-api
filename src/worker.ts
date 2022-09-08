@@ -15,18 +15,16 @@ const KV_TTL = 60 * 60 * 1000;
 const getProductData = async (req: Request): Promise<ProductData> => {
   const res = await fetch(req);
 
-  if (res.status >= 200 && res.status < 300) {
-    const product = await res.json<ProductOnMicroCMS>();
-    return {
-      ...product,
-      rule: {
-        ...product.rule,
-        schedule: makeSchedule(product.rule),
-      },
-    };
-  }
+  if (!res.ok) throw res;
 
-  throw res;
+  const product = await res.json<ProductOnMicroCMS>();
+  return {
+    ...product,
+    rule: {
+      ...product.rule,
+      schedule: makeSchedule(product.rule),
+    },
+  };
 };
 
 const swrPut = async (key: string, data: unknown, kv: KVNamespace) => {
@@ -77,12 +75,22 @@ app.get("/products/:id", async (c) => {
   try {
     data = await getProductData(originReq);
   } catch (e) {
-    if (e instanceof Response) return e;
+    if (e instanceof Response) return e.clone();
     throw e;
   }
 
   c.executionCtx.waitUntil(swrPut(kvKey, data, c.env.PRODUCT));
   return c.json(data);
+});
+
+app.get("/products/page-data/:code", async (c) => {
+  const url = new URL(c.req.url);
+  url.host = c.env.ORIGIN;
+  const originReq = new Request(url.toString(), c.req);
+  const res = await fetch(originReq);
+  if (res.ok) return c.json(await res.json());
+
+  return res.clone();
 });
 
 export default app;
