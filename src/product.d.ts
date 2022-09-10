@@ -29,7 +29,7 @@ declare type PageData = {
   customHead?: string;
   logo?: Image;
   favicon?: Image;
-  body?: string;
+  productHandle?: string;
   customBody?: string;
   productId?: string;
   domain?: string;
