@@ -54,4 +54,5 @@ declare type ProductOnMicroCMS = {
   foundation: Foundation;
   rule: Rule;
   pageData?: PageData;
+  smartShoppingIds?: string;
 };
