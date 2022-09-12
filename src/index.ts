@@ -48,26 +48,6 @@ server.get<{ Params: { id: string } }>(
   }
 );
 
-server.get<{ Params: { code: string } }>(
-  "/products/page-data/:code",
-  async (request, reply) => {
-    const code = request.params.code;
-    const {
-      contents: [product],
-    } = await cmsClient.getList<ProductOnMicroCMS>({
-      endpoint: "products",
-      queries: {
-        filters: "productCode[equals]" + code,
-        fields: ["productCode", "productName", "pageData"],
-      },
-    });
-    if (!product?.pageData)
-      return reply.code(404).send({ message: "not found" });
-
-    return product;
-  }
-);
-
 const start = async () => {
   try {
     await server.listen({
