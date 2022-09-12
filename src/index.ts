@@ -28,6 +28,7 @@ server.get<{ Params: { id: string } }>(
           "variants",
           "skuLabel",
           "foundation",
+          "smartShoppingIds",
         ],
       },
     });
