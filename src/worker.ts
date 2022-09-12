@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { Bindings } from "../bindings";
 import { makeSchedule } from "../libs/makeSchedule";
+import { createClient } from "microcms-js-sdk";
 
 type KVMetadata = { expireAt: number };
 type ProductData = ProductOnMicroCMS & {
@@ -84,13 +85,66 @@ app.get("/products/:id", async (c) => {
 });
 
 app.get("/products/page-data/:code", async (c) => {
-  const url = new URL(c.req.url);
-  url.host = c.env.ORIGIN;
-  const originReq = new Request(url.toString(), c.req);
-  const res = await fetch(originReq);
-  if (res.ok) return c.json(await res.json());
+  const cmsClient = createClient({
+    serviceDomain: "survaq-shopify",
+    apiKey: c.env.MICROCMS_API_TOKEN,
+  });
 
-  return res.clone();
+  const {
+    contents: [product],
+  } = await cmsClient.getList<ProductOnMicroCMS>({
+    endpoint: "products",
+    queries: {
+      filters: "productCode[equals]" + c.req.param("code"),
+      fields: ["productCode", "productName", "pageData"],
+    },
+  });
+
+  if (!product) return c.notFound();
+
+  return c.json(product);
+});
+
+app.get("/products/page-data/by-domain/:domain", async (c) => {
+  const cmsClient = createClient({
+    serviceDomain: "survaq-shopify",
+    apiKey: c.env.MICROCMS_API_TOKEN,
+  });
+
+  const {
+    contents: [product],
+  } = await cmsClient.getList<ProductOnMicroCMS>({
+    endpoint: "products",
+    queries: {
+      filters: "pageData.domain[equals]" + c.req.param("domain"),
+      fields: ["productCode", "productName", "pageData"],
+    },
+  });
+
+  if (!product) return c.notFound();
+
+  return c.json(product);
+});
+
+app.get("/products/page-data/by-shopify-handle/:handle", async (c) => {
+  const cmsClient = createClient({
+    serviceDomain: "survaq-shopify",
+    apiKey: c.env.MICROCMS_API_TOKEN,
+  });
+
+  const {
+    contents: [product],
+  } = await cmsClient.getList<ProductOnMicroCMS>({
+    endpoint: "products",
+    queries: {
+      filters: "pageData.productHandle[equals]" + c.req.param("handle"),
+      fields: ["productCode", "productName", "pageData"],
+    },
+  });
+
+  if (!product) return c.notFound();
+
+  return c.json(product);
 });
 
 export default app;
