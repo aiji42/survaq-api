@@ -35,6 +35,7 @@ declare type PageData = {
   domain?: string;
   ogpImageUrl?: string;
   ogpShortTitle?: string;
+  buyButton: string;
 };
 
 declare type Image = {
