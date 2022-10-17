@@ -101,9 +101,7 @@ app.get("/products/page-data/:code", async (c) => {
     cmsClient.getList<ProductOnMicroCMS>({
       endpoint: "products",
       queries: {
-        filters: `productCode[equals]${c.req.param(
-          "code"
-        )}[or]pageData.pathname[equals]${c.req.param("code")}`,
+        filters: `pageData.pathname[equals]${c.req.param("code")}`,
         fields: ["productCode", "productName", "pageData"],
       },
     }),
