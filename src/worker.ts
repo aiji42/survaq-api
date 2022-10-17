@@ -90,17 +90,40 @@ app.get("/products/page-data/:code", async (c) => {
     apiKey: c.env.MICROCMS_API_TOKEN,
   });
 
-  const {
-    contents: [product],
-  } = await cmsClient.getList<ProductOnMicroCMS>({
-    endpoint: "products",
-    queries: {
-      filters: "productCode[equals]" + c.req.param("code"),
-      fields: ["productCode", "productName", "pageData"],
+  const [
+    {
+      contents: [product1],
     },
-  });
+    {
+      contents: [product2],
+    },
+  ] = await Promise.all([
+    cmsClient.getList<ProductOnMicroCMS>({
+      endpoint: "products",
+      queries: {
+        filters: `productCode[equals]${c.req.param(
+          "code"
+        )}[or]pageData.pathname[equals]${c.req.param("code")}`,
+        fields: ["productCode", "productName", "pageData"],
+      },
+    }),
+    cmsClient.getList<ProductOnMicroCMS>({
+      endpoint: "products",
+      queries: {
+        filters: `pageDataSub.pathname[equals]${c.req.param("code")}`,
+        fields: ["productCode", "productName", "pageDataSub"],
+      },
+    }),
+  ]);
+
+  const product = product1 || product2;
 
   if (!product) return c.notFound();
+
+  if ("pageDataSub" in product && !product.pageData) {
+    product.pageData = product.pageDataSub;
+    product.pageDataSub = undefined;
+  }
 
   return c.json(product);
 });
@@ -111,17 +134,38 @@ app.get("/products/page-data/by-domain/:domain", async (c) => {
     apiKey: c.env.MICROCMS_API_TOKEN,
   });
 
-  const {
-    contents: [product],
-  } = await cmsClient.getList<ProductOnMicroCMS>({
-    endpoint: "products",
-    queries: {
-      filters: "pageData.domain[equals]" + c.req.param("domain"),
-      fields: ["productCode", "productName", "pageData"],
+  const [
+    {
+      contents: [product1],
     },
-  });
+    {
+      contents: [product2],
+    },
+  ] = await Promise.all([
+    cmsClient.getList<ProductOnMicroCMS>({
+      endpoint: "products",
+      queries: {
+        filters: "pageData.domain[equals]" + c.req.param("domain"),
+        fields: ["productCode", "productName", "pageData"],
+      },
+    }),
+    cmsClient.getList<ProductOnMicroCMS>({
+      endpoint: "products",
+      queries: {
+        filters: "pageDataSub.domain[equals]" + c.req.param("domain"),
+        fields: ["productCode", "productName", "pageDataSub"],
+      },
+    }),
+  ]);
+
+  const product = product1 ?? product2;
 
   if (!product) return c.notFound();
+
+  if ("pageDataSub" in product && !product.pageData) {
+    product.pageData = product.pageDataSub;
+    product.pageDataSub = undefined;
+  }
 
   return c.json(product);
 });
@@ -132,17 +176,38 @@ app.get("/products/page-data/by-shopify-handle/:handle", async (c) => {
     apiKey: c.env.MICROCMS_API_TOKEN,
   });
 
-  const {
-    contents: [product],
-  } = await cmsClient.getList<ProductOnMicroCMS>({
-    endpoint: "products",
-    queries: {
-      filters: "pageData.productHandle[equals]" + c.req.param("handle"),
-      fields: ["productCode", "productName", "pageData"],
+  const [
+    {
+      contents: [product1],
     },
-  });
+    {
+      contents: [product2],
+    },
+  ] = await Promise.all([
+    cmsClient.getList<ProductOnMicroCMS>({
+      endpoint: "products",
+      queries: {
+        filters: "pageData.productHandle[equals]" + c.req.param("handle"),
+        fields: ["productCode", "productName", "pageData"],
+      },
+    }),
+    cmsClient.getList<ProductOnMicroCMS>({
+      endpoint: "products",
+      queries: {
+        filters: "pageDataSub.productHandle[equals]" + c.req.param("handle"),
+        fields: ["productCode", "productName", "pageDataSub"],
+      },
+    }),
+  ]);
+
+  const product = product1 ?? product2;
 
   if (!product) return c.notFound();
+
+  if ("pageDataSub" in product && !product.pageData) {
+    product.pageData = product.pageDataSub;
+    product.pageDataSub = undefined;
+  }
 
   return c.json(product);
 });
