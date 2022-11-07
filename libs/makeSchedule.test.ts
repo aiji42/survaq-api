@@ -295,3 +295,172 @@ describe("custom schedule", () => {
     });
   });
 });
+
+describe("locale en", () => {
+  test("early(28-7)", () => {
+    vi.setSystemTime(new Date(2022, 10, 28));
+    expect(makeSchedule({ customSchedules: [] }, "en")).toEqual({
+      year: 2022,
+      month: 12,
+      subText: "Dec. 1 - 10",
+      term: "early",
+      text: "early Dec. 2022",
+      texts: [
+        "early Dec. 2022",
+        "late Nov. 2022",
+        "mid Nov. 2022",
+        "early Nov. 2022",
+        "late Oct. 2022",
+        "mid Oct. 2022",
+        "early Oct. 2022",
+      ],
+    });
+
+    vi.setSystemTime(new Date(2022, 11, 7));
+    expect(makeSchedule({ customSchedules: [] }, "en")).toEqual({
+      year: 2022,
+      month: 12,
+      subText: "Dec. 1 - 10",
+      term: "early",
+      text: "early Dec. 2022",
+      texts: [
+        "early Dec. 2022",
+        "late Nov. 2022",
+        "mid Nov. 2022",
+        "early Nov. 2022",
+        "late Oct. 2022",
+        "mid Oct. 2022",
+        "early Oct. 2022",
+      ],
+    });
+  });
+
+  test("middle(8-17)", () => {
+    vi.setSystemTime(new Date(2022, 11, 8));
+    expect(makeSchedule({ customSchedules: [] }, "en")).toEqual({
+      year: 2022,
+      month: 12,
+      subText: "Dec. 11 - 20",
+      term: "middle",
+      text: "mid Dec. 2022",
+      texts: [
+        "mid Dec. 2022",
+        "early Dec. 2022",
+        "late Nov. 2022",
+        "mid Nov. 2022",
+        "early Nov. 2022",
+        "late Oct. 2022",
+        "mid Oct. 2022",
+      ],
+    });
+
+    vi.setSystemTime(new Date(2022, 11, 17));
+    expect(makeSchedule({ customSchedules: [] }, "en")).toEqual({
+      year: 2022,
+      month: 12,
+      subText: "Dec. 11 - 20",
+      term: "middle",
+      text: "mid Dec. 2022",
+      texts: [
+        "mid Dec. 2022",
+        "early Dec. 2022",
+        "late Nov. 2022",
+        "mid Nov. 2022",
+        "early Nov. 2022",
+        "late Oct. 2022",
+        "mid Oct. 2022",
+      ],
+    });
+  });
+
+  test("late(18-27)", () => {
+    vi.setSystemTime(new Date(2022, 11, 18));
+    expect(makeSchedule({ customSchedules: [] }, "en")).toEqual({
+      year: 2022,
+      month: 12,
+      subText: "Dec. 21 - 31",
+      term: "late",
+      text: "late Dec. 2022",
+      texts: [
+        "late Dec. 2022",
+        "mid Dec. 2022",
+        "early Dec. 2022",
+        "late Nov. 2022",
+        "mid Nov. 2022",
+        "early Nov. 2022",
+        "late Oct. 2022",
+      ],
+    });
+
+    vi.setSystemTime(new Date(2022, 11, 27));
+    expect(makeSchedule({ customSchedules: [] }, "en")).toEqual({
+      year: 2022,
+      month: 12,
+      subText: "Dec. 21 - 31",
+      term: "late",
+      text: "late Dec. 2022",
+      texts: [
+        "late Dec. 2022",
+        "mid Dec. 2022",
+        "early Dec. 2022",
+        "late Nov. 2022",
+        "mid Nov. 2022",
+        "early Nov. 2022",
+        "late Oct. 2022",
+      ],
+    });
+  });
+
+  test("Straddling the year and the month", () => {
+    vi.setSystemTime(new Date(2022, 11, 28));
+    expect(makeSchedule({ customSchedules: [] }, "en")).toEqual({
+      year: 2023,
+      month: 1,
+      subText: "Jan. 1 - 10",
+      term: "early",
+      text: "early Jan. 2023",
+      texts: [
+        "early Jan. 2023",
+        "late Dec. 2022",
+        "mid Dec. 2022",
+        "early Dec. 2022",
+        "late Nov. 2022",
+        "mid Nov. 2022",
+        "early Nov. 2022",
+      ],
+    });
+  });
+
+  test("custom schedule", () => {
+    vi.setSystemTime(new Date(2022, 10, 28));
+    expect(
+      makeSchedule(
+        {
+          customSchedules: [
+            {
+              beginOn: "2022-11-20",
+              endOn: "2022-11-30",
+              deliverySchedule: "2023-01-early",
+            },
+          ],
+        },
+        "en"
+      )
+    ).toEqual({
+      year: 2023,
+      month: 1,
+      subText: "Jan. 1 - 10",
+      term: "early",
+      text: "early Jan. 2023",
+      texts: [
+        "early Jan. 2023",
+        "late Dec. 2022",
+        "mid Dec. 2022",
+        "early Dec. 2022",
+        "late Nov. 2022",
+        "mid Nov. 2022",
+        "early Nov. 2022",
+      ],
+    });
+  });
+});

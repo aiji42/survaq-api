@@ -16,9 +16,10 @@ export type Schedule = {
   texts: string[];
 };
 
-export const makeSchedule = ({
-  customSchedules,
-}: Pick<Rule, "customSchedules">): Schedule => {
+export const makeSchedule = (
+  { customSchedules }: Pick<Rule, "customSchedules">,
+  locale: "ja" | "en" = "ja"
+): Schedule => {
   const customSchedule = customSchedules.find(({ beginOn, endOn }) =>
     dayjs().isBetween(
       dayjs(beginOn).startOf("date"),
@@ -30,29 +31,30 @@ export const makeSchedule = ({
     const [year, month, term] = customSchedule.deliverySchedule.split("-") as [
       string,
       string,
-      string
+      Schedule["term"]
     ];
+    const texts = createScheduleTextArray(
+      {
+        year,
+        month,
+        term,
+      },
+      locale
+    );
+    const text = texts[0];
+    if (!text) throw new Error();
     return {
       year: Number(year),
       month: Number(month),
-      term: term as Schedule["term"],
-      text: `${year}年${Number(month)}月${
-        term === "early" ? "上旬" : term === "middle" ? "中旬" : "下旬"
-      }`,
-      texts: createScheduleTextArray({
-        year,
-        month,
-        term: term as Schedule["term"],
-      }),
-      subText: `${Number(month)}/${
-        term === "early" ? "1" : term === "middle" ? "11" : "21"
-      }〜${Number(month)}/${
-        term === "early"
-          ? "10"
-          : term === "middle"
-          ? "20"
-          : dayjs(new Date(Number(year), Number(month) - 1, 1)).daysInMonth()
-      }`,
+      term,
+      text,
+      texts,
+      subText: monthWithDateRange(
+        Number(year),
+        Number(month) - 1,
+        term,
+        locale
+      ),
     };
   }
   const date = dayjs().tz();
@@ -63,26 +65,20 @@ export const makeSchedule = ({
     month = 1;
     year = year + 1;
   }
-  const dayOfMonth = dayjs(new Date(year, month - 1, day)).daysInMonth();
+  const term: Schedule["term"] =
+    28 <= day || day <= 7 ? "early" : 8 <= day && day <= 17 ? "middle" : "late";
 
-  const [term, termText, beginDate, endDate]: [
-    Schedule["term"],
-    string,
-    number,
-    number
-  ] =
-    28 <= day || day <= 7
-      ? ["early", "上旬", 1, 10]
-      : 8 <= day && day <= 17
-      ? ["middle", "中旬", 11, 20]
-      : ["late", "下旬", 21, dayOfMonth];
+  const texts = createScheduleTextArray({ year, month, term }, locale);
+  const text = texts[0];
+  if (!text) throw new Error();
+
   return {
     year,
     month,
     term,
-    text: `${year}年${month}月${termText}`,
-    texts: createScheduleTextArray({ year, month, term }),
-    subText: `${month}/${beginDate}〜${month}/${endDate}`,
+    text,
+    texts,
+    subText: monthWithDateRange(year, month - 1, term, locale),
   };
 };
 
@@ -96,6 +92,7 @@ const createScheduleTextArray = (
     month: string | number;
     term?: Schedule["term"];
   },
+  locale: "ja" | "en" = "ja",
   size = 7
 ): string[] => {
   const begin = dayjs(
@@ -103,8 +100,54 @@ const createScheduleTextArray = (
   );
   return Array.from({ length: size }).map((_, index) => {
     const date = begin.add(-1 * index * 10, "days");
-    return `${date.year()}年${date.month() + 1}月${
-      date.date() > 20 ? "下旬" : date.date() > 10 ? "中旬" : "上旬"
-    }`;
+    return yearMonthTerm(date.year(), date.month(), date.date(), locale);
   });
 };
+
+const yearMonthTerm = (
+  year: number,
+  monthIndex: number,
+  date: number,
+  locale: "ja" | "en" = "ja"
+) => {
+  if (locale === "ja")
+    return `${year}年${monthIndex + 1}月${
+      date > 20 ? "下旬" : date > 10 ? "中旬" : "上旬"
+    }`;
+
+  return `${date > 20 ? "late" : date > 10 ? "mid" : "early"} ${
+    months[monthIndex]
+  }. ${year}`;
+};
+
+const monthWithDateRange = (
+  year: number,
+  monthIndex: number,
+  term: Schedule["term"],
+  locale: "ja" | "en" = "ja"
+) => {
+  const month = monthIndex + 1;
+  const daysInMonth = dayjs(new Date(year, monthIndex, 1)).daysInMonth();
+  const [begin, end] = [
+    term === "early" ? 1 : term === "middle" ? 11 : 21,
+    term === "early" ? 10 : term === "middle" ? 20 : daysInMonth,
+  ];
+  if (locale === "ja") return `${month}/${begin}〜${month}/${end}`;
+
+  return `${months[monthIndex]}. ${begin} - ${end}`;
+};
+
+const months = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
