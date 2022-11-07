@@ -16,7 +16,9 @@ export type Schedule = {
   texts: string[];
 };
 
-export const makeSchedule = ({ customSchedules }: Rule): Schedule => {
+export const makeSchedule = ({
+  customSchedules,
+}: Pick<Rule, "customSchedules">): Schedule => {
   const customSchedule = customSchedules.find(({ beginOn, endOn }) =>
     dayjs().isBetween(
       dayjs(beginOn).startOf("date"),
