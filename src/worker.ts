@@ -23,21 +23,26 @@ const getProductData = async (req: Request): Promise<ProductData> => {
     ...product,
     rule: {
       ...product.rule,
-      schedule: makeSchedule(product.rule),
+      schedule: makeSchedule(
+        product.rule,
+        req.headers.get("accept-language")?.startsWith("en") ? "en" : "ja"
+      ),
     },
   };
 };
 
-const swrPut = async (key: string, data: unknown, kv: KVNamespace) => {
+const swrPut = async (req: Request, data: unknown, kv: KVNamespace) => {
+  const key = req.url + req.headers.get("accept-language");
   return kv.put(key, JSON.stringify(data), {
     metadata: { expireAt: new Date().getTime() + KV_TTL },
   });
 };
 
 const swrGet = async <T>(
-  key: string,
+  req: Request,
   kv: KVNamespace
 ): Promise<[T | null, boolean]> => {
+  const key = req.url + req.headers.get("accept-language");
   const { value, metadata } = await kv.getWithMetadata<T, KVMetadata>(key, {
     type: "json",
     cacheTtl: 600,
@@ -61,13 +66,14 @@ app.get("/products/:id", async (c) => {
   const url = new URL(c.req.url);
   url.host = c.env.ORIGIN;
   const originReq = new Request(url.toString(), c.req);
-  const kvKey = originReq.url;
 
-  const [value, expired] = await swrGet<ProductData>(kvKey, c.env.PRODUCT);
+  const [value, expired] = await swrGet<ProductData>(originReq, c.env.PRODUCT);
 
   if (value && expired) {
     c.executionCtx.waitUntil(
-      getProductData(originReq).then((res) => swrPut(kvKey, res, c.env.PRODUCT))
+      getProductData(originReq).then((res) =>
+        swrPut(originReq, res, c.env.PRODUCT)
+      )
     );
   }
   if (value) return c.json(value);
@@ -80,7 +86,7 @@ app.get("/products/:id", async (c) => {
     throw e;
   }
 
-  c.executionCtx.waitUntil(swrPut(kvKey, data, c.env.PRODUCT));
+  c.executionCtx.waitUntil(swrPut(originReq, data, c.env.PRODUCT));
   return c.json(data);
 });
 
