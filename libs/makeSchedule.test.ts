@@ -17,6 +17,7 @@ describe("no custom schedules", () => {
       month: 12,
       subText: "12/1〜12/10",
       term: "early",
+      termIndex: 0,
       text: "2022年12月上旬",
       texts: [
         "2022年12月上旬",
@@ -35,6 +36,7 @@ describe("no custom schedules", () => {
       month: 12,
       subText: "12/1〜12/10",
       term: "early",
+      termIndex: 0,
       text: "2022年12月上旬",
       texts: [
         "2022年12月上旬",
@@ -55,6 +57,7 @@ describe("no custom schedules", () => {
       month: 12,
       subText: "12/11〜12/20",
       term: "middle",
+      termIndex: 1,
       text: "2022年12月中旬",
       texts: [
         "2022年12月中旬",
@@ -73,6 +76,7 @@ describe("no custom schedules", () => {
       month: 12,
       subText: "12/11〜12/20",
       term: "middle",
+      termIndex: 1,
       text: "2022年12月中旬",
       texts: [
         "2022年12月中旬",
@@ -93,6 +97,7 @@ describe("no custom schedules", () => {
       month: 12,
       subText: "12/21〜12/31",
       term: "late",
+      termIndex: 2,
       text: "2022年12月下旬",
       texts: [
         "2022年12月下旬",
@@ -111,6 +116,7 @@ describe("no custom schedules", () => {
       month: 12,
       subText: "12/21〜12/31",
       term: "late",
+      termIndex: 2,
       text: "2022年12月下旬",
       texts: [
         "2022年12月下旬",
@@ -131,6 +137,7 @@ describe("no custom schedules", () => {
       month: 1,
       subText: "1/1〜1/10",
       term: "early",
+      termIndex: 0,
       text: "2023年1月上旬",
       texts: [
         "2023年1月上旬",
@@ -163,6 +170,7 @@ describe("custom schedule", () => {
       month: 1,
       subText: "1/1〜1/10",
       term: "early",
+      termIndex: 0,
       text: "2023年1月上旬",
       texts: [
         "2023年1月上旬",
@@ -190,6 +198,7 @@ describe("custom schedule", () => {
       month: 1,
       subText: "1/11〜1/20",
       term: "middle",
+      termIndex: 1,
       text: "2023年1月中旬",
       texts: [
         "2023年1月中旬",
@@ -217,6 +226,7 @@ describe("custom schedule", () => {
       month: 1,
       subText: "1/21〜1/31",
       term: "late",
+      termIndex: 2,
       text: "2023年1月下旬",
       texts: [
         "2023年1月下旬",
@@ -247,6 +257,7 @@ describe("custom schedule", () => {
       month: 12,
       subText: "12/1〜12/10",
       term: "early",
+      termIndex: 0,
       text: "2022年12月上旬",
       texts: [
         "2022年12月上旬",
@@ -282,6 +293,7 @@ describe("custom schedule", () => {
       month: 1,
       subText: "1/1〜1/10",
       term: "early",
+      termIndex: 0,
       text: "2023年1月上旬",
       texts: [
         "2023年1月上旬",
@@ -304,6 +316,7 @@ describe("locale en", () => {
       month: 12,
       subText: "Dec. 1 - 10",
       term: "early",
+      termIndex: 0,
       text: "early Dec. 2022",
       texts: [
         "early Dec. 2022",
@@ -322,6 +335,7 @@ describe("locale en", () => {
       month: 12,
       subText: "Dec. 1 - 10",
       term: "early",
+      termIndex: 0,
       text: "early Dec. 2022",
       texts: [
         "early Dec. 2022",
@@ -342,6 +356,7 @@ describe("locale en", () => {
       month: 12,
       subText: "Dec. 11 - 20",
       term: "middle",
+      termIndex: 1,
       text: "mid Dec. 2022",
       texts: [
         "mid Dec. 2022",
@@ -360,6 +375,7 @@ describe("locale en", () => {
       month: 12,
       subText: "Dec. 11 - 20",
       term: "middle",
+      termIndex: 1,
       text: "mid Dec. 2022",
       texts: [
         "mid Dec. 2022",
@@ -380,6 +396,7 @@ describe("locale en", () => {
       month: 12,
       subText: "Dec. 21 - 31",
       term: "late",
+      termIndex: 2,
       text: "late Dec. 2022",
       texts: [
         "late Dec. 2022",
@@ -398,6 +415,7 @@ describe("locale en", () => {
       month: 12,
       subText: "Dec. 21 - 31",
       term: "late",
+      termIndex: 2,
       text: "late Dec. 2022",
       texts: [
         "late Dec. 2022",
@@ -418,6 +436,7 @@ describe("locale en", () => {
       month: 1,
       subText: "Jan. 1 - 10",
       term: "early",
+      termIndex: 0,
       text: "early Jan. 2023",
       texts: [
         "early Jan. 2023",
@@ -451,6 +470,7 @@ describe("locale en", () => {
       month: 1,
       subText: "Jan. 1 - 10",
       term: "early",
+      termIndex: 0,
       text: "early Jan. 2023",
       texts: [
         "early Jan. 2023",
