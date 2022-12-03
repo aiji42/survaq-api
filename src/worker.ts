@@ -3,9 +3,11 @@ import { cors } from "hono/cors";
 import { Bindings } from "../bindings";
 import { makeSchedule } from "../libs/makeSchedule";
 import { createClient } from "microcms-js-sdk";
+import { makeVariants } from "../libs/makeVariants";
 
 type KVMetadata = { expireAt: number };
-type ProductData = ProductOnMicroCMS & {
+type ProductData = Omit<ProductOnMicroCMS, "variants"> & {
+  variants: ReturnType<typeof makeVariants> | null;
   rule: ProductOnMicroCMS["rule"] & {
     schedule: ReturnType<typeof makeSchedule>;
   };
@@ -14,6 +16,9 @@ type ProductData = ProductOnMicroCMS & {
 const KV_TTL = 60 * 60 * 1000;
 
 const getProductData = async (req: Request): Promise<ProductData> => {
+  const locale = req.headers.get("accept-language")?.startsWith("en")
+    ? "en"
+    : "ja";
   const res = await fetch(req);
 
   if (!res.ok) throw res;
@@ -21,12 +26,10 @@ const getProductData = async (req: Request): Promise<ProductData> => {
   const product = await res.json<ProductOnMicroCMS>();
   return {
     ...product,
+    variants: product.variants ? makeVariants(product.variants, locale) : null,
     rule: {
       ...product.rule,
-      schedule: makeSchedule(
-        product.rule,
-        req.headers.get("accept-language")?.startsWith("en") ? "en" : "ja"
-      ),
+      schedule: makeSchedule(product.rule, locale),
     },
   };
 };
