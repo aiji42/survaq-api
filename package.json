@@ -11,22 +11,23 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^3.18.0",
-    "@types/node": "^18.11.9",
+    "@cloudflare/workers-types": "^4.20221111.1",
+    "@types/node": "^18.11.10",
     "@types/sqlstring": "^2.3.0",
-    "prettier": "^2.7.1",
-    "tsup": "^6.4.0",
-    "tsx": "^3.11.0",
-    "typescript": "^4.8.4",
-    "vitest": "^0.24.5",
-    "wrangler": "^2.1.15"
+    "prettier": "^2.8.0",
+    "tsup": "^6.5.0",
+    "tsx": "^3.12.1",
+    "typescript": "^4.9.3",
+    "vite": "^3.2.4",
+    "vitest": "^0.25.3",
+    "wrangler": "^2.5.0"
   },
   "dependencies": {
     "@google-cloud/bigquery": "^6.0.3",
     "dayjs": "^1.11.6",
-    "fastify": "^4.9.2",
-    "hono": "^2.4.1",
-    "microcms-js-sdk": "^2.3.0",
+    "fastify": "^4.10.2",
+    "hono": "^2.5.7",
+    "microcms-js-sdk": "^2.3.2",
     "sqlstring": "^2.3.3"
   }
 }

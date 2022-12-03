@@ -7,18 +7,27 @@ dayjs.extend(timezone);
 dayjs.tz.setDefault("Asia/Tokyo");
 dayjs.extend(isBetween);
 
+const terms = {
+  early: 0,
+  middle: 1,
+  late: 2,
+} as const;
+
 export type Schedule = {
   year: number;
   month: number;
-  term: "early" | "middle" | "late";
+  term: keyof typeof terms;
+  termIndex: number;
   text: string;
   subText: string;
   texts: string[];
 };
 
+type Locale = "ja" | "en";
+
 export const makeSchedule = (
   { customSchedules }: Pick<Rule, "customSchedules">,
-  locale: "ja" | "en" = "ja"
+  locale: Locale = "ja"
 ): Schedule => {
   const customSchedule = customSchedules.find(({ beginOn, endOn }) =>
     dayjs().isBetween(
@@ -28,34 +37,10 @@ export const makeSchedule = (
   );
 
   if (customSchedule) {
-    const [year, month, term] = customSchedule.deliverySchedule.split("-") as [
-      string,
-      string,
-      Schedule["term"]
-    ];
-    const texts = createScheduleTextArray(
-      {
-        year,
-        month,
-        term,
-      },
+    return makeScheduleFromDeliverySchedule(
+      customSchedule.deliverySchedule,
       locale
     );
-    const text = texts[0];
-    if (!text) throw new Error();
-    return {
-      year: Number(year),
-      month: Number(month),
-      term,
-      text,
-      texts,
-      subText: monthWithDateRange(
-        Number(year),
-        Number(month) - 1,
-        term,
-        locale
-      ),
-    };
   }
   const date = dayjs().tz();
   let year = date.year();
@@ -65,20 +50,48 @@ export const makeSchedule = (
     month = 1;
     year = year + 1;
   }
-  const term: Schedule["term"] =
+  const term: keyof typeof terms =
     28 <= day || day <= 7 ? "early" : 8 <= day && day <= 17 ? "middle" : "late";
 
-  const texts = createScheduleTextArray({ year, month, term }, locale);
+  return schedule(year, month, term, locale);
+};
+
+export const makeScheduleFromDeliverySchedule = (
+  str: DeliverySchedule,
+  locale: Locale
+) => {
+  const [year, month, term] = str.split("-") as [
+    string,
+    string,
+    keyof typeof terms
+  ];
+  return schedule(year, month, term, locale);
+};
+
+const schedule = (
+  year: string | number,
+  month: string | number,
+  term: keyof typeof terms,
+  locale: Locale
+): Schedule => {
+  const texts = createScheduleTextArray(
+    {
+      year,
+      month,
+      term,
+    },
+    locale
+  );
   const text = texts[0];
   if (!text) throw new Error();
-
   return {
-    year,
-    month,
+    year: Number(year),
+    month: Number(month),
     term,
+    termIndex: terms[term],
     text,
     texts,
-    subText: monthWithDateRange(year, month - 1, term, locale),
+    subText: monthWithDateRange(Number(year), Number(month) - 1, term, locale),
   };
 };
 
@@ -90,7 +103,7 @@ const createScheduleTextArray = (
   }: {
     year: string | number;
     month: string | number;
-    term?: Schedule["term"];
+    term?: keyof typeof terms;
   },
   locale: "ja" | "en" = "ja",
   size = 7
@@ -123,7 +136,7 @@ const yearMonthTerm = (
 const monthWithDateRange = (
   year: number,
   monthIndex: number,
-  term: Schedule["term"],
+  term: keyof typeof terms,
   locale: "ja" | "en" = "ja"
 ) => {
   const month = monthIndex + 1;
