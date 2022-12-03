@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, Context } from "hono";
 import { cors } from "hono/cors";
 import { Bindings } from "../bindings";
 import { makeSchedule } from "../libs/makeSchedule";
@@ -6,38 +6,43 @@ import { createClient } from "microcms-js-sdk";
 import { makeVariants } from "../libs/makeVariants";
 
 type KVMetadata = { expireAt: number };
-type ProductData = Omit<ProductOnMicroCMS, "variants"> & {
-  variants: ReturnType<typeof makeVariants> | null;
-  rule: ProductOnMicroCMS["rule"] & {
-    schedule: ReturnType<typeof makeSchedule>;
-  };
-};
 
-const KV_TTL = 60 * 60 * 1000;
+const KV_TTL = 3600;
 
-const getProductData = async (req: Request): Promise<ProductData> => {
-  const locale = req.headers.get("accept-language")?.startsWith("en")
-    ? "en"
-    : "ja";
-  const res = await fetch(req);
+const getProductDataFromOrigin = async (
+  c: Context<any, { Bindings: Bindings }>
+): Promise<ProductOnMicroCMS> => {
+  const url = new URL(c.req.url);
+  url.host = c.env.ORIGIN;
+  const originReq = new Request(url.toString(), c.req);
 
-  if (!res.ok) throw res;
+  let [data, expired] = await swrGet<ProductOnMicroCMS>(
+    originReq,
+    c.env.PRODUCT
+  );
 
-  const product = await res.json<ProductOnMicroCMS>();
-  return {
-    ...product,
-    variants: product.variants ? makeVariants(product.variants, locale) : null,
-    rule: {
-      ...product.rule,
-      schedule: makeSchedule(product.rule, locale),
-    },
-  };
+  if (data && expired) {
+    c.executionCtx.waitUntil(
+      fetch(originReq)
+        .then((res) => res.json())
+        .then((data) => swrPut(originReq, data, c.env.PRODUCT))
+    );
+  }
+
+  if (!data) {
+    data = (await fetch(originReq).then((res) =>
+      res.json()
+    )) as ProductOnMicroCMS;
+    c.executionCtx.waitUntil(swrPut(originReq, data, c.env.PRODUCT));
+  }
+
+  return data;
 };
 
 const swrPut = async (req: Request, data: unknown, kv: KVNamespace) => {
-  const key = req.url + req.headers.get("accept-language");
+  const key = req.url + req.headers.get("accept-language") + "v2";
   return kv.put(key, JSON.stringify(data), {
-    metadata: { expireAt: new Date().getTime() + KV_TTL },
+    metadata: { expireAt: new Date().getTime() + KV_TTL * 1000 },
   });
 };
 
@@ -45,7 +50,7 @@ const swrGet = async <T>(
   req: Request,
   kv: KVNamespace
 ): Promise<[T | null, boolean]> => {
-  const key = req.url + req.headers.get("accept-language");
+  const key = req.url + req.headers.get("accept-language") + "v2";
   const { value, metadata } = await kv.getWithMetadata<T, KVMetadata>(key, {
     type: "json",
     cacheTtl: 600,
@@ -66,31 +71,56 @@ app.use(
 );
 
 app.get("/products/:id", async (c) => {
-  const url = new URL(c.req.url);
-  url.host = c.env.ORIGIN;
-  const originReq = new Request(url.toString(), c.req);
+  const cmsClient = createClient({
+    serviceDomain: "survaq-shopify",
+    apiKey: c.env.MICROCMS_API_TOKEN,
+  });
 
-  const [value, expired] = await swrGet<ProductData>(originReq, c.env.PRODUCT);
+  const [
+    {
+      contents: [baseProductData],
+    },
+    lazyProductData,
+  ] = await Promise.all([
+    cmsClient.getList<ProductOnMicroCMS>({
+      endpoint: "products",
+      queries: {
+        filters: "productIds[contains]" + c.req.param("id"),
+        fields: [
+          "id",
+          "productIds",
+          "productCode",
+          "productName",
+          "rule",
+          "variants",
+          "skuLabel",
+          "foundation",
+        ],
+      },
+    }),
+    getProductDataFromOrigin(c),
+  ]);
 
-  if (value && expired) {
-    c.executionCtx.waitUntil(
-      getProductData(originReq).then((res) =>
-        swrPut(originReq, res, c.env.PRODUCT)
-      )
-    );
-  }
-  if (value) return c.json(value);
+  if (!baseProductData) return c.notFound();
 
-  let data: ProductData;
-  try {
-    data = await getProductData(originReq);
-  } catch (e) {
-    if (e instanceof Response) return e.clone();
-    throw e;
-  }
+  const locale = c.req.headers.get("accept-language")?.startsWith("en")
+    ? "en"
+    : "ja";
 
-  c.executionCtx.waitUntil(swrPut(originReq, data, c.env.PRODUCT));
-  return c.json(data);
+  return c.json({
+    ...baseProductData,
+    variants: makeVariants(
+      baseProductData.variants?.filter(
+        (v) => v.productId === c.req.param("id")
+      ) ?? [],
+      locale
+    ),
+    rule: {
+      ...baseProductData.rule,
+      schedule: makeSchedule(baseProductData.rule, locale),
+    },
+    foundation: lazyProductData.foundation,
+  });
 });
 
 app.get("/products/page-data/:code", async (c) => {
