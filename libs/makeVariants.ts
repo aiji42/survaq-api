@@ -13,38 +13,52 @@ type CustomizedVariant = {
     schedule: Omit<Schedule, "texts"> | null;
   }[];
   skuSelectable: number;
+  schedule: Omit<Schedule, "texts"> | null;
 };
 export const makeVariants = (
   variants: Variant[],
   locale: Locale
 ): CustomizedVariant[] => {
   return variants.map(
-    ({ productId, variantId, variantName, skus, skuSelectable }) => ({
+    ({
       productId,
       variantId,
       variantName,
+      skus,
       skuSelectable,
-      skus: skus.map(({ code, name, subName, deliverySchedule }) => {
-        if (deliverySchedule) {
-          const { texts, ...omitTexts } = makeScheduleFromDeliverySchedule(
-            deliverySchedule,
-            locale
-          );
+      deliverySchedule,
+    }) => {
+      let schedule = null;
+      if (deliverySchedule) {
+        const { texts, ...omitTexts } = makeScheduleFromDeliverySchedule(
+          deliverySchedule,
+          locale
+        );
+        schedule = omitTexts;
+      }
+      return {
+        productId,
+        variantId,
+        variantName,
+        skuSelectable,
+        schedule,
+        skus: skus.map(({ code, name, subName, deliverySchedule }) => {
+          let schedule = null;
+          if (deliverySchedule) {
+            const { texts, ...omitTexts } = makeScheduleFromDeliverySchedule(
+              deliverySchedule,
+              locale
+            );
+            schedule = omitTexts;
+          }
           return {
             code,
             name,
             subName,
-            schedule: omitTexts,
+            schedule,
           };
-        }
-
-        return {
-          code,
-          name,
-          subName,
-          schedule: null,
-        };
-      }),
-    })
+        }),
+      };
+    }
   );
 };

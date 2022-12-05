@@ -50,6 +50,7 @@ declare type Variant = {
     deliverySchedule?: DeliverySchedule;
   }[];
   skuSelectable: number;
+  deliverySchedule?: DeliverySchedule;
 };
 
 declare type PageData = {
