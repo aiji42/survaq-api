@@ -3,7 +3,7 @@ main = "src/worker.ts"
 compatibility_date = "2022-09-02"
 
 kv_namespaces = [
-  { binding = "PRODUCT", preview_id = "f3448fba638c4c22b80c870003de7361", id = "a27f2ed0ae474366999e88334f2af3f0" }
+  { binding = "PRODUCT", preview_id = "d0a6ab406e19422ab9abf1a4a2612a5e", id = "0a142bc8c80a4882a0a3ba0a62dd397b" }
 ]
 
 [vars]
@@ -12,7 +12,7 @@ ORIGIN = "0.0.0.0:3001"
 [env.production]
 name = "survaq-api-production"
 kv_namespaces = [
-  { binding = "PRODUCT", id = "b8482c24a1dc4dde9e2aecf544edfb8a" }
+  { binding = "PRODUCT", id = "582de9b1f4d5454fbe87070d60e6ce63" }
 ]
 
 [env.production.vars]
