@@ -4,6 +4,8 @@ import { Bindings } from "../bindings";
 import { makeSchedule } from "../libs/makeSchedule";
 import { createClient } from "microcms-js-sdk";
 import { makeVariants } from "../libs/makeVariants";
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import {Database} from "./database.type";
 
 type KVMetadata = { expireAt: number };
 
@@ -69,6 +71,12 @@ app.use(
     maxAge: 600,
   })
 );
+
+app.get('/test', async (c) => {
+  const client = createSupabaseClient<Database>(c.env.SUPABASE_URL, c.env.SUPABASE_KEY)
+  const res = await client.from('FacebookAdAlerts').select('id')
+  return c.json(res)
+})
 
 app.get("/products/:id", async (c) => {
   const cmsClient = createClient({
