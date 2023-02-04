@@ -1170,31 +1170,31 @@ export interface Database {
         Row: {
           createdAt: string | null
           customSchedule: number | null
-          customSKUSelects: string
+          customSelects: number
           id: number
           product: number | null
           updatedAt: string | null
-          variantId: number
+          variantId: string
           variantName: string
         }
         Insert: {
           createdAt?: string | null
           customSchedule?: number | null
-          customSKUSelects?: string
+          customSelects?: number
           id?: number
           product?: number | null
           updatedAt?: string | null
-          variantId: number
+          variantId: string
           variantName: string
         }
         Update: {
           createdAt?: string | null
           customSchedule?: number | null
-          customSKUSelects?: string
+          customSelects?: number
           id?: number
           product?: number | null
           updatedAt?: string | null
-          variantId?: number
+          variantId?: string
           variantName?: string
         }
       }
