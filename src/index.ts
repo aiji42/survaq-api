@@ -4,7 +4,7 @@ import { getFundingByBigQuery } from "../libs/getFundingByBigQuery";
 
 const cmsClient = createClient({
   serviceDomain: "survaq-shopify",
-  apiKey: process.env.MICROCMS_API_TOKEN,
+  apiKey: process.env.MICROCMS_API_TOKEN!,
 });
 
 const server = fastify({ logger: true });

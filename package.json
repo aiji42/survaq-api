@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "dev:worker": "wrangler dev",
+    "dev:worker": "wrangler dev --local",
     "dev:server": "tsx watch src/index.ts",
     "build:server": "tsup",
     "deploy:worker": "wrangler publish -e production",
@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@google-cloud/bigquery": "^6.1.0",
+    "@supabase/supabase-js": "^2.7.0",
     "dayjs": "^1.11.7",
     "fastify": "^4.12.0",
     "hono": "^2.7.5",

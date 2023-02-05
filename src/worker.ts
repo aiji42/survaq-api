@@ -4,6 +4,8 @@ import { Bindings } from "../bindings";
 import { makeSchedule } from "../libs/makeSchedule";
 import { createClient } from "microcms-js-sdk";
 import { makeVariants } from "../libs/makeVariants";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { Database } from "./database.type";
 
 type KVMetadata = { expireAt: number };
 
@@ -107,14 +109,80 @@ app.get("/products/:id", async (c) => {
     ? "en"
     : "ja";
 
+  const variants = makeVariants(
+    baseProductData.variants?.filter(
+      (v) => v.productId === c.req.param("id")
+    ) ?? [],
+    locale
+  );
+
+  const syncSupabase = async () => {
+    const client = createSupabaseClient<Database>(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_KEY
+    );
+    const { data } = await client
+      .from("ShopifyProducts")
+      .upsert(
+        {
+          productName: baseProductData.productName,
+          productId: c.req.param("id"),
+        },
+        { onConflict: "productId", ignoreDuplicates: false }
+      )
+      .select("id")
+      .single();
+    if (!data) return;
+
+    await Promise.all(
+      variants.map(async (variant) => {
+        const { data: variantData } = await client
+          .from("ShopifyVariants")
+          .upsert(
+            {
+              product: data!.id,
+              variantId: variant.variantId,
+              variantName: variant.variantName,
+              customSelects: variant.skuSelectable,
+              // customSchedule
+            },
+            { onConflict: "variantId", ignoreDuplicates: false }
+          )
+          .select("id")
+          .single();
+        const { data: skuData } = await client
+          .from("ShopifyCustomSKUs")
+          .upsert(
+            variant.skus.map((sku) => ({
+              code: sku.code,
+              name: sku.name,
+              subName: sku.subName,
+              // customSchedule
+            })),
+            { onConflict: "code", ignoreDuplicates: false }
+          )
+          .select("id");
+        if (variantData && skuData) {
+          await client
+            .from("ShopifyVariants_ShopifyCustomSKUs")
+            .delete()
+            .eq("ShopifyVariants_id", variantData.id);
+          await client.from("ShopifyVariants_ShopifyCustomSKUs").insert(
+            skuData.map((sku) => ({
+              ShopifyCustomSKUs_id: sku.id,
+              ShopifyVariants_id: variantData.id,
+            }))
+          );
+        }
+      })
+    );
+    console.log("synced");
+  };
+  c.executionCtx.waitUntil(syncSupabase());
+
   return c.json({
     ...baseProductData,
-    variants: makeVariants(
-      baseProductData.variants?.filter(
-        (v) => v.productId === c.req.param("id")
-      ) ?? [],
-      locale
-    ),
+    variants,
     rule: {
       ...baseProductData.rule,
       schedule: makeSchedule(baseProductData.rule, locale),
