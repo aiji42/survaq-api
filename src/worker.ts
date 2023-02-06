@@ -144,9 +144,16 @@ app.get("/products/:id", async (c) => {
               variantId: variant.variantId,
               variantName: variant.variantName,
               customSelects: variant.skuSelectable,
-              // customSchedule
+              deliverySchedule: variant.schedule
+                ? `${variant.schedule.year}-${String(
+                    variant.schedule.month
+                  ).padStart(2, "0")}-${variant.schedule.term}`
+                : null,
             },
-            { onConflict: "variantId", ignoreDuplicates: false }
+            {
+              onConflict: "variantId",
+              ignoreDuplicates: false,
+            }
           )
           .select("id")
           .single();
@@ -157,9 +164,17 @@ app.get("/products/:id", async (c) => {
               code: sku.code,
               name: sku.name,
               subName: sku.subName,
-              // customSchedule
+              deliverySchedule: sku.schedule
+                ? `${sku.schedule.year}-${String(sku.schedule.month).padStart(
+                    2,
+                    "0"
+                  )}-${sku.schedule.term}`
+                : null,
             })),
-            { onConflict: "code", ignoreDuplicates: false }
+            {
+              onConflict: "code",
+              ignoreDuplicates: false,
+            }
           )
           .select("id");
         if (variantData && skuData) {
@@ -187,7 +202,7 @@ app.get("/products/:id", async (c) => {
       ...baseProductData.rule,
       schedule: makeSchedule(baseProductData.rule, locale),
     },
-    foundation: lazyProductData.foundation,
+    // foundation: lazyProductData.foundation,
   });
 });
 
