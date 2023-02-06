@@ -202,7 +202,7 @@ app.get("/products/:id", async (c) => {
       ...baseProductData.rule,
       schedule: makeSchedule(baseProductData.rule, locale),
     },
-    // foundation: lazyProductData.foundation,
+    foundation: lazyProductData.foundation,
   });
 });
 
