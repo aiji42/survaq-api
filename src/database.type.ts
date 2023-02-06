@@ -1063,7 +1063,7 @@ export interface Database {
         Row: {
           code: string | null
           createdAt: string | null
-          customSchedule: number | null
+          deliverySchedule: string | null
           id: number
           name: string
           subName: string | null
@@ -1072,7 +1072,7 @@ export interface Database {
         Insert: {
           code?: string | null
           createdAt?: string | null
-          customSchedule?: number | null
+          deliverySchedule?: string | null
           id?: number
           name: string
           subName?: string | null
@@ -1081,7 +1081,7 @@ export interface Database {
         Update: {
           code?: string | null
           createdAt?: string | null
-          customSchedule?: number | null
+          deliverySchedule?: string | null
           id?: number
           name?: string
           subName?: string | null
@@ -1169,8 +1169,8 @@ export interface Database {
       ShopifyVariants: {
         Row: {
           createdAt: string | null
-          customSchedule: number | null
           customSelects: number
+          deliverySchedule: string | null
           id: number
           product: number | null
           updatedAt: string | null
@@ -1179,8 +1179,8 @@ export interface Database {
         }
         Insert: {
           createdAt?: string | null
-          customSchedule?: number | null
           customSelects?: number
+          deliverySchedule?: string | null
           id?: number
           product?: number | null
           updatedAt?: string | null
@@ -1189,8 +1189,8 @@ export interface Database {
         }
         Update: {
           createdAt?: string | null
-          customSchedule?: number | null
           customSelects?: number
+          deliverySchedule?: string | null
           id?: number
           product?: number | null
           updatedAt?: string | null
