@@ -1033,32 +1033,6 @@ export interface Database {
           setName?: string
         }
       }
-      ShopifyCustomSchedules: {
-        Row: {
-          beginOn: string
-          createdAt: string | null
-          endOn: string
-          id: number
-          schedule: string
-          updatedAt: string | null
-        }
-        Insert: {
-          beginOn: string
-          createdAt?: string | null
-          endOn: string
-          id?: number
-          schedule: string
-          updatedAt?: string | null
-        }
-        Update: {
-          beginOn?: string
-          createdAt?: string | null
-          endOn?: string
-          id?: number
-          schedule?: string
-          updatedAt?: string | null
-        }
-      }
       ShopifyCustomSKUs: {
         Row: {
           code: string | null
@@ -1092,6 +1066,7 @@ export interface Database {
         Row: {
           closeOn: string
           createdAt: string | null
+          deliverySchedule: string | null
           id: number
           realSupporters: number
           realTotalPrice: number
@@ -1103,6 +1078,7 @@ export interface Database {
         Insert: {
           closeOn: string
           createdAt?: string | null
+          deliverySchedule?: string | null
           id?: number
           realSupporters?: number
           realTotalPrice?: number
@@ -1114,6 +1090,7 @@ export interface Database {
         Update: {
           closeOn?: string
           createdAt?: string | null
+          deliverySchedule?: string | null
           id?: number
           realSupporters?: number
           realTotalPrice?: number
@@ -1121,23 +1098,6 @@ export interface Database {
           title?: string | null
           totalPrice?: number
           updatedAt?: string | null
-        }
-      }
-      ShopifyProductGroups_ShopifyCustomSchedules: {
-        Row: {
-          id: number
-          ShopifyCustomSchedules_id: number | null
-          ShopifyProductGroups_id: number | null
-        }
-        Insert: {
-          id?: number
-          ShopifyCustomSchedules_id?: number | null
-          ShopifyProductGroups_id?: number | null
-        }
-        Update: {
-          id?: number
-          ShopifyCustomSchedules_id?: number | null
-          ShopifyProductGroups_id?: number | null
         }
       }
       ShopifyProducts: {

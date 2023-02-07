@@ -133,54 +133,14 @@ app.get("/products/:id", async (c) => {
           closeOn: dayjs(baseProductData.foundation.closeOn)
             .tz("Asia/Tokyo")
             .format("YYYY-MM-DD"),
+          deliverySchedule:
+            baseProductData.rule.customSchedules[0]?.deliverySchedule,
         },
         { onConflict: "title", ignoreDuplicates: false }
       )
       .select("id")
       .single();
     if (!groupData) return;
-
-    await client
-      .from("ShopifyProductGroups_ShopifyCustomSchedules")
-      .delete()
-      .eq("ShopifyProductGroups_id", groupData.id);
-
-    await Promise.all(
-      baseProductData.rule.customSchedules.map(async (schedule) => {
-        const beginOn = dayjs(schedule.beginOn)
-          .tz("Asia/Tokyo")
-          .format("YYYY-MM-DD");
-        const endOn = dayjs(schedule.endOn)
-          .tz("Asia/Tokyo")
-          .format("YYYY-MM-DD");
-        let { data: customSchedule } = await client
-          .from("ShopifyCustomSchedules")
-          .select("id")
-          .eq("beginOn", beginOn)
-          .eq("endOn", endOn)
-          .eq("schedule", schedule.deliverySchedule)
-          .single();
-        if (!customSchedule) {
-          const res = await client
-            .from("ShopifyCustomSchedules")
-            .insert({
-              beginOn,
-              endOn,
-              schedule: schedule.deliverySchedule,
-            })
-            .select("id")
-            .single();
-          customSchedule = res.data;
-        }
-        if (!customSchedule) return;
-        await client
-          .from("ShopifyProductGroups_ShopifyCustomSchedules")
-          .insert({
-            ShopifyProductGroups_id: groupData.id,
-            ShopifyCustomSchedules_id: customSchedule.id,
-          });
-      })
-    );
 
     const { data } = await client
       .from("ShopifyProducts")
