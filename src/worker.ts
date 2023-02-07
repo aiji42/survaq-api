@@ -130,7 +130,9 @@ app.get("/products/:id", async (c) => {
           title: baseProductData.productName,
           totalPrice: baseProductData.foundation.totalPrice,
           supporters: baseProductData.foundation.supporter,
-          closeOn: baseProductData.foundation.closeOn,
+          closeOn: dayjs(baseProductData.foundation.closeOn)
+            .tz("Asia/Tokyo")
+            .format("YYYY-MM-DD"),
         },
         { onConflict: "title", ignoreDuplicates: false }
       )
