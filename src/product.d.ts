@@ -63,9 +63,10 @@ declare type PageData = {
   customBody?: string;
   productId?: string;
   domain?: string;
+  pathname?: string;
   ogpImageUrl?: string;
   ogpShortTitle?: string;
-  buyButton: string;
+  buyButton: boolean;
 };
 
 declare type Image = {

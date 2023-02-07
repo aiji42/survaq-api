@@ -267,6 +267,69 @@ app.get("/products/page-data/:code", async (c) => {
     product.pageDataSub = undefined;
   }
 
+  const syncSupabase = async () => {
+    const client = createSupabaseClient<Database>(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_KEY
+    );
+
+    if (
+      !product.pageData ||
+      !product.pageData.domain ||
+      !product.pageData.pathname ||
+      !product.pageData.productHandle
+    )
+      return;
+
+    const { data: pageData } = await client
+      .from("ShopifyPages")
+      .select("id")
+      .eq("domain", product.pageData.domain)
+      .eq("pathname", product.pageData.pathname)
+      .eq("productHandle", product.pageData.productHandle)
+      .single();
+    const { data: productData } = await client
+      .from("ShopifyProducts")
+      .select("id")
+      .eq("productId", product.pageData.productId)
+      .single();
+    if (!productData) return;
+    if (!pageData) {
+      await client.from("ShopifyPages").insert({
+        buyButton: product.pageData.buyButton,
+        customBody: product.pageData.customBody,
+        customHead: product.pageData.customHead,
+        description: product.pageData.description,
+        domain: product.pageData.domain,
+        favicon: product.pageData.favicon?.url,
+        logo: product.pageData.logo?.url,
+        ogpImageUrl: product.pageData.ogpImageUrl,
+        ogpShortTitle: product.pageData.ogpShortTitle,
+        pathname: product.pageData.pathname,
+        product: productData.id,
+        productHandle: product.pageData.productHandle,
+        title: product.pageData.title,
+      });
+    } else {
+      await client.from("ShopifyPages").update({
+        buyButton: product.pageData.buyButton,
+        customBody: product.pageData.customBody,
+        customHead: product.pageData.customHead,
+        description: product.pageData.description,
+        domain: product.pageData.domain,
+        favicon: product.pageData.favicon?.url,
+        logo: product.pageData.logo?.url,
+        ogpImageUrl: product.pageData.ogpImageUrl,
+        ogpShortTitle: product.pageData.ogpShortTitle,
+        pathname: product.pageData.pathname,
+        product: productData.id,
+        productHandle: product.pageData.productHandle,
+        title: product.pageData.title,
+      });
+    }
+  };
+  c.executionCtx.waitUntil(syncSupabase());
+
   return c.json(product);
 });
 

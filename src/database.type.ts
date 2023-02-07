@@ -1062,6 +1062,62 @@ export interface Database {
           updatedAt?: string | null
         }
       }
+      ShopifyPages: {
+        Row: {
+          buyButton: boolean | null
+          createdAt: string | null
+          customBody: string | null
+          customHead: string | null
+          description: string | null
+          domain: string
+          favicon: string | null
+          id: number
+          logo: string | null
+          ogpImageUrl: string | null
+          ogpShortTitle: string | null
+          pathname: string
+          product: number
+          productHandle: string
+          title: string | null
+          updatedAt: string | null
+        }
+        Insert: {
+          buyButton?: boolean | null
+          createdAt?: string | null
+          customBody?: string | null
+          customHead?: string | null
+          description?: string | null
+          domain: string
+          favicon?: string | null
+          id?: number
+          logo?: string | null
+          ogpImageUrl?: string | null
+          ogpShortTitle?: string | null
+          pathname?: string
+          product: number
+          productHandle: string
+          title?: string | null
+          updatedAt?: string | null
+        }
+        Update: {
+          buyButton?: boolean | null
+          createdAt?: string | null
+          customBody?: string | null
+          customHead?: string | null
+          description?: string | null
+          domain?: string
+          favicon?: string | null
+          id?: number
+          logo?: string | null
+          ogpImageUrl?: string | null
+          ogpShortTitle?: string | null
+          pathname?: string
+          product?: number
+          productHandle?: string
+          title?: string | null
+          updatedAt?: string | null
+        }
+      }
       ShopifyProductGroups: {
         Row: {
           closeOn: string
@@ -1070,9 +1126,9 @@ export interface Database {
           id: number
           realSupporters: number
           realTotalPrice: number
-          supporters: number
+          supporters: number | null
           title: string | null
-          totalPrice: number
+          totalPrice: number | null
           updatedAt: string | null
         }
         Insert: {
@@ -1082,9 +1138,9 @@ export interface Database {
           id?: number
           realSupporters?: number
           realTotalPrice?: number
-          supporters?: number
+          supporters?: number | null
           title?: string | null
-          totalPrice?: number
+          totalPrice?: number | null
           updatedAt?: string | null
         }
         Update: {
@@ -1094,9 +1150,9 @@ export interface Database {
           id?: number
           realSupporters?: number
           realTotalPrice?: number
-          supporters?: number
+          supporters?: number | null
           title?: string | null
-          totalPrice?: number
+          totalPrice?: number | null
           updatedAt?: string | null
         }
       }
@@ -1183,6 +1239,9 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
       [_ in never]: never
     }
   }
