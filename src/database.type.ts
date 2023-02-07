@@ -1035,28 +1035,28 @@ export interface Database {
       }
       ShopifyCustomSchedules: {
         Row: {
+          beginOn: string
           createdAt: string | null
+          endOn: string
           id: number
-          month: number
-          step: string
+          schedule: string
           updatedAt: string | null
-          year: number
         }
         Insert: {
+          beginOn: string
           createdAt?: string | null
+          endOn: string
           id?: number
-          month: number
-          step: string
+          schedule: string
           updatedAt?: string | null
-          year: number
         }
         Update: {
+          beginOn?: string
           createdAt?: string | null
+          endOn?: string
           id?: number
-          month?: number
-          step?: string
+          schedule?: string
           updatedAt?: string | null
-          year?: number
         }
       }
       ShopifyCustomSKUs: {
@@ -1096,7 +1096,7 @@ export interface Database {
           realSupporters: number
           realTotalPrice: number
           supporters: number
-          title: string
+          title: string | null
           totalPrice: number
           updatedAt: string | null
         }
@@ -1107,7 +1107,7 @@ export interface Database {
           realSupporters?: number
           realTotalPrice?: number
           supporters?: number
-          title: string
+          title?: string | null
           totalPrice?: number
           updatedAt?: string | null
         }
@@ -1118,7 +1118,7 @@ export interface Database {
           realSupporters?: number
           realTotalPrice?: number
           supporters?: number
-          title?: string
+          title?: string | null
           totalPrice?: number
           updatedAt?: string | null
         }

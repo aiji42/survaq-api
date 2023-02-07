@@ -6,6 +6,7 @@ import { createClient } from "microcms-js-sdk";
 import { makeVariants } from "../libs/makeVariants";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { Database } from "./database.type";
+import dayjs from "dayjs";
 
 type KVMetadata = { expireAt: number };
 
@@ -121,12 +122,71 @@ app.get("/products/:id", async (c) => {
       c.env.SUPABASE_URL,
       c.env.SUPABASE_KEY
     );
+
+    const { data: groupData } = await client
+      .from("ShopifyProductGroups")
+      .upsert(
+        {
+          title: baseProductData.productName,
+          totalPrice: baseProductData.foundation.totalPrice,
+          supporters: baseProductData.foundation.supporter,
+          closeOn: baseProductData.foundation.closeOn,
+        },
+        { onConflict: "title", ignoreDuplicates: false }
+      )
+      .select("id")
+      .single();
+    if (!groupData) return;
+
+    await client
+      .from("ShopifyProductGroups_ShopifyCustomSchedules")
+      .delete()
+      .eq("ShopifyProductGroups_id", groupData.id);
+
+    await Promise.all(
+      baseProductData.rule.customSchedules.map(async (schedule) => {
+        const beginOn = dayjs(schedule.beginOn)
+          .tz("Asia/Tokyo")
+          .format("YYYY-MM-DD");
+        const endOn = dayjs(schedule.endOn)
+          .tz("Asia/Tokyo")
+          .format("YYYY-MM-DD");
+        let { data: customSchedule } = await client
+          .from("ShopifyCustomSchedules")
+          .select("id")
+          .eq("beginOn", beginOn)
+          .eq("endOn", endOn)
+          .eq("schedule", schedule.deliverySchedule)
+          .single();
+        if (!customSchedule) {
+          const res = await client
+            .from("ShopifyCustomSchedules")
+            .insert({
+              beginOn,
+              endOn,
+              schedule: schedule.deliverySchedule,
+            })
+            .select("id")
+            .single();
+          customSchedule = res.data;
+        }
+        if (!customSchedule) return;
+        await client
+          .from("ShopifyProductGroups_ShopifyCustomSchedules")
+          .insert({
+            ShopifyProductGroups_id: groupData.id,
+            ShopifyCustomSchedules_id: customSchedule.id,
+          });
+      })
+    );
+
     const { data } = await client
       .from("ShopifyProducts")
       .upsert(
         {
           productName: baseProductData.productName,
           productId: c.req.param("id"),
+          productGroupId: groupData.id,
         },
         { onConflict: "productId", ignoreDuplicates: false }
       )
