@@ -73,6 +73,30 @@ app.use(
   })
 );
 
+app.get("/products/:id/supabase", async (c) => {
+  const client = createSupabaseClient<Database>(
+    c.env.SUPABASE_URL,
+    c.env.SUPABASE_KEY
+  );
+
+  const { data, error } = await client
+    .from("ShopifyProducts")
+    .select(
+      "*,ShopifyProductGroups(*),ShopifyVariants(*,ShopifyVariants_ShopifyCustomSKUs(ShopifyCustomSKUs(*)))"
+    )
+    .match({ productId: c.req.param("id") })
+    .maybeSingle();
+
+  if (error) return c.json(error, 500);
+  if (!data) return c.notFound();
+
+  const locale = c.req.headers.get("accept-language")?.startsWith("en")
+    ? "en"
+    : "ja";
+
+  return c.json(data);
+});
+
 app.get("/products/:id", async (c) => {
   const cmsClient = createClient({
     serviceDomain: "survaq-shopify",
