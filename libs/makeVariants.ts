@@ -1,4 +1,5 @@
 import { makeScheduleFromDeliverySchedule, Schedule } from "./makeSchedule";
+import { Database } from "../src/database.type";
 
 type Locale = "ja" | "en";
 
@@ -58,6 +59,73 @@ export const makeVariants = (
             schedule,
           };
         }),
+      };
+    }
+  );
+};
+
+export type VariantsSupabase = (Omit<
+  Database["public"]["Tables"]["ShopifyVariants"]["Row"],
+  "deliverySchedule"
+> & {
+  deliverySchedule: DeliverySchedule | null;
+  ShopifyVariants_ShopifyCustomSKUs: {
+    ShopifyCustomSKUs: Omit<
+      Database["public"]["Tables"]["ShopifyCustomSKUs"]["Row"],
+      "deliverySchedule"
+    > & {
+      deliverySchedule: DeliverySchedule | null;
+    };
+  }[];
+})[];
+
+export const makeVariantsSupabase = (
+  product: Database["public"]["Tables"]["ShopifyProducts"]["Row"],
+  variants: VariantsSupabase,
+  locale: Locale
+): CustomizedVariant[] => {
+  return variants.map(
+    ({
+      variantId,
+      variantName,
+      customSelects,
+      deliverySchedule,
+      ShopifyVariants_ShopifyCustomSKUs,
+    }) => {
+      let schedule = null;
+      if (deliverySchedule) {
+        const { texts, ...omitTexts } = makeScheduleFromDeliverySchedule(
+          deliverySchedule,
+          locale
+        );
+        schedule = omitTexts;
+      }
+      return {
+        productId: product.productId,
+        variantId,
+        variantName,
+        skuSelectable: customSelects,
+        schedule,
+        skus: ShopifyVariants_ShopifyCustomSKUs.map(
+          ({
+            ShopifyCustomSKUs: { code, name, subName, deliverySchedule },
+          }) => {
+            let schedule = null;
+            if (deliverySchedule) {
+              const { texts, ...omitTexts } = makeScheduleFromDeliverySchedule(
+                deliverySchedule,
+                locale
+              );
+              schedule = omitTexts;
+            }
+            return {
+              code,
+              name,
+              subName: subName ?? "",
+              schedule,
+            };
+          }
+        ),
       };
     }
   );

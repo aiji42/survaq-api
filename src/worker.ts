@@ -1,9 +1,13 @@
 import { Hono, Context } from "hono";
 import { cors } from "hono/cors";
 import { Bindings } from "../bindings";
-import { makeSchedule } from "../libs/makeSchedule";
+import { makeSchedule, makeScheduleSupabase } from "../libs/makeSchedule";
 import { createClient } from "microcms-js-sdk";
-import { makeVariants } from "../libs/makeVariants";
+import {
+  makeVariants,
+  makeVariantsSupabase,
+  VariantsSupabase,
+} from "../libs/makeVariants";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { Database } from "./database.type";
 import dayjs from "dayjs";
@@ -94,7 +98,30 @@ app.get("/products/:id/supabase", async (c) => {
     ? "en"
     : "ja";
 
-  return c.json(data);
+  const variants = makeVariantsSupabase(
+    data,
+    (data.ShopifyVariants ?? []) as VariantsSupabase,
+    locale
+  );
+
+  const group = data.ShopifyProductGroups as
+    | (Omit<
+        Database["public"]["Tables"]["ShopifyProductGroups"]["Row"],
+        "deliverySchedule"
+      > & { deliverySchedule: DeliverySchedule | null })
+    | null;
+
+  return c.json({
+    variants,
+    rule: {
+      schedule: makeScheduleSupabase(group?.deliverySchedule ?? null, locale),
+    },
+    foundation: {
+      totalPrice: (group?.totalPrice ?? 0) + (group?.realTotalPrice ?? 0),
+      supporters: (group?.supporters ?? 0) + (group?.realSupporters ?? 0),
+      closeOn: group?.closeOn ?? null,
+    },
+  });
 });
 
 app.get("/products/:id", async (c) => {

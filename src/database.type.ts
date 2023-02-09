@@ -1035,7 +1035,7 @@ export interface Database {
       }
       ShopifyCustomSKUs: {
         Row: {
-          code: string | null
+          code: string
           createdAt: string | null
           deliverySchedule: string | null
           id: number
@@ -1044,7 +1044,7 @@ export interface Database {
           updatedAt: string | null
         }
         Insert: {
-          code?: string | null
+          code?: string
           createdAt?: string | null
           deliverySchedule?: string | null
           id?: number
@@ -1053,7 +1053,7 @@ export interface Database {
           updatedAt?: string | null
         }
         Update: {
-          code?: string | null
+          code?: string
           createdAt?: string | null
           deliverySchedule?: string | null
           id?: number
