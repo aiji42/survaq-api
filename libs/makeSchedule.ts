@@ -164,3 +164,24 @@ const months = [
   "Nov",
   "Dec",
 ];
+
+export const makeScheduleSupabase = (
+  customSchedule: DeliverySchedule | null,
+  locale: Locale = "ja"
+): Schedule => {
+  if (customSchedule) {
+    return makeScheduleFromDeliverySchedule(customSchedule, locale);
+  }
+  const date = dayjs().tz();
+  let year = date.year();
+  const day = date.date();
+  let month = date.month() + 1 + (28 <= day ? 1 : 0);
+  if (month > 12) {
+    month = 1;
+    year = year + 1;
+  }
+  const term: keyof typeof terms =
+    28 <= day || day <= 7 ? "early" : 8 <= day && day <= 17 ? "middle" : "late";
+
+  return schedule(year, month, term, locale);
+};

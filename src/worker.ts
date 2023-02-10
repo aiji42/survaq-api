@@ -1,9 +1,13 @@
 import { Hono, Context } from "hono";
 import { cors } from "hono/cors";
 import { Bindings } from "../bindings";
-import { makeSchedule } from "../libs/makeSchedule";
+import { makeSchedule, makeScheduleSupabase } from "../libs/makeSchedule";
 import { createClient } from "microcms-js-sdk";
-import { makeVariants } from "../libs/makeVariants";
+import {
+  makeVariants,
+  makeVariantsSupabase,
+  VariantsSupabase,
+} from "../libs/makeVariants";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { Database } from "./database.type";
 import dayjs from "dayjs";
@@ -72,6 +76,53 @@ app.use(
     maxAge: 600,
   })
 );
+
+app.get("/products/:id/supabase", async (c) => {
+  const client = createSupabaseClient<Database>(
+    c.env.SUPABASE_URL,
+    c.env.SUPABASE_KEY
+  );
+
+  const { data, error } = await client
+    .from("ShopifyProducts")
+    .select(
+      "*,ShopifyProductGroups(*),ShopifyVariants(*,ShopifyVariants_ShopifyCustomSKUs(ShopifyCustomSKUs(*)))"
+    )
+    .match({ productId: c.req.param("id") })
+    .maybeSingle();
+
+  if (error) return c.json(error, 500);
+  if (!data) return c.notFound();
+
+  const locale = c.req.headers.get("accept-language")?.startsWith("en")
+    ? "en"
+    : "ja";
+
+  const variants = makeVariantsSupabase(
+    data,
+    (data.ShopifyVariants ?? []) as VariantsSupabase,
+    locale
+  );
+
+  const group = data.ShopifyProductGroups as
+    | (Omit<
+        Database["public"]["Tables"]["ShopifyProductGroups"]["Row"],
+        "deliverySchedule"
+      > & { deliverySchedule: DeliverySchedule | null })
+    | null;
+
+  return c.json({
+    variants,
+    rule: {
+      schedule: makeScheduleSupabase(group?.deliverySchedule ?? null, locale),
+    },
+    foundation: {
+      totalPrice: (group?.totalPrice ?? 0) + (group?.realTotalPrice ?? 0),
+      supporters: (group?.supporters ?? 0) + (group?.realSupporters ?? 0),
+      closeOn: group?.closeOn ?? null,
+    },
+  });
+});
 
 app.get("/products/:id", async (c) => {
   const cmsClient = createClient({
