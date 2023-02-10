@@ -218,6 +218,7 @@ app.get("/products/:id", async (c) => {
               variantId: variant.variantId,
               variantName: variant.variantName,
               customSelects: variant.skuSelectable,
+              skuLabel: baseProductData.skuLabel ?? null,
               deliverySchedule: variant.schedule
                 ? `${variant.schedule.year}-${String(
                     variant.schedule.month

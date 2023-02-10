@@ -1189,6 +1189,7 @@ export interface Database {
           deliverySchedule: string | null
           id: number
           product: number | null
+          skuLabel: string | null
           updatedAt: string | null
           variantId: string
           variantName: string
@@ -1199,6 +1200,7 @@ export interface Database {
           deliverySchedule?: string | null
           id?: number
           product?: number | null
+          skuLabel?: string | null
           updatedAt?: string | null
           variantId: string
           variantName: string
@@ -1209,6 +1211,7 @@ export interface Database {
           deliverySchedule?: string | null
           id?: number
           product?: number | null
+          skuLabel?: string | null
           updatedAt?: string | null
           variantId?: string
           variantName?: string
