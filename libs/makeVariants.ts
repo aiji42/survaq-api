@@ -14,6 +14,7 @@ type CustomizedVariant = {
     schedule: Omit<Schedule, "texts"> | null;
   }[];
   skuSelectable: number;
+  skuLabel?: string | null;
   schedule: Omit<Schedule, "texts"> | null;
 };
 export const makeVariants = (
@@ -90,6 +91,7 @@ export const makeVariantsSupabase = (
       variantName,
       customSelects,
       deliverySchedule,
+      skuLabel,
       ShopifyVariants_ShopifyCustomSKUs,
     }) => {
       let schedule = null;
@@ -104,6 +106,7 @@ export const makeVariantsSupabase = (
         productId: product.productId,
         variantId,
         variantName,
+        skuLabel,
         skuSelectable: customSelects,
         schedule,
         skus: ShopifyVariants_ShopifyCustomSKUs.map(

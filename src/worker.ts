@@ -116,7 +116,6 @@ app.get("/products/:id/supabase", async (c) => {
     rule: {
       schedule: makeScheduleSupabase(group?.deliverySchedule ?? null, locale),
     },
-    // skuLabel
     foundation: {
       totalPrice: (group?.totalPrice ?? 0) + (group?.realTotalPrice ?? 0),
       supporters: (group?.supporters ?? 0) + (group?.realSupporters ?? 0),
