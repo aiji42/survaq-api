@@ -40,7 +40,7 @@ declare type Rule = {
 
 declare type Variant = {
   fieldId: string;
-  productId?: string;
+  productId: string;
   variantId: string;
   variantName: string;
   skus: {

@@ -186,107 +186,6 @@ app.get("/products/:id", async (c) => {
     locale
   );
 
-  const syncSupabase = async () => {
-    const client = createSupabaseClient<Database>(
-      c.env.SUPABASE_URL,
-      c.env.SUPABASE_KEY
-    );
-
-    const { data: groupData } = await client
-      .from("ShopifyProductGroups")
-      .upsert(
-        {
-          title: baseProductData.productName,
-          totalPrice: baseProductData.foundation.totalPrice,
-          supporters: baseProductData.foundation.supporter,
-          closeOn: dayjs(baseProductData.foundation.closeOn)
-            .tz("Asia/Tokyo")
-            .format("YYYY-MM-DD"),
-          deliverySchedule:
-            baseProductData.rule.customSchedules[0]?.deliverySchedule,
-        },
-        { onConflict: "title", ignoreDuplicates: false }
-      )
-      .select("id")
-      .single();
-    if (!groupData) return;
-
-    const { data } = await client
-      .from("ShopifyProducts")
-      .upsert(
-        {
-          productName: baseProductData.productName,
-          productId: c.req.param("id"),
-          productGroupId: groupData.id,
-        },
-        { onConflict: "productId", ignoreDuplicates: false }
-      )
-      .select("id")
-      .single();
-    if (!data) return;
-
-    await Promise.all(
-      variants.map(async (variant) => {
-        const { data: variantData } = await client
-          .from("ShopifyVariants")
-          .upsert(
-            {
-              product: data!.id,
-              variantId: variant.variantId,
-              variantName: variant.variantName,
-              customSelects: variant.skuSelectable,
-              skuLabel: baseProductData.skuLabel ?? null,
-              deliverySchedule: variant.schedule
-                ? `${variant.schedule.year}-${String(
-                    variant.schedule.month
-                  ).padStart(2, "0")}-${variant.schedule.term}`
-                : null,
-            },
-            {
-              onConflict: "variantId",
-              ignoreDuplicates: false,
-            }
-          )
-          .select("id")
-          .single();
-        const { data: skuData } = await client
-          .from("ShopifyCustomSKUs")
-          .upsert(
-            variant.skus.map((sku) => ({
-              code: sku.code,
-              name: sku.name,
-              subName: sku.subName,
-              deliverySchedule: sku.schedule
-                ? `${sku.schedule.year}-${String(sku.schedule.month).padStart(
-                    2,
-                    "0"
-                  )}-${sku.schedule.term}`
-                : null,
-            })),
-            {
-              onConflict: "code",
-              ignoreDuplicates: false,
-            }
-          )
-          .select("id");
-        if (variantData && skuData) {
-          await client
-            .from("ShopifyVariants_ShopifyCustomSKUs")
-            .delete()
-            .eq("ShopifyVariants_id", variantData.id);
-          await client.from("ShopifyVariants_ShopifyCustomSKUs").insert(
-            skuData.map((sku) => ({
-              ShopifyCustomSKUs_id: sku.id,
-              ShopifyVariants_id: variantData.id,
-            }))
-          );
-        }
-      })
-    );
-    console.log("synced");
-  };
-  c.executionCtx.waitUntil(syncSupabase());
-
   return c.json({
     ...baseProductData,
     variants,
@@ -357,69 +256,6 @@ app.get("/products/page-data/:code", async (c) => {
     product.pageData = product.pageDataSub;
     product.pageDataSub = undefined;
   }
-
-  const syncSupabase = async () => {
-    const client = createSupabaseClient<Database>(
-      c.env.SUPABASE_URL,
-      c.env.SUPABASE_KEY
-    );
-
-    if (
-      !product.pageData ||
-      !product.pageData.domain ||
-      !product.pageData.pathname ||
-      !product.pageData.productHandle
-    )
-      return;
-
-    const { data: pageData } = await client
-      .from("ShopifyPages")
-      .select("id")
-      .eq("domain", product.pageData.domain)
-      .eq("pathname", product.pageData.pathname)
-      .eq("productHandle", product.pageData.productHandle)
-      .single();
-    const { data: productData } = await client
-      .from("ShopifyProducts")
-      .select("id")
-      .eq("productId", product.pageData.productId)
-      .single();
-    if (!productData) return;
-    if (!pageData) {
-      await client.from("ShopifyPages").insert({
-        buyButton: product.pageData.buyButton,
-        customBody: product.pageData.customBody,
-        customHead: product.pageData.customHead,
-        description: product.pageData.description,
-        domain: product.pageData.domain,
-        favicon: product.pageData.favicon?.url,
-        logo: product.pageData.logo?.url,
-        ogpImageUrl: product.pageData.ogpImageUrl,
-        ogpShortTitle: product.pageData.ogpShortTitle,
-        pathname: product.pageData.pathname,
-        product: productData.id,
-        productHandle: product.pageData.productHandle,
-        title: product.pageData.title,
-      });
-    } else {
-      await client.from("ShopifyPages").update({
-        buyButton: product.pageData.buyButton,
-        customBody: product.pageData.customBody,
-        customHead: product.pageData.customHead,
-        description: product.pageData.description,
-        domain: product.pageData.domain,
-        favicon: product.pageData.favicon?.url,
-        logo: product.pageData.logo?.url,
-        ogpImageUrl: product.pageData.ogpImageUrl,
-        ogpShortTitle: product.pageData.ogpShortTitle,
-        pathname: product.pageData.pathname,
-        product: productData.id,
-        productHandle: product.pageData.productHandle,
-        title: product.pageData.title,
-      });
-    }
-  };
-  c.executionCtx.waitUntil(syncSupabase());
 
   return c.json(product);
 });
@@ -506,6 +342,195 @@ app.get("/products/page-data/by-shopify-handle/:handle", async (c) => {
   }
 
   return c.json(product);
+});
+
+app.post("/products/sync", async (c) => {
+  const json = await c.req.json<{
+    message: {};
+    type: "new" | "edit" | "delete";
+    contents: {
+      new?: { publishValue: ProductOnMicroCMS };
+    };
+  }>();
+  const data = json.contents.new?.publishValue;
+
+  if (!data) return c.json({});
+
+  const client = createSupabaseClient<Database>(
+    c.env.SUPABASE_URL,
+    c.env.SUPABASE_KEY
+  );
+
+  console.log("upsert ShopifyProductGroups", data.productName);
+  const { data: groupData, error: groupError } = await client
+    .from("ShopifyProductGroups")
+    .upsert(
+      {
+        title: data.productName,
+        totalPrice: data.foundation.totalPrice,
+        supporters: data.foundation.supporter,
+        closeOn: dayjs(data.foundation.closeOn)
+          .tz("Asia/Tokyo")
+          .format("YYYY-MM-DD"),
+        deliverySchedule: data.rule.customSchedules[0]?.deliverySchedule,
+      },
+      { onConflict: "title", ignoreDuplicates: false }
+    )
+    .select("id")
+    .single();
+
+  if (!groupData || groupError) return c.json(groupError, 500);
+
+  console.log("upsert ShopifyProducts", data.productName, data.productIds);
+  const { data: productData, error: productError } = await client
+    .from("ShopifyProducts")
+    .upsert(
+      data.productIds.split(",").map((id) => ({
+        productName: data.productName,
+        productId: id,
+        productGroupId: groupData.id,
+      })),
+      { onConflict: "productId", ignoreDuplicates: false }
+    )
+    .select("id,productId");
+
+  if (!productData || productError) return c.json(productError, 500);
+
+  const productIdMap = Object.fromEntries(
+    productData.map(({ id, productId }) => [productId, id])
+  );
+
+  await Promise.all(
+    (data.variants ?? []).map(async (variant) => {
+      const product = productIdMap[variant.productId];
+      if (!product)
+        throw new Error(
+          `not found product record (productId: ${variant.productId})`
+        );
+      console.log(
+        "upsert ShopifyVariants",
+        variant.variantId,
+        variant.variantName
+      );
+      const { data: variantData } = await client
+        .from("ShopifyVariants")
+        .upsert(
+          {
+            product,
+            variantId: variant.variantId,
+            variantName: variant.variantName,
+            customSelects: variant.skuSelectable,
+            skuLabel: data.skuLabel ?? null,
+            deliverySchedule: variant.deliverySchedule ?? null,
+          },
+          {
+            onConflict: "variantId",
+            ignoreDuplicates: false,
+          }
+        )
+        .select("id")
+        .single();
+
+      console.log("upsert ShopifyCustomSKUs");
+      const { data: skuData } = await client
+        .from("ShopifyCustomSKUs")
+        .upsert(
+          variant.skus.map((sku) => ({
+            code: sku.code,
+            name: sku.name,
+            subName: sku.subName,
+            deliverySchedule: sku.deliverySchedule ?? null,
+          })),
+          {
+            onConflict: "code",
+            ignoreDuplicates: false,
+          }
+        )
+        .select("id");
+      if (variantData && skuData) {
+        await client
+          .from("ShopifyVariants_ShopifyCustomSKUs")
+          .delete()
+          .eq("ShopifyVariants_id", variantData.id);
+        await client.from("ShopifyVariants_ShopifyCustomSKUs").insert(
+          skuData.map((sku) => ({
+            ShopifyCustomSKUs_id: sku.id,
+            ShopifyVariants_id: variantData.id,
+          }))
+        );
+      }
+    })
+  );
+
+  if (Object.values(productIdMap).length) {
+    const { error } = await client
+      .from("ShopifyPages")
+      .delete()
+      .in("product", Object.values(productIdMap));
+
+    if (error) return c.json(error, 500);
+  }
+  if (
+    data.pageData &&
+    data.pageData.domain &&
+    data.pageData.pathname &&
+    data.pageData.productHandle &&
+    data.pageData.productId
+  ) {
+    const product = productIdMap[data.pageData.productId];
+    if (!product)
+      throw new Error(
+        `not found product record (productId: ${data.pageData.productId})`
+      );
+
+    await client.from("ShopifyPages").insert({
+      buyButton: data.pageData.buyButton,
+      customBody: data.pageData.customBody,
+      customHead: data.pageData.customHead,
+      description: data.pageData.description,
+      domain: data.pageData.domain,
+      productHandle: data.pageData.productHandle,
+      favicon: data.pageData.favicon?.url,
+      logo: data.pageData.logo?.url,
+      ogpImageUrl: data.pageData.ogpImageUrl,
+      ogpShortTitle: data.pageData.ogpShortTitle,
+      pathname: data.pageData.pathname,
+      title: data.pageData.title,
+      product,
+    });
+  }
+
+  if (
+    data.pageDataSub &&
+    data.pageDataSub.domain &&
+    data.pageDataSub.pathname &&
+    data.pageDataSub.productHandle &&
+    data.pageDataSub.productId
+  ) {
+    const product = productIdMap[data.pageDataSub.productId];
+    if (!product)
+      throw new Error(
+        `not found product record (productId: ${data.pageDataSub.productId})`
+      );
+
+    await client.from("ShopifyPages").insert({
+      buyButton: data.pageDataSub.buyButton,
+      customBody: data.pageDataSub.customBody,
+      customHead: data.pageDataSub.customHead,
+      description: data.pageDataSub.description,
+      domain: data.pageDataSub.domain,
+      productHandle: data.pageDataSub.productHandle,
+      favicon: data.pageDataSub.favicon?.url,
+      logo: data.pageDataSub.logo?.url,
+      ogpImageUrl: data.pageDataSub.ogpImageUrl,
+      ogpShortTitle: data.pageDataSub.ogpShortTitle,
+      pathname: data.pageDataSub.pathname,
+      title: data.pageDataSub.title,
+      product,
+    });
+  }
+
+  return c.json({ message: "synced" });
 });
 
 export default app;

@@ -1093,7 +1093,7 @@ export interface Database {
           logo?: string | null
           ogpImageUrl?: string | null
           ogpShortTitle?: string | null
-          pathname?: string
+          pathname: string
           product: number
           productHandle: string
           title?: string | null
