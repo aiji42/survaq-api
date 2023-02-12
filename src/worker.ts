@@ -77,6 +77,33 @@ app.use(
   })
 );
 
+app.get("products/:id/funding", async (c) => {
+  const client = createSupabaseClient<Database>(
+    c.env.SUPABASE_URL,
+    c.env.SUPABASE_KEY
+  );
+
+  const { data, error } = await client
+    .from("ShopifyProducts")
+    .select("ShopifyProductGroups(*)")
+    .match({ productId: c.req.param("id") })
+    .maybeSingle();
+
+  if (error) return c.json(error, 500);
+  if (!data) return c.notFound();
+  if (Array.isArray(data.ShopifyProductGroups)) return c.json(error, 500);
+
+  return c.json({
+    totalPrice:
+      (data.ShopifyProductGroups?.totalPrice ?? 0) +
+      (data.ShopifyProductGroups?.realTotalPrice ?? 0),
+    supporters:
+      (data.ShopifyProductGroups?.supporters ?? 0) +
+      (data.ShopifyProductGroups?.realSupporters ?? 0),
+    closeOn: data.ShopifyProductGroups?.closeOn ?? null,
+  });
+});
+
 app.get("/products/:id/supabase", async (c) => {
   const client = createSupabaseClient<Database>(
     c.env.SUPABASE_URL,
@@ -93,6 +120,8 @@ app.get("/products/:id/supabase", async (c) => {
 
   if (error) return c.json(error, 500);
   if (!data) return c.notFound();
+  if (!data.ShopifyProductGroups || Array.isArray(data.ShopifyProductGroups))
+    return c.json(error, 500);
 
   const locale = c.req.headers.get("accept-language")?.startsWith("en")
     ? "en"
@@ -104,23 +133,12 @@ app.get("/products/:id/supabase", async (c) => {
     locale
   );
 
-  const group = data.ShopifyProductGroups as
-    | (Omit<
-        Database["public"]["Tables"]["ShopifyProductGroups"]["Row"],
-        "deliverySchedule"
-      > & { deliverySchedule: DeliverySchedule | null })
-    | null;
-
   return c.json({
     variants,
-    rule: {
-      schedule: makeScheduleSupabase(group?.deliverySchedule ?? null, locale),
-    },
-    foundation: {
-      totalPrice: (group?.totalPrice ?? 0) + (group?.realTotalPrice ?? 0),
-      supporters: (group?.supporters ?? 0) + (group?.realSupporters ?? 0),
-      closeOn: group?.closeOn ?? null,
-    },
+    schedule: makeScheduleSupabase(
+      data.ShopifyProductGroups.deliverySchedule as DeliverySchedule | null,
+      locale
+    ),
   });
 });
 
@@ -278,6 +296,27 @@ app.get("/products/:id", async (c) => {
     },
     foundation: lazyProductData.foundation,
   });
+});
+
+// WIP
+app.get("/products/page-data/:code/supabase", async (c) => {
+  const client = createSupabaseClient<Database>(
+    c.env.SUPABASE_URL,
+    c.env.SUPABASE_KEY
+  );
+
+  const { data, error } = await client
+    .from("ShopifyPages")
+    .select(
+      "*,ShopifyProducts(*,ShopifyProductGroups(*),ShopifyVariants(*,ShopifyVariants_ShopifyCustomSKUs(ShopifyCustomSKUs(*))))"
+    )
+    .match({ pathname: c.req.param("code") })
+    .single();
+
+  if (error) return c.json(error, 500);
+  if (!data) return c.notFound();
+
+  return c.json(data);
 });
 
 app.get("/products/page-data/:code", async (c) => {
