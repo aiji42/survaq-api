@@ -2,18 +2,5 @@ name = "survaq-api"
 main = "src/worker.ts"
 compatibility_date = "2022-09-02"
 
-kv_namespaces = [
-  { binding = "PRODUCT", preview_id = "d0a6ab406e19422ab9abf1a4a2612a5e", id = "0a142bc8c80a4882a0a3ba0a62dd397b" }
-]
-
-[vars]
-ORIGIN = "0.0.0.0:3001"
-
 [env.production]
 name = "survaq-api-production"
-kv_namespaces = [
-  { binding = "PRODUCT", id = "582de9b1f4d5454fbe87070d60e6ce63" }
-]
-
-[env.production.vars]
-ORIGIN = "survaq-api-b3eeccanjq-an.a.run.app"

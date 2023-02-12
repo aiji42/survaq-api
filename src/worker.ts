@@ -1,4 +1,4 @@
-import { Hono, Context } from "hono";
+import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { Bindings } from "../bindings";
 import { makeSchedule, makeScheduleSupabase } from "../libs/makeSchedule";
@@ -11,60 +11,6 @@ import {
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { Database } from "./database.type";
 import dayjs from "dayjs";
-
-type KVMetadata = { expireAt: number };
-
-const KV_TTL = 3600;
-
-const getProductDataFromOrigin = async (
-  c: Context<any, { Bindings: Bindings }>
-): Promise<ProductOnMicroCMS> => {
-  const url = new URL(c.req.url);
-  url.host = c.env.ORIGIN;
-  const originReq = new Request(url.toString(), c.req);
-
-  let [data, expired] = await swrGet<ProductOnMicroCMS>(
-    originReq,
-    c.env.PRODUCT
-  );
-
-  if (data && expired) {
-    c.executionCtx.waitUntil(
-      fetch(originReq)
-        .then((res) => res.json())
-        .then((data) => swrPut(originReq, data, c.env.PRODUCT))
-    );
-  }
-
-  if (!data) {
-    data = (await fetch(originReq).then((res) =>
-      res.json()
-    )) as ProductOnMicroCMS;
-    c.executionCtx.waitUntil(swrPut(originReq, data, c.env.PRODUCT));
-  }
-
-  return data;
-};
-
-const swrPut = async (req: Request, data: unknown, kv: KVNamespace) => {
-  const key = req.url + req.headers.get("accept-language") + "v2";
-  return kv.put(key, JSON.stringify(data), {
-    metadata: { expireAt: new Date().getTime() + KV_TTL * 1000 },
-  });
-};
-
-const swrGet = async <T>(
-  req: Request,
-  kv: KVNamespace
-): Promise<[T | null, boolean]> => {
-  const key = req.url + req.headers.get("accept-language") + "v2";
-  const { value, metadata } = await kv.getWithMetadata<T, KVMetadata>(key, {
-    type: "json",
-    cacheTtl: 600,
-  });
-
-  return [value, !!(metadata && metadata.expireAt < new Date().getTime())];
-};
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -148,30 +94,24 @@ app.get("/products/:id", async (c) => {
     apiKey: c.env.MICROCMS_API_TOKEN,
   });
 
-  const [
-    {
-      contents: [baseProductData],
+  const {
+    contents: [baseProductData],
+  } = await cmsClient.getList<ProductOnMicroCMS>({
+    endpoint: "products",
+    queries: {
+      filters: "productIds[contains]" + c.req.param("id"),
+      fields: [
+        "id",
+        "productIds",
+        "productCode",
+        "productName",
+        "rule",
+        "variants",
+        "skuLabel",
+        "foundation",
+      ],
     },
-    lazyProductData,
-  ] = await Promise.all([
-    cmsClient.getList<ProductOnMicroCMS>({
-      endpoint: "products",
-      queries: {
-        filters: "productIds[contains]" + c.req.param("id"),
-        fields: [
-          "id",
-          "productIds",
-          "productCode",
-          "productName",
-          "rule",
-          "variants",
-          "skuLabel",
-          "foundation",
-        ],
-      },
-    }),
-    getProductDataFromOrigin(c),
-  ]);
+  });
 
   if (!baseProductData) return c.notFound();
 
@@ -193,7 +133,6 @@ app.get("/products/:id", async (c) => {
       ...baseProductData.rule,
       schedule: makeSchedule(baseProductData.rule, locale),
     },
-    foundation: lazyProductData.foundation,
   });
 });
 
