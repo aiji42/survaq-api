@@ -481,10 +481,13 @@ app.post("/shopify/product", async (c) => {
   );
 
   if (data.handle && data.body_html) {
-    client
+    const { error } = await client
       .from("ShopifyPages")
       .update({ body: data.body_html })
       .eq("productHandle", data.handle);
+
+    if (error) console.error(error);
+    return c.json({ message: error });
   }
 
   return c.json({ message: "synced" });
