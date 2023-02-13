@@ -166,11 +166,14 @@ const months = [
 ];
 
 export const makeScheduleSupabase = (
-  customSchedule: DeliverySchedule | null,
+  customSchedule: string | null,
   locale: Locale = "ja"
 ): Schedule => {
   if (customSchedule) {
-    return makeScheduleFromDeliverySchedule(customSchedule, locale);
+    return makeScheduleFromDeliverySchedule(
+      customSchedule as DeliverySchedule,
+      locale
+    );
   }
   const date = dayjs().tz();
   let year = date.year();

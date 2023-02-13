@@ -1065,7 +1065,7 @@ export interface Database {
       ShopifyPages: {
         Row: {
           body: string | null
-          buyButton: boolean | null
+          buyButton: boolean
           createdAt: string | null
           customBody: string | null
           customHead: string | null
@@ -1084,7 +1084,7 @@ export interface Database {
         }
         Insert: {
           body?: string | null
-          buyButton?: boolean | null
+          buyButton?: boolean
           createdAt?: string | null
           customBody?: string | null
           customHead?: string | null
@@ -1103,7 +1103,7 @@ export interface Database {
         }
         Update: {
           body?: string | null
-          buyButton?: boolean | null
+          buyButton?: boolean
           createdAt?: string | null
           customBody?: string | null
           customHead?: string | null

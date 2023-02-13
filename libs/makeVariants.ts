@@ -65,20 +65,14 @@ export const makeVariants = (
   );
 };
 
-export type VariantsSupabase = (Omit<
-  Database["public"]["Tables"]["ShopifyVariants"]["Row"],
-  "deliverySchedule"
-> & {
-  deliverySchedule: DeliverySchedule | null;
-  ShopifyVariants_ShopifyCustomSKUs: {
-    ShopifyCustomSKUs: Omit<
-      Database["public"]["Tables"]["ShopifyCustomSKUs"]["Row"],
-      "deliverySchedule"
-    > & {
-      deliverySchedule: DeliverySchedule | null;
-    };
-  }[];
-})[];
+export type VariantsSupabase =
+  (Database["public"]["Tables"]["ShopifyVariants"]["Row"] & {
+    ShopifyVariants_ShopifyCustomSKUs:
+      | {
+          ShopifyCustomSKUs: Database["public"]["Tables"]["ShopifyCustomSKUs"]["Row"];
+        }[]
+      | null;
+  })[];
 
 export const makeVariantsSupabase = (
   product: Database["public"]["Tables"]["ShopifyProducts"]["Row"],
@@ -97,7 +91,7 @@ export const makeVariantsSupabase = (
       let schedule = null;
       if (deliverySchedule) {
         const { texts, ...omitTexts } = makeScheduleFromDeliverySchedule(
-          deliverySchedule,
+          deliverySchedule as DeliverySchedule,
           locale
         );
         schedule = omitTexts;
@@ -109,26 +103,28 @@ export const makeVariantsSupabase = (
         skuLabel,
         skuSelectable: customSelects,
         schedule,
-        skus: ShopifyVariants_ShopifyCustomSKUs.map(
-          ({
-            ShopifyCustomSKUs: { code, name, subName, deliverySchedule },
-          }) => {
-            let schedule = null;
-            if (deliverySchedule) {
-              const { texts, ...omitTexts } = makeScheduleFromDeliverySchedule(
-                deliverySchedule,
-                locale
-              );
-              schedule = omitTexts;
+        skus:
+          ShopifyVariants_ShopifyCustomSKUs?.map(
+            ({
+              ShopifyCustomSKUs: { code, name, subName, deliverySchedule },
+            }) => {
+              let schedule = null;
+              if (deliverySchedule) {
+                const { texts, ...omitTexts } =
+                  makeScheduleFromDeliverySchedule(
+                    deliverySchedule as DeliverySchedule,
+                    locale
+                  );
+                schedule = omitTexts;
+              }
+              return {
+                code,
+                name,
+                subName: subName ?? "",
+                schedule,
+              };
             }
-            return {
-              code,
-              name,
-              subName: subName ?? "",
-              schedule,
-            };
-          }
-        ),
+          ) ?? [],
       };
     }
   );

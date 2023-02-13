@@ -82,7 +82,7 @@ app.get("/products/:id/supabase", async (c) => {
   return c.json({
     variants,
     schedule: makeScheduleSupabase(
-      data.ShopifyProductGroups.deliverySchedule as DeliverySchedule | null,
+      data.ShopifyProductGroups.deliverySchedule,
       locale
     ),
   });
@@ -136,8 +136,11 @@ app.get("/products/:id", async (c) => {
   });
 });
 
-// WIP
 app.get("/products/page-data/:code/supabase", async (c) => {
+  const locale = c.req.headers.get("accept-language")?.startsWith("en")
+    ? "en"
+    : "ja";
+
   const client = createSupabaseClient<Database>(
     c.env.SUPABASE_URL,
     c.env.SUPABASE_KEY
@@ -154,7 +157,35 @@ app.get("/products/page-data/:code/supabase", async (c) => {
   if (error) return c.json(error, 500);
   if (!data) return c.notFound();
 
-  return c.json(data);
+  const { ShopifyProducts, ...page } = data;
+
+  if (!ShopifyProducts || Array.isArray(ShopifyProducts))
+    return c.text("invalid ShopifyProducts", 500);
+
+  if (
+    ShopifyProducts.ShopifyVariants &&
+    !Array.isArray(ShopifyProducts.ShopifyVariants)
+  )
+    return c.text("invalid ShopifyVariants", 500);
+
+  if (
+    !ShopifyProducts.ShopifyProductGroups ||
+    Array.isArray(ShopifyProducts.ShopifyProductGroups)
+  )
+    return c.text("invalid ShopifyProductGroups", 500);
+
+  return c.json({
+    ...page,
+    variants: makeVariantsSupabase(
+      ShopifyProducts,
+      (ShopifyProducts.ShopifyVariants ?? []) as VariantsSupabase,
+      locale
+    ),
+    schedule: makeScheduleSupabase(
+      ShopifyProducts.ShopifyProductGroups.deliverySchedule,
+      locale
+    ),
+  });
 });
 
 app.get("/products/page-data/:code", async (c) => {
