@@ -149,7 +149,7 @@ app.get("/products/page-data/:code/supabase", async (c) => {
   const { data, error } = await client
     .from("ShopifyPages")
     .select(
-      "*,logo:shopifypages_logo_foreign(*),favicon:shopifypages_favicon_foreign(*),ShopifyProducts(*,ShopifyProductGroups(*),ShopifyVariants(*,ShopifyVariants_ShopifyCustomSKUs(ShopifyCustomSKUs(*))))"
+      "*,logo:shopifypages_logo_foreign(filename_disk,width,height),favicon:shopifypages_favicon_foreign(filename_disk),ShopifyProducts(*,ShopifyProductGroups(*),ShopifyVariants(*,ShopifyVariants_ShopifyCustomSKUs(ShopifyCustomSKUs(*))))"
     )
     .match({ pathname: c.req.param("code") })
     .single();
