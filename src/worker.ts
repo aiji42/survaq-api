@@ -185,6 +185,7 @@ app.get("/products/page-data/:code/supabase", async (c) => {
       ShopifyProducts.ShopifyProductGroups.deliverySchedule,
       locale
     ),
+    productId: ShopifyProducts.productId,
   });
 });
 
