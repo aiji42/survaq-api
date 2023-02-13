@@ -43,7 +43,7 @@ declare type Variant = {
   productId: string;
   variantId: string;
   variantName: string;
-  skus: {
+  skus?: {
     code: string;
     name: string;
     subName: string;

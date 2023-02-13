@@ -403,27 +403,33 @@ app.post("/products/sync", async (c) => {
         .select("id")
         .single();
 
-      console.log("upsert ShopifyCustomSKUs");
-      const { data: skuData } = await client
-        .from("ShopifyCustomSKUs")
-        .upsert(
-          variant.skus.map((sku) => ({
-            code: sku.code,
-            name: sku.name,
-            subName: sku.subName,
-            deliverySchedule: sku.deliverySchedule ?? null,
-          })),
-          {
-            onConflict: "code",
-            ignoreDuplicates: false,
-          }
-        )
-        .select("id");
-      if (variantData && skuData) {
+      let skuData;
+      if (variant.skus) {
+        console.log("upsert ShopifyCustomSKUs");
+        const { data } = await client
+          .from("ShopifyCustomSKUs")
+          .upsert(
+            variant.skus.map((sku) => ({
+              code: sku.code,
+              name: sku.name,
+              subName: sku.subName,
+              deliverySchedule: sku.deliverySchedule ?? null,
+            })),
+            {
+              onConflict: "code",
+              ignoreDuplicates: false,
+            }
+          )
+          .select("id");
+        skuData = data;
+      }
+      if (variantData) {
         await client
           .from("ShopifyVariants_ShopifyCustomSKUs")
           .delete()
           .eq("ShopifyVariants_id", variantData.id);
+      }
+      if (variantData && skuData) {
         await client.from("ShopifyVariants_ShopifyCustomSKUs").insert(
           skuData.map((sku) => ({
             ShopifyCustomSKUs_id: sku.id,
