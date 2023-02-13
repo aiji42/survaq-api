@@ -149,7 +149,7 @@ app.get("/products/page-data/:code/supabase", async (c) => {
   const { data, error } = await client
     .from("ShopifyPages")
     .select(
-      "*,ShopifyProducts(*,ShopifyProductGroups(*),ShopifyVariants(*,ShopifyVariants_ShopifyCustomSKUs(ShopifyCustomSKUs(*))))"
+      "*,logo:shopifypages_logo_foreign(*),favicon:shopifypages_favicon_foreign(*),ShopifyProducts(*,ShopifyProductGroups(*),ShopifyVariants(*,ShopifyVariants_ShopifyCustomSKUs(ShopifyCustomSKUs(*))))"
     )
     .match({ pathname: c.req.param("code") })
     .single();
@@ -349,6 +349,7 @@ app.post("/products/sync", async (c) => {
     .select("id")
     .single();
 
+  if (groupError) console.error(groupError);
   if (!groupData || groupError) return c.json(groupError, 500);
 
   console.log("upsert ShopifyProducts", data.productName, data.productIds);
@@ -364,6 +365,7 @@ app.post("/products/sync", async (c) => {
     )
     .select("id,productId");
 
+  if (productError) console.error(productError);
   if (!productData || productError) return c.json(productError, 500);
 
   const productIdMap = Object.fromEntries(
@@ -432,14 +434,6 @@ app.post("/products/sync", async (c) => {
     })
   );
 
-  if (Object.values(productIdMap).length) {
-    const { error } = await client
-      .from("ShopifyPages")
-      .delete()
-      .in("product", Object.values(productIdMap));
-
-    if (error) return c.json(error, 500);
-  }
   if (
     data.pageData &&
     data.pageData.domain &&
@@ -448,26 +442,35 @@ app.post("/products/sync", async (c) => {
     data.pageData.productId
   ) {
     const product = productIdMap[data.pageData.productId];
-    if (!product)
+    if (!product) {
+      console.error(
+        `not found product record (productId: ${data.pageData.productId})`
+      );
       throw new Error(
         `not found product record (productId: ${data.pageData.productId})`
       );
+    }
 
-    await client.from("ShopifyPages").insert({
-      buyButton: data.pageData.buyButton,
-      customBody: data.pageData.customBody,
-      customHead: data.pageData.customHead,
-      description: data.pageData.description,
-      domain: data.pageData.domain,
-      productHandle: data.pageData.productHandle,
-      favicon: data.pageData.favicon?.url,
-      logo: data.pageData.logo?.url,
-      ogpImageUrl: data.pageData.ogpImageUrl,
-      ogpShortTitle: data.pageData.ogpShortTitle,
-      pathname: data.pageData.pathname,
-      title: data.pageData.title,
-      product,
-    });
+    const { error } = await client.from("ShopifyPages").upsert(
+      {
+        buyButton: data.pageData.buyButton,
+        customBody: data.pageData.customBody,
+        customHead: data.pageData.customHead,
+        description: data.pageData.description,
+        domain: data.pageData.domain,
+        productHandle: data.pageData.productHandle,
+        ogpImageUrl: data.pageData.ogpImageUrl,
+        ogpShortTitle: data.pageData.ogpShortTitle,
+        pathname: data.pageData.pathname,
+        title: data.pageData.title,
+        product,
+      },
+      {
+        onConflict: "pathname",
+        ignoreDuplicates: false,
+      }
+    );
+    if (error) console.error(error);
   }
 
   if (
@@ -478,26 +481,47 @@ app.post("/products/sync", async (c) => {
     data.pageDataSub.productId
   ) {
     const product = productIdMap[data.pageDataSub.productId];
-    if (!product)
+    if (!product) {
+      console.error(
+        `not found product record (productId: ${data.pageDataSub.productId})`
+      );
       throw new Error(
         `not found product record (productId: ${data.pageDataSub.productId})`
       );
+    }
 
-    await client.from("ShopifyPages").insert({
-      buyButton: data.pageDataSub.buyButton,
-      customBody: data.pageDataSub.customBody,
-      customHead: data.pageDataSub.customHead,
-      description: data.pageDataSub.description,
-      domain: data.pageDataSub.domain,
-      productHandle: data.pageDataSub.productHandle,
-      favicon: data.pageDataSub.favicon?.url,
-      logo: data.pageDataSub.logo?.url,
-      ogpImageUrl: data.pageDataSub.ogpImageUrl,
-      ogpShortTitle: data.pageDataSub.ogpShortTitle,
-      pathname: data.pageDataSub.pathname,
-      title: data.pageDataSub.title,
-      product,
-    });
+    const { error } = await client.from("ShopifyPages").upsert(
+      {
+        buyButton: data.pageDataSub.buyButton,
+        customBody: data.pageDataSub.customBody,
+        customHead: data.pageDataSub.customHead,
+        description: data.pageDataSub.description,
+        domain: data.pageDataSub.domain,
+        productHandle: data.pageDataSub.productHandle,
+        ogpImageUrl: data.pageDataSub.ogpImageUrl,
+        ogpShortTitle: data.pageDataSub.ogpShortTitle,
+        pathname: data.pageDataSub.pathname,
+        title: data.pageDataSub.title,
+        product,
+      },
+      {
+        onConflict: "pathname",
+        ignoreDuplicates: false,
+      }
+    );
+    if (error) console.error(error);
+  }
+
+  if (Object.values(productIdMap).length) {
+    const { error } = await client
+      .from("ShopifyPages")
+      .delete()
+      .in("product", Object.values(productIdMap))
+      .not("pathname", "eq", data.pageData?.pathname ?? "")
+      .not("pathname", "eq", data.pageDataSub?.pathname ?? "");
+
+    if (error) console.error(error);
+    if (error) return c.json(error, 500);
   }
 
   return c.json({ message: "synced" });
