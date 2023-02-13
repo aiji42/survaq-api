@@ -472,4 +472,22 @@ app.post("/products/sync", async (c) => {
   return c.json({ message: "synced" });
 });
 
+app.post("/shopify/product", async (c) => {
+  const data = await c.req.json<{ body_html?: string; handle?: string }>();
+
+  const client = createSupabaseClient<Database>(
+    c.env.SUPABASE_URL,
+    c.env.SUPABASE_KEY
+  );
+
+  if (data.handle && data.body_html) {
+    client
+      .from("ShopifyPages")
+      .update({ body: data.body_html })
+      .eq("productHandle", data.handle);
+  }
+
+  return c.json({ message: "synced" });
+});
+
 export default app;
