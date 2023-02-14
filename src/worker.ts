@@ -189,48 +189,6 @@ app.get("/products/page-data/:code/supabase", async (c) => {
   });
 });
 
-app.get("/products/page-data/:code", async (c) => {
-  const cmsClient = createClient({
-    serviceDomain: "survaq-shopify",
-    apiKey: c.env.MICROCMS_API_TOKEN,
-  });
-
-  const [
-    {
-      contents: [product1],
-    },
-    {
-      contents: [product2],
-    },
-  ] = await Promise.all([
-    cmsClient.getList<ProductOnMicroCMS>({
-      endpoint: "products",
-      queries: {
-        filters: `pageData.pathname[equals]${c.req.param("code")}`,
-        fields: ["productCode", "productName", "pageData"],
-      },
-    }),
-    cmsClient.getList<ProductOnMicroCMS>({
-      endpoint: "products",
-      queries: {
-        filters: `pageDataSub.pathname[equals]${c.req.param("code")}`,
-        fields: ["productCode", "productName", "pageDataSub"],
-      },
-    }),
-  ]);
-
-  const product = product1 || product2;
-
-  if (!product) return c.notFound();
-
-  if ("pageDataSub" in product && !product.pageData) {
-    product.pageData = product.pageDataSub;
-    product.pageDataSub = undefined;
-  }
-
-  return c.json(product);
-});
-
 app.get("/products/page-data/by-domain/:domain/supabase", async (c) => {
   const client = createSupabaseClient<Database>(
     c.env.SUPABASE_URL,
@@ -248,90 +206,6 @@ app.get("/products/page-data/by-domain/:domain/supabase", async (c) => {
   if (!data) return c.notFound();
 
   return c.json({ pathname: data.pathname });
-});
-
-app.get("/products/page-data/by-domain/:domain", async (c) => {
-  const cmsClient = createClient({
-    serviceDomain: "survaq-shopify",
-    apiKey: c.env.MICROCMS_API_TOKEN,
-  });
-
-  const [
-    {
-      contents: [product1],
-    },
-    {
-      contents: [product2],
-    },
-  ] = await Promise.all([
-    cmsClient.getList<ProductOnMicroCMS>({
-      endpoint: "products",
-      queries: {
-        filters: "pageData.domain[equals]" + c.req.param("domain"),
-        fields: ["productCode", "productName", "pageData"],
-      },
-    }),
-    cmsClient.getList<ProductOnMicroCMS>({
-      endpoint: "products",
-      queries: {
-        filters: "pageDataSub.domain[equals]" + c.req.param("domain"),
-        fields: ["productCode", "productName", "pageDataSub"],
-      },
-    }),
-  ]);
-
-  const product = product1 ?? product2;
-
-  if (!product) return c.notFound();
-
-  if ("pageDataSub" in product && !product.pageData) {
-    product.pageData = product.pageDataSub;
-    product.pageDataSub = undefined;
-  }
-
-  return c.json(product);
-});
-
-app.get("/products/page-data/by-shopify-handle/:handle", async (c) => {
-  const cmsClient = createClient({
-    serviceDomain: "survaq-shopify",
-    apiKey: c.env.MICROCMS_API_TOKEN,
-  });
-
-  const [
-    {
-      contents: [product1],
-    },
-    {
-      contents: [product2],
-    },
-  ] = await Promise.all([
-    cmsClient.getList<ProductOnMicroCMS>({
-      endpoint: "products",
-      queries: {
-        filters: "pageData.productHandle[equals]" + c.req.param("handle"),
-        fields: ["productCode", "productName", "pageData"],
-      },
-    }),
-    cmsClient.getList<ProductOnMicroCMS>({
-      endpoint: "products",
-      queries: {
-        filters: "pageDataSub.productHandle[equals]" + c.req.param("handle"),
-        fields: ["productCode", "productName", "pageDataSub"],
-      },
-    }),
-  ]);
-
-  const product = product1 ?? product2;
-
-  if (!product) return c.notFound();
-
-  if ("pageDataSub" in product && !product.pageData) {
-    product.pageData = product.pageDataSub;
-    product.pageDataSub = undefined;
-  }
-
-  return c.json(product);
 });
 
 app.post("/products/sync", async (c) => {
