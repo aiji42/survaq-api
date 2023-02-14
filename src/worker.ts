@@ -152,7 +152,7 @@ app.get("/products/page-data/:code/supabase", async (c) => {
       "*,logo:shopifypages_logo_foreign(filename_disk,width,height),favicon:shopifypages_favicon_foreign(filename_disk),ShopifyProducts(*,ShopifyProductGroups(*),ShopifyVariants(*,ShopifyVariants_ShopifyCustomSKUs(ShopifyCustomSKUs(*))))"
     )
     .match({ pathname: c.req.param("code") })
-    .single();
+    .maybeSingle();
 
   if (error) return c.json(error, 500);
   if (!data) return c.notFound();
