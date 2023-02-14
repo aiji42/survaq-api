@@ -231,6 +231,25 @@ app.get("/products/page-data/:code", async (c) => {
   return c.json(product);
 });
 
+app.get("/products/page-data/by-domain/:domain/supabase", async (c) => {
+  const client = createSupabaseClient<Database>(
+    c.env.SUPABASE_URL,
+    c.env.SUPABASE_KEY
+  );
+
+  const { data, error } = await client
+    .from("ShopifyPages")
+    .select("pathname")
+    .match({ domain: c.req.param("domain") })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) return c.json(error, 500);
+  if (!data) return c.notFound();
+
+  return c.json({ pathname: data.pathname });
+});
+
 app.get("/products/page-data/by-domain/:domain", async (c) => {
   const cmsClient = createClient({
     serviceDomain: "survaq-shopify",
