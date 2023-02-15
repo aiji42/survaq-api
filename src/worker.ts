@@ -288,11 +288,44 @@ app.post("/products/sync", async (c) => {
   if (!groupData || groupError) return c.json(groupError, 500);
 
   console.log("upsert ShopifyProducts", data.productName, data.productIds);
+
+  const shopifyProductTitleById = Object.fromEntries(
+    await Promise.all(
+      data.productIds.split(",").map(async (id) => {
+        const res = await fetch(
+          `https://${c.env.SHOPIFY_SHOP_NAME}.myshopify.com/admin/api/2023-01/graphql.json`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/graphql",
+              "X-Shopify-Access-Token": c.env.SHOPIFY_ACCESS_TOKEN,
+            },
+            body: `
+              {
+                product(id: "gid://shopify/Product/${id}") {
+                  title
+                }
+              }
+            `,
+          }
+        );
+
+        const {
+          data: { product },
+        } = (await res.json()) as {
+          data: { product: null | { title: string } };
+        };
+        return [id, product?.title ?? null] satisfies [string, string | null];
+      })
+    )
+  );
+
+  console.log(shopifyProductTitleById);
   const { data: productData, error: productError } = await client
     .from("ShopifyProducts")
     .upsert(
       data.productIds.split(",").map((id) => ({
-        productName: data.productName,
+        productName: shopifyProductTitleById[id] ?? data.productName,
         productId: id,
         productGroupId: groupData.id,
       })),

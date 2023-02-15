@@ -44,22 +44,23 @@ export const makeVariants = (
         variantName,
         skuSelectable,
         schedule,
-        skus: skus.map(({ code, name, subName, deliverySchedule }) => {
-          let schedule = null;
-          if (deliverySchedule) {
-            const { texts, ...omitTexts } = makeScheduleFromDeliverySchedule(
-              deliverySchedule,
-              locale
-            );
-            schedule = omitTexts;
-          }
-          return {
-            code,
-            name,
-            subName,
-            schedule,
-          };
-        }),
+        skus:
+          skus?.map(({ code, name, subName, deliverySchedule }) => {
+            let schedule = null;
+            if (deliverySchedule) {
+              const { texts, ...omitTexts } = makeScheduleFromDeliverySchedule(
+                deliverySchedule,
+                locale
+              );
+              schedule = omitTexts;
+            }
+            return {
+              code,
+              name,
+              subName,
+              schedule,
+            };
+          }) ?? [],
       };
     }
   );
