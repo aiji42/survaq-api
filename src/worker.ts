@@ -236,7 +236,8 @@ app.post("/products/sync", async (c) => {
         closeOn: dayjs(data.foundation.closeOn)
           .tz("Asia/Tokyo")
           .format("YYYY-MM-DD"),
-        deliverySchedule: data.rule.customSchedules[0]?.deliverySchedule,
+        deliverySchedule:
+          data.rule.customSchedules[0]?.deliverySchedule ?? null,
       },
       { onConflict: "title", ignoreDuplicates: false }
     )

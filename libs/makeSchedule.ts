@@ -191,10 +191,18 @@ export const makeScheduleSupabase = (
 
   if (!scheduleMadeByCustom) return scheduleMadeByCurrent;
   if (
-    scheduleMadeByCustom.year >= scheduleMadeByCurrent.year &&
-    scheduleMadeByCustom.month >= scheduleMadeByCurrent.month &&
-    scheduleMadeByCustom.termIndex >= scheduleMadeByCurrent.termIndex
+    Number(
+      `${scheduleMadeByCustom.year}${String(
+        scheduleMadeByCustom.month
+      ).padStart(2, "0")}${scheduleMadeByCustom.termIndex}`
+    ) >
+    Number(
+      `${scheduleMadeByCurrent.year}${String(
+        scheduleMadeByCurrent.month
+      ).padStart(2, "0")}${scheduleMadeByCurrent.termIndex}`
+    )
   )
     return scheduleMadeByCustom;
+
   return scheduleMadeByCurrent;
 };
