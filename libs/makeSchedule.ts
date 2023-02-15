@@ -59,7 +59,7 @@ export const makeSchedule = (
 export const makeScheduleFromDeliverySchedule = (
   str: DeliverySchedule,
   locale: Locale
-) => {
+): Schedule => {
   const [year, month, term] = str.split("-") as [
     string,
     string,
@@ -169,8 +169,9 @@ export const makeScheduleSupabase = (
   customSchedule: string | null,
   locale: Locale = "ja"
 ): Schedule => {
+  let scheduleMadeByCustom: undefined | Schedule;
   if (customSchedule) {
-    return makeScheduleFromDeliverySchedule(
+    scheduleMadeByCustom = makeScheduleFromDeliverySchedule(
       customSchedule as DeliverySchedule,
       locale
     );
@@ -186,5 +187,14 @@ export const makeScheduleSupabase = (
   const term: keyof typeof terms =
     28 <= day || day <= 7 ? "early" : 8 <= day && day <= 17 ? "middle" : "late";
 
-  return schedule(year, month, term, locale);
+  const scheduleMadeByCurrent = schedule(year, month, term, locale);
+
+  if (!scheduleMadeByCustom) return scheduleMadeByCurrent;
+  if (
+    scheduleMadeByCustom.year >= scheduleMadeByCurrent.year &&
+    scheduleMadeByCustom.month >= scheduleMadeByCurrent.month &&
+    scheduleMadeByCustom.termIndex >= scheduleMadeByCurrent.termIndex
+  )
+    return scheduleMadeByCustom;
+  return scheduleMadeByCurrent;
 };
