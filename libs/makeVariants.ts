@@ -70,6 +70,8 @@ export type VariantsSupabase =
   (Database["public"]["Tables"]["ShopifyVariants"]["Row"] & {
     ShopifyVariants_ShopifyCustomSKUs:
       | {
+          id: number;
+          sort: number | null;
           ShopifyCustomSKUs: Database["public"]["Tables"]["ShopifyCustomSKUs"]["Row"];
         }[]
       | null;
@@ -105,7 +107,17 @@ export const makeVariantsSupabase = (
         skuSelectable: customSelects,
         schedule,
         skus:
-          ShopifyVariants_ShopifyCustomSKUs?.map(
+          ShopifyVariants_ShopifyCustomSKUs?.sort(
+            ({ sort: a, id: aId }, { sort: b, id: bId }) => {
+              return a === null && b === null
+                ? aId - bId
+                : a === null
+                ? 1
+                : b === null
+                ? -1
+                : a - b;
+            }
+          )?.map(
             ({
               ShopifyCustomSKUs: { code, name, subName, deliverySchedule },
             }) => {
