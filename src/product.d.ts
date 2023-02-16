@@ -48,6 +48,8 @@ declare type Variant = {
     name: string;
     subName: string;
     deliverySchedule?: DeliverySchedule;
+    createdAt: string;
+    updatedAt: string;
   }[];
   skuSelectable: number;
   deliverySchedule?: DeliverySchedule;
@@ -86,4 +88,6 @@ declare type ProductOnMicroCMS = {
   rule: Rule;
   pageData?: PageData;
   pageDataSub?: PageData;
+  createdAt: string;
+  updatedAt: string;
 };

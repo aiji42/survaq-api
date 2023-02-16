@@ -234,6 +234,8 @@ app.post("/products/sku/sync", async (c) => {
         name: data.name,
         subName: data.subName,
         deliverySchedule: data.deliverySchedule ?? null,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
       },
       {
         onConflict: "code",
@@ -278,6 +280,8 @@ app.post("/products/sync", async (c) => {
           .format("YYYY-MM-DD"),
         deliverySchedule:
           data.rule.customSchedules[0]?.deliverySchedule ?? null,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
       },
       { onConflict: "title", ignoreDuplicates: false }
     )
@@ -328,6 +332,8 @@ app.post("/products/sync", async (c) => {
         productName: shopifyProductTitleById[id] ?? data.productName,
         productId: id,
         productGroupId: groupData.id,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
       })),
       { onConflict: "productId", ignoreDuplicates: false }
     )
@@ -362,6 +368,8 @@ app.post("/products/sync", async (c) => {
             customSelects: variant.skuSelectable,
             skuLabel: data.skuLabel ?? null,
             deliverySchedule: variant.deliverySchedule ?? null,
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt,
           },
           {
             onConflict: "variantId",
@@ -382,6 +390,8 @@ app.post("/products/sync", async (c) => {
               name: sku.name,
               subName: sku.subName,
               deliverySchedule: sku.deliverySchedule ?? null,
+              createdAt: sku.createdAt,
+              updatedAt: sku.updatedAt,
             })),
             {
               onConflict: "code",
@@ -438,6 +448,8 @@ app.post("/products/sync", async (c) => {
         pathname: data.pageData.pathname,
         title: data.pageData.title,
         product,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
       },
       {
         onConflict: "pathname",
@@ -477,6 +489,8 @@ app.post("/products/sync", async (c) => {
         pathname: data.pageDataSub.pathname,
         title: data.pageDataSub.title,
         product,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
       },
       {
         onConflict: "pathname",
@@ -512,7 +526,7 @@ app.post("/shopify/product", async (c) => {
   if (data.handle && data.body_html) {
     const { error } = await client
       .from("ShopifyPages")
-      .update({ body: data.body_html })
+      .update({ body: data.body_html, updatedAt: new Date().toISOString() })
       .eq("productHandle", data.handle);
 
     if (error) console.error(error);
