@@ -280,6 +280,7 @@ app.post("/products/sync", async (c) => {
           .format("YYYY-MM-DD"),
         deliverySchedule:
           data.rule.customSchedules[0]?.deliverySchedule ?? null,
+        microCmsProductGroupId: data.id,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
       },

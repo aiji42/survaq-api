@@ -1127,6 +1127,7 @@ export interface Database {
           createdAt: string | null
           deliverySchedule: string | null
           id: number
+          microCmsProductGroupId: string | null
           realSupporters: number
           realTotalPrice: number
           supporters: number | null
@@ -1139,6 +1140,7 @@ export interface Database {
           createdAt?: string | null
           deliverySchedule?: string | null
           id?: number
+          microCmsProductGroupId?: string | null
           realSupporters?: number
           realTotalPrice?: number
           supporters?: number | null
@@ -1151,6 +1153,7 @@ export interface Database {
           createdAt?: string | null
           deliverySchedule?: string | null
           id?: number
+          microCmsProductGroupId?: string | null
           realSupporters?: number
           realTotalPrice?: number
           supporters?: number | null
