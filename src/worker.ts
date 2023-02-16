@@ -409,9 +409,10 @@ app.post("/products/sync", async (c) => {
       }
       if (variantData && skuData) {
         await client.from("ShopifyVariants_ShopifyCustomSKUs").insert(
-          skuData.map((sku) => ({
+          skuData.map((sku, index) => ({
             ShopifyCustomSKUs_id: sku.id,
             ShopifyVariants_id: variantData.id,
+            sort: index + 1,
           }))
         );
       }

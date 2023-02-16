@@ -1225,16 +1225,19 @@ export interface Database {
           id: number
           ShopifyCustomSKUs_id: number | null
           ShopifyVariants_id: number | null
+          sort: number | null
         }
         Insert: {
           id?: number
           ShopifyCustomSKUs_id?: number | null
           ShopifyVariants_id?: number | null
+          sort?: number | null
         }
         Update: {
           id?: number
           ShopifyCustomSKUs_id?: number | null
           ShopifyVariants_id?: number | null
+          sort?: number | null
         }
       }
     }
