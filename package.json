@@ -22,7 +22,6 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.7.1",
     "dayjs": "^1.11.7",
-    "hono": "^2.7.7",
-    "microcms-js-sdk": "^2.3.2"
+    "hono": "^2.7.7"
   }
 }

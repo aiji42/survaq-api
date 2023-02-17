@@ -12,7 +12,7 @@ afterEach(() => {
 describe("no custom schedules", () => {
   test("early(28-7)", () => {
     vi.setSystemTime(new Date(2022, 10, 28));
-    expect(makeSchedule({ customSchedules: [] })).toEqual({
+    expect(makeSchedule(null)).toEqual({
       year: 2022,
       month: 12,
       subText: "12/1〜12/10",
@@ -31,7 +31,7 @@ describe("no custom schedules", () => {
     });
 
     vi.setSystemTime(new Date(2022, 11, 7));
-    expect(makeSchedule({ customSchedules: [] })).toEqual({
+    expect(makeSchedule(null)).toEqual({
       year: 2022,
       month: 12,
       subText: "12/1〜12/10",
@@ -52,7 +52,7 @@ describe("no custom schedules", () => {
 
   test("middle(8-17)", () => {
     vi.setSystemTime(new Date(2022, 11, 8));
-    expect(makeSchedule({ customSchedules: [] })).toEqual({
+    expect(makeSchedule(null)).toEqual({
       year: 2022,
       month: 12,
       subText: "12/11〜12/20",
@@ -71,7 +71,7 @@ describe("no custom schedules", () => {
     });
 
     vi.setSystemTime(new Date(2022, 11, 17));
-    expect(makeSchedule({ customSchedules: [] })).toEqual({
+    expect(makeSchedule(null)).toEqual({
       year: 2022,
       month: 12,
       subText: "12/11〜12/20",
@@ -92,7 +92,7 @@ describe("no custom schedules", () => {
 
   test("late(18-27)", () => {
     vi.setSystemTime(new Date(2022, 11, 18));
-    expect(makeSchedule({ customSchedules: [] })).toEqual({
+    expect(makeSchedule(null)).toEqual({
       year: 2022,
       month: 12,
       subText: "12/21〜12/31",
@@ -111,7 +111,7 @@ describe("no custom schedules", () => {
     });
 
     vi.setSystemTime(new Date(2022, 11, 27));
-    expect(makeSchedule({ customSchedules: [] })).toEqual({
+    expect(makeSchedule(null)).toEqual({
       year: 2022,
       month: 12,
       subText: "12/21〜12/31",
@@ -132,7 +132,7 @@ describe("no custom schedules", () => {
 
   test("Straddling the year and the month", () => {
     vi.setSystemTime(new Date(2022, 11, 28));
-    expect(makeSchedule({ customSchedules: [] })).toEqual({
+    expect(makeSchedule(null)).toEqual({
       year: 2023,
       month: 1,
       subText: "1/1〜1/10",
@@ -153,19 +153,9 @@ describe("no custom schedules", () => {
 });
 
 describe("custom schedule", () => {
-  test("in the range", () => {
+  test("Current date and time is before custom schedule", () => {
     vi.setSystemTime(new Date(2022, 10, 28));
-    expect(
-      makeSchedule({
-        customSchedules: [
-          {
-            beginOn: "2022-11-20",
-            endOn: "2022-11-30",
-            deliverySchedule: "2023-01-early",
-          },
-        ],
-      })
-    ).toEqual({
+    expect(makeSchedule("2023-01-early")).toEqual({
       year: 2023,
       month: 1,
       subText: "1/1〜1/10",
@@ -183,17 +173,7 @@ describe("custom schedule", () => {
       ],
     });
 
-    expect(
-      makeSchedule({
-        customSchedules: [
-          {
-            beginOn: "2022-11-20",
-            endOn: "2022-11-30",
-            deliverySchedule: "2023-01-middle",
-          },
-        ],
-      })
-    ).toEqual({
+    expect(makeSchedule("2023-01-middle")).toEqual({
       year: 2023,
       month: 1,
       subText: "1/11〜1/20",
@@ -211,17 +191,7 @@ describe("custom schedule", () => {
       ],
     });
 
-    expect(
-      makeSchedule({
-        customSchedules: [
-          {
-            beginOn: "2022-11-20",
-            endOn: "2022-11-30",
-            deliverySchedule: "2023-01-late",
-          },
-        ],
-      })
-    ).toEqual({
+    expect(makeSchedule("2023-01-late")).toEqual({
       year: 2023,
       month: 1,
       subText: "1/21〜1/31",
@@ -240,70 +210,24 @@ describe("custom schedule", () => {
     });
   });
 
-  test("out of the range", () => {
-    vi.setSystemTime(new Date(2022, 11, 1));
-    expect(
-      makeSchedule({
-        customSchedules: [
-          {
-            beginOn: "2022-11-20",
-            endOn: "2022-11-30",
-            deliverySchedule: "2023-01-early",
-          },
-        ],
-      })
-    ).toEqual({
-      year: 2022,
-      month: 12,
-      subText: "12/1〜12/10",
-      term: "early",
-      termIndex: 0,
-      text: "2022年12月上旬",
-      texts: [
-        "2022年12月上旬",
-        "2022年11月下旬",
-        "2022年11月中旬",
-        "2022年11月上旬",
-        "2022年10月下旬",
-        "2022年10月中旬",
-        "2022年10月上旬",
-      ],
-    });
-  });
-
-  test("two overlapping ranges", () => {
-    vi.setSystemTime(new Date(2022, 10, 28));
-    expect(
-      makeSchedule({
-        customSchedules: [
-          {
-            beginOn: "2022-11-20",
-            endOn: "2022-11-30",
-            deliverySchedule: "2023-01-early",
-          },
-          {
-            beginOn: "2022-11-25",
-            endOn: "2022-12-01",
-            deliverySchedule: "2023-02-late",
-          },
-        ],
-      })
-    ).toEqual({
-      year: 2023,
+  test("If the current date/time is past the custom schedule, the schedule is calculated based on the current date/time", () => {
+    vi.setSystemTime(new Date(2023, 0, 8));
+    expect(makeSchedule("2023-01-early")).toEqual({
       month: 1,
-      subText: "1/1〜1/10",
-      term: "early",
-      termIndex: 0,
-      text: "2023年1月上旬",
+      subText: "1/11〜1/20",
+      term: "middle",
+      termIndex: 1,
+      text: "2023年1月中旬",
       texts: [
+        "2023年1月中旬",
         "2023年1月上旬",
         "2022年12月下旬",
         "2022年12月中旬",
         "2022年12月上旬",
         "2022年11月下旬",
         "2022年11月中旬",
-        "2022年11月上旬",
       ],
+      year: 2023,
     });
   });
 });
@@ -311,7 +235,7 @@ describe("custom schedule", () => {
 describe("locale en", () => {
   test("early(28-7)", () => {
     vi.setSystemTime(new Date(2022, 10, 28));
-    expect(makeSchedule({ customSchedules: [] }, "en")).toEqual({
+    expect(makeSchedule(null, "en")).toEqual({
       year: 2022,
       month: 12,
       subText: "Dec. 1 - 10",
@@ -330,7 +254,7 @@ describe("locale en", () => {
     });
 
     vi.setSystemTime(new Date(2022, 11, 7));
-    expect(makeSchedule({ customSchedules: [] }, "en")).toEqual({
+    expect(makeSchedule(null, "en")).toEqual({
       year: 2022,
       month: 12,
       subText: "Dec. 1 - 10",
@@ -351,7 +275,7 @@ describe("locale en", () => {
 
   test("middle(8-17)", () => {
     vi.setSystemTime(new Date(2022, 11, 8));
-    expect(makeSchedule({ customSchedules: [] }, "en")).toEqual({
+    expect(makeSchedule(null, "en")).toEqual({
       year: 2022,
       month: 12,
       subText: "Dec. 11 - 20",
@@ -370,7 +294,7 @@ describe("locale en", () => {
     });
 
     vi.setSystemTime(new Date(2022, 11, 17));
-    expect(makeSchedule({ customSchedules: [] }, "en")).toEqual({
+    expect(makeSchedule(null, "en")).toEqual({
       year: 2022,
       month: 12,
       subText: "Dec. 11 - 20",
@@ -391,7 +315,7 @@ describe("locale en", () => {
 
   test("late(18-27)", () => {
     vi.setSystemTime(new Date(2022, 11, 18));
-    expect(makeSchedule({ customSchedules: [] }, "en")).toEqual({
+    expect(makeSchedule(null, "en")).toEqual({
       year: 2022,
       month: 12,
       subText: "Dec. 21 - 31",
@@ -410,7 +334,7 @@ describe("locale en", () => {
     });
 
     vi.setSystemTime(new Date(2022, 11, 27));
-    expect(makeSchedule({ customSchedules: [] }, "en")).toEqual({
+    expect(makeSchedule(null, "en")).toEqual({
       year: 2022,
       month: 12,
       subText: "Dec. 21 - 31",
@@ -431,7 +355,7 @@ describe("locale en", () => {
 
   test("Straddling the year and the month", () => {
     vi.setSystemTime(new Date(2022, 11, 28));
-    expect(makeSchedule({ customSchedules: [] }, "en")).toEqual({
+    expect(makeSchedule(null, "en")).toEqual({
       year: 2023,
       month: 1,
       subText: "Jan. 1 - 10",
@@ -450,37 +374,47 @@ describe("locale en", () => {
     });
   });
 
-  test("custom schedule", () => {
-    vi.setSystemTime(new Date(2022, 10, 28));
-    expect(
-      makeSchedule(
-        {
-          customSchedules: [
-            {
-              beginOn: "2022-11-20",
-              endOn: "2022-11-30",
-              deliverySchedule: "2023-01-early",
-            },
-          ],
-        },
-        "en"
-      )
-    ).toEqual({
-      year: 2023,
-      month: 1,
-      subText: "Jan. 1 - 10",
-      term: "early",
-      termIndex: 0,
-      text: "early Jan. 2023",
-      texts: [
-        "early Jan. 2023",
-        "late Dec. 2022",
-        "mid Dec. 2022",
-        "early Dec. 2022",
-        "late Nov. 2022",
-        "mid Nov. 2022",
-        "early Nov. 2022",
-      ],
+  describe("custom schedule", () => {
+    test("Current date and time is before custom schedule", () => {
+      vi.setSystemTime(new Date(2022, 10, 28));
+      expect(makeSchedule("2023-01-early", "en")).toEqual({
+        year: 2023,
+        month: 1,
+        subText: "Jan. 1 - 10",
+        term: "early",
+        termIndex: 0,
+        text: "early Jan. 2023",
+        texts: [
+          "early Jan. 2023",
+          "late Dec. 2022",
+          "mid Dec. 2022",
+          "early Dec. 2022",
+          "late Nov. 2022",
+          "mid Nov. 2022",
+          "early Nov. 2022",
+        ],
+      });
+    });
+
+    test("If the current date/time is past the custom schedule, the schedule is calculated based on the current date/time", () => {
+      vi.setSystemTime(new Date(2023, 0, 8));
+      expect(makeSchedule("2023-01-early", "en")).toEqual({
+        month: 1,
+        subText: "Jan. 11 - 20",
+        term: "middle",
+        termIndex: 1,
+        text: "mid Jan. 2023",
+        texts: [
+          "mid Jan. 2023",
+          "early Jan. 2023",
+          "late Dec. 2022",
+          "mid Dec. 2022",
+          "early Dec. 2022",
+          "late Nov. 2022",
+          "mid Nov. 2022",
+        ],
+        year: 2023,
+      });
     });
   });
 });

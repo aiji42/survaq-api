@@ -25,37 +25,6 @@ export type Schedule = {
 
 type Locale = "ja" | "en";
 
-export const makeSchedule = (
-  { customSchedules }: Pick<Rule, "customSchedules">,
-  locale: Locale = "ja"
-): Schedule => {
-  const customSchedule = customSchedules.find(({ beginOn, endOn }) =>
-    dayjs().isBetween(
-      dayjs(beginOn).startOf("date"),
-      dayjs(endOn).endOf("date")
-    )
-  );
-
-  if (customSchedule) {
-    return makeScheduleFromDeliverySchedule(
-      customSchedule.deliverySchedule,
-      locale
-    );
-  }
-  const date = dayjs().tz();
-  let year = date.year();
-  const day = date.date();
-  let month = date.month() + 1 + (28 <= day ? 1 : 0);
-  if (month > 12) {
-    month = 1;
-    year = year + 1;
-  }
-  const term: keyof typeof terms =
-    28 <= day || day <= 7 ? "early" : 8 <= day && day <= 17 ? "middle" : "late";
-
-  return schedule(year, month, term, locale);
-};
-
 export const makeScheduleFromDeliverySchedule = (
   str: DeliverySchedule,
   locale: Locale
@@ -165,7 +134,7 @@ const months = [
   "Dec",
 ];
 
-export const makeScheduleSupabase = (
+export const makeSchedule = (
   customSchedule: string | null,
   locale: Locale = "ja"
 ): Schedule => {

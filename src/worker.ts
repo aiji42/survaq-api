@@ -1,13 +1,8 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { Bindings } from "../bindings";
-import { makeSchedule, makeScheduleSupabase } from "../libs/makeSchedule";
-import { createClient } from "microcms-js-sdk";
-import {
-  makeVariants,
-  makeVariantsSupabase,
-  VariantsSupabase,
-} from "../libs/makeVariants";
+import { makeSchedule } from "../libs/makeSchedule";
+import { makeVariants, Variants } from "../libs/makeVariants";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { Database } from "./database.type";
 import dayjs from "dayjs";
@@ -73,66 +68,15 @@ app.get("/products/:id/supabase", async (c) => {
     ? "en"
     : "ja";
 
-  const variants = makeVariantsSupabase(
-    data,
-    (data.ShopifyVariants ?? []) as VariantsSupabase,
-    locale
-  );
-
-  return c.json({
-    variants,
-    schedule: makeScheduleSupabase(
-      data.ShopifyProductGroups.deliverySchedule,
-      locale
-    ),
-  });
-});
-
-app.get("/products/:id", async (c) => {
-  const cmsClient = createClient({
-    serviceDomain: "survaq-shopify",
-    apiKey: c.env.MICROCMS_API_TOKEN,
-  });
-
-  const {
-    contents: [baseProductData],
-  } = await cmsClient.getList<ProductOnMicroCMS>({
-    endpoint: "products",
-    queries: {
-      filters: "productIds[contains]" + c.req.param("id"),
-      fields: [
-        "id",
-        "productIds",
-        "productCode",
-        "productName",
-        "rule",
-        "variants",
-        "skuLabel",
-        "foundation",
-      ],
-    },
-  });
-
-  if (!baseProductData) return c.notFound();
-
-  const locale = c.req.headers.get("accept-language")?.startsWith("en")
-    ? "en"
-    : "ja";
-
   const variants = makeVariants(
-    baseProductData.variants?.filter(
-      (v) => v.productId === c.req.param("id")
-    ) ?? [],
+    data,
+    (data.ShopifyVariants ?? []) as Variants,
     locale
   );
 
   return c.json({
-    ...baseProductData,
     variants,
-    rule: {
-      ...baseProductData.rule,
-      schedule: makeSchedule(baseProductData.rule, locale),
-    },
+    schedule: makeSchedule(data.ShopifyProductGroups.deliverySchedule, locale),
   });
 });
 
@@ -176,12 +120,12 @@ app.get("/products/page-data/:code/supabase", async (c) => {
 
   return c.json({
     ...page,
-    variants: makeVariantsSupabase(
+    variants: makeVariants(
       ShopifyProducts,
-      (ShopifyProducts.ShopifyVariants ?? []) as VariantsSupabase,
+      (ShopifyProducts.ShopifyVariants ?? []) as Variants,
       locale
     ),
-    schedule: makeScheduleSupabase(
+    schedule: makeSchedule(
       ShopifyProducts.ShopifyProductGroups.deliverySchedule,
       locale
     ),
