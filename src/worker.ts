@@ -151,48 +151,6 @@ app.get("/products/page-data/by-domain/:domain/supabase", async (c) => {
   return c.json({ pathname: data.pathname });
 });
 
-app.post("/products/sku/sync", async (c) => {
-  const json = await c.req.json<{
-    message: {};
-    type: "new" | "edit" | "delete";
-    contents: {
-      new?: { publishValue: Exclude<Variant["skus"], undefined>[number] };
-    };
-  }>();
-  const data = json.contents.new?.publishValue;
-
-  if (!data) return c.json({});
-
-  const client = createSupabaseClient<Database>(
-    c.env.SUPABASE_URL,
-    c.env.SUPABASE_KEY
-  );
-
-  console.log("upsert ShopifyCustomSKUs");
-  const { error } = await client
-    .from("ShopifyCustomSKUs")
-    .upsert(
-      {
-        code: data.code,
-        name: data.name,
-        subName: data.subName,
-        deliverySchedule: data.deliverySchedule ?? null,
-        createdAt: data.createdAt,
-        updatedAt: data.updatedAt,
-      },
-      {
-        onConflict: "code",
-        ignoreDuplicates: false,
-      }
-    )
-    .select("id");
-
-  if (error) console.error(error);
-  if (error) return c.json(error, 500);
-
-  return c.json({ message: "synced" });
-});
-
 app.post("/shopify/product", async (c) => {
   const data = await c.req.json<{ body_html?: string; handle?: string }>();
 
