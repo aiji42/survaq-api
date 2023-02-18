@@ -1033,6 +1033,32 @@ export interface Database {
           setName?: string
         }
       }
+      GoogleMerchantCenter: {
+        Row: {
+          createdAt: string | null
+          id: number
+          merchantCenterId: string
+          shopifyProductGroup: number
+          title: string
+          updatedAt: string | null
+        }
+        Insert: {
+          createdAt?: string | null
+          id?: number
+          merchantCenterId: string
+          shopifyProductGroup: number
+          title: string
+          updatedAt?: string | null
+        }
+        Update: {
+          createdAt?: string | null
+          id?: number
+          merchantCenterId?: string
+          shopifyProductGroup?: number
+          title?: string
+          updatedAt?: string | null
+        }
+      }
       ShopifyCustomSKUs: {
         Row: {
           code: string
@@ -1127,7 +1153,6 @@ export interface Database {
           createdAt: string | null
           deliverySchedule: string | null
           id: number
-          microCmsProductGroupId: string | null
           realSupporters: number
           realTotalPrice: number
           supporters: number | null
@@ -1140,7 +1165,6 @@ export interface Database {
           createdAt?: string | null
           deliverySchedule?: string | null
           id?: number
-          microCmsProductGroupId?: string | null
           realSupporters?: number
           realTotalPrice?: number
           supporters?: number | null
@@ -1153,7 +1177,6 @@ export interface Database {
           createdAt?: string | null
           deliverySchedule?: string | null
           id?: number
-          microCmsProductGroupId?: string | null
           realSupporters?: number
           realTotalPrice?: number
           supporters?: number | null
