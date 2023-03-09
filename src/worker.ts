@@ -151,22 +151,184 @@ app.get("/products/page-data/by-domain/:domain/supabase", async (c) => {
   return c.json({ pathname: data.pathname });
 });
 
+type ShopifyProduct = {
+  id: number;
+  body_html?: string;
+  handle?: string;
+  title: string;
+  status: "active" | "draft" | "archived";
+  variants?: Array<{
+    id: number;
+    title: string;
+  }>;
+};
+
 app.post("/shopify/product", async (c) => {
-  const data = await c.req.json<{ body_html?: string; handle?: string }>();
+  const data = await c.req.json<ShopifyProduct>();
+  console.log(data);
 
   const client = createSupabaseClient<Database>(
     c.env.SUPABASE_URL,
     c.env.SUPABASE_KEY
   );
 
+  // サテライトサイトBODY更新処理
   if (data.handle && data.body_html) {
-    const { error } = await client
+    console.log("try update page body", data.handle);
+    const { data: updatedPage, error: pageError } = await client
       .from("ShopifyPages")
       .update({ body: data.body_html, updatedAt: new Date().toISOString() })
-      .eq("productHandle", data.handle);
+      .eq("productHandle", data.handle)
+      .select("id");
+    if (pageError) {
+      console.error(pageError);
+      return c.json({ message: pageError });
+    }
+    if (updatedPage?.length)
+      console.log("updated page record ids", updatedPage);
+  }
 
-    if (error) console.error(error);
-    return c.json({ message: error });
+  const { data: product, error: productError } = await client
+    .from("ShopifyProducts")
+    .select("id")
+    .eq("productId", String(data.id))
+    .maybeSingle();
+  if (productError) {
+    console.error(productError);
+    return c.json({ message: productError });
+  }
+  let productRecordId: number | undefined = product?.id;
+
+  // activeかつ、CMS上にまだ商品がないなら商品を追加
+  if (!product && data.status === "active") {
+    console.log("insert new product", data.id, data.title);
+    const { data: newProduct, error: productCreateError } = await client
+      .from("ShopifyProducts")
+      .insert({
+        productId: String(data.id),
+        productName: data.title,
+        updatedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+    if (productCreateError) {
+      console.error(productCreateError);
+      return c.json({ message: productCreateError });
+    }
+    console.log("inserted new product record id:", newProduct.id);
+    productRecordId = newProduct.id;
+  }
+
+  const shopifyVariants = Object.fromEntries(
+    data.variants?.map(({ id, title }) => [String(id), title]) ?? []
+  );
+  const shopifyVariantIds = Object.keys(shopifyVariants);
+
+  // activeなら、CMS上から該当商品を探し、その商品が持つバリエーションの配列と交差差分をとって
+  // CMS上に存在しないIDがあれば、そのバリエーションを作る
+  // CMS上にしか存在しないIDがあるのであれば、そのバリエーションは削除する
+  // CMS上・Shopify両方に存在していればバリエーションをアップデートする
+  if (data.status === "active" && productRecordId) {
+    const { data: variants, error: variantsError } = await client
+      .from("ShopifyVariants")
+      .select("id,variantId")
+      .eq("product", productRecordId);
+    if (variantsError) {
+      console.error(variantsError);
+      return c.json({ message: variantsError });
+    }
+    const cmsVariantIds = variants.map(({ variantId }) => variantId);
+
+    const shouldInsertVariantIds = shopifyVariantIds.filter(
+      (id) => !cmsVariantIds.includes(id)
+    );
+    const shouldDeleteVariantIds = cmsVariantIds.filter(
+      (id) => !shopifyVariantIds.includes(id)
+    );
+    const shouldUpdateVariantIds = shopifyVariantIds.filter((id) =>
+      cmsVariantIds.includes(id)
+    );
+
+    if (shouldInsertVariantIds.length) {
+      const insertData = shouldInsertVariantIds.map((variantId) => ({
+        variantId,
+        variantName: shopifyVariants[variantId]!,
+      }));
+      console.log("insert new variants", insertData);
+      const { data: insertedVariants, error: variantInsertError } = await client
+        .from("ShopifyVariants")
+        .insert(
+          insertData.map((item) => ({
+            ...item,
+            product: productRecordId,
+            updatedAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+          }))
+        )
+        .select("id");
+      if (variantInsertError) {
+        console.error(variantInsertError);
+        return c.json({ message: variantInsertError });
+      }
+      console.log("inserted new variant record ids:", insertedVariants);
+    }
+
+    if (shouldDeleteVariantIds.length) {
+      console.log("delete variants", shouldDeleteVariantIds);
+      const { data: deletedVariants, error: variantDeleteError } = await client
+        .from("ShopifyVariants")
+        .delete()
+        .in("variantId", shouldDeleteVariantIds)
+        .select("id");
+      if (variantDeleteError) {
+        console.error(variantDeleteError);
+        return c.json({ message: variantDeleteError });
+      }
+      console.log("inserted variant record ids:", deletedVariants);
+    }
+
+    if (shouldUpdateVariantIds.length) {
+      const updateData = shouldUpdateVariantIds.map((variantId) => ({
+        variantId,
+        variantName: shopifyVariants[variantId]!,
+      }));
+      console.log("update variants", updateData);
+      try {
+        const updatedVariants = await Promise.all(
+          updateData.map(async ({ variantId, variantName }) => {
+            const { data, error } = await client
+              .from("ShopifyVariants")
+              .update({ variantName })
+              .eq("variantId", variantId)
+              .select("id")
+              .single();
+            if (error) throw error;
+            return data;
+          })
+        );
+        console.log("updated variant record ids:", updatedVariants);
+      } catch (e) {
+        console.error(e);
+        return c.json({ message: e });
+      }
+    }
+  }
+
+  // draft/archived ならCMS上から該当商品を探し、その商品が持つバリエーションをすべて削除する
+  // バリエーション削除時に、SKU紐付け用の中間テーブルが残らないようにする
+  if (data.status !== "active" && productRecordId) {
+    console.log("delete variants by product record id", productRecordId);
+    const { data: deletedVariants, error: variantDeleteError } = await client
+      .from("ShopifyVariants")
+      .delete()
+      .eq("product", productRecordId)
+      .select("id");
+    if (variantDeleteError) {
+      console.error(variantDeleteError);
+      return c.json({ message: variantDeleteError });
+    }
+    console.log("inserted variant record ids:", deletedVariants);
   }
 
   return c.json({ message: "synced" });
