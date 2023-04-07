@@ -172,22 +172,6 @@ app.post("/shopify/product", async (c) => {
     c.env.SUPABASE_KEY
   );
 
-  // サテライトサイトBODY更新処理
-  if (data.handle && data.body_html) {
-    console.log("try update page body", data.handle);
-    const { data: updatedPage, error: pageError } = await client
-      .from("ShopifyPages")
-      .update({ body: data.body_html, updatedAt: new Date().toISOString() })
-      .eq("productHandle", data.handle)
-      .select("id");
-    if (pageError) {
-      console.error(pageError);
-      return c.json({ message: pageError });
-    }
-    if (updatedPage?.length)
-      console.log("updated page record ids", updatedPage);
-  }
-
   const { data: product, error: productError } = await client
     .from("ShopifyProducts")
     .select("id")
