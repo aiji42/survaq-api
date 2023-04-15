@@ -922,7 +922,12 @@ export interface Database {
           createdAt: string | null
           dayOfWeek: Json | null
           id: string
+          level: string
+          level2: string
+          level3: string
           rule: Json | null
+          rule2: Json | null
+          rule3: Json | null
           title: string
           updatedAt: string | null
         }
@@ -932,7 +937,12 @@ export interface Database {
           createdAt?: string | null
           dayOfWeek?: Json | null
           id: string
+          level?: string
+          level2?: string
+          level3?: string
           rule?: Json | null
+          rule2?: Json | null
+          rule3?: Json | null
           title: string
           updatedAt?: string | null
         }
@@ -942,7 +952,12 @@ export interface Database {
           createdAt?: string | null
           dayOfWeek?: Json | null
           id?: string
+          level?: string
+          level2?: string
+          level3?: string
           rule?: Json | null
+          rule2?: Json | null
+          rule3?: Json | null
           title?: string
           updatedAt?: string | null
         }
@@ -1061,30 +1076,72 @@ export interface Database {
       }
       ShopifyCustomSKUs: {
         Row: {
+          availableStock: string
           code: string
           createdAt: string | null
           deliverySchedule: string | null
           id: number
+          incomingStockDateA: string | null
+          incomingStockDateB: string | null
+          incomingStockDateC: string | null
+          incomingStockDeliveryScheduleA: string | null
+          incomingStockDeliveryScheduleB: string | null
+          incomingStockDeliveryScheduleC: string | null
+          incomingStockQtyA: number | null
+          incomingStockQtyB: number | null
+          incomingStockQtyC: number | null
+          inventory: number
+          lastSyncedAt: string | null
           name: string
+          stockBuffer: number | null
           subName: string | null
+          unshippedOrderCount: number
           updatedAt: string | null
         }
         Insert: {
+          availableStock?: string
           code?: string
           createdAt?: string | null
           deliverySchedule?: string | null
           id?: number
+          incomingStockDateA?: string | null
+          incomingStockDateB?: string | null
+          incomingStockDateC?: string | null
+          incomingStockDeliveryScheduleA?: string | null
+          incomingStockDeliveryScheduleB?: string | null
+          incomingStockDeliveryScheduleC?: string | null
+          incomingStockQtyA?: number | null
+          incomingStockQtyB?: number | null
+          incomingStockQtyC?: number | null
+          inventory?: number
+          lastSyncedAt?: string | null
           name: string
+          stockBuffer?: number | null
           subName?: string | null
+          unshippedOrderCount?: number
           updatedAt?: string | null
         }
         Update: {
+          availableStock?: string
           code?: string
           createdAt?: string | null
           deliverySchedule?: string | null
           id?: number
+          incomingStockDateA?: string | null
+          incomingStockDateB?: string | null
+          incomingStockDateC?: string | null
+          incomingStockDeliveryScheduleA?: string | null
+          incomingStockDeliveryScheduleB?: string | null
+          incomingStockDeliveryScheduleC?: string | null
+          incomingStockQtyA?: number | null
+          incomingStockQtyB?: number | null
+          incomingStockQtyC?: number | null
+          inventory?: number
+          lastSyncedAt?: string | null
           name?: string
+          stockBuffer?: number | null
           subName?: string | null
+          unshippedOrderCount?: number
           updatedAt?: string | null
         }
       }
@@ -1104,7 +1161,6 @@ export interface Database {
           ogpShortTitle: string | null
           pathname: string
           product: number
-          productHandle: string
           title: string | null
           updatedAt: string | null
         }
@@ -1123,7 +1179,6 @@ export interface Database {
           ogpShortTitle?: string | null
           pathname: string
           product: number
-          productHandle: string
           title?: string | null
           updatedAt?: string | null
         }
@@ -1142,7 +1197,6 @@ export interface Database {
           ogpShortTitle?: string | null
           pathname?: string
           product?: number
-          productHandle?: string
           title?: string | null
           updatedAt?: string | null
         }
@@ -1219,6 +1273,7 @@ export interface Database {
           id: number
           product: number | null
           skuLabel: string | null
+          skusJSON: string | null
           updatedAt: string | null
           variantId: string
           variantName: string
@@ -1230,6 +1285,7 @@ export interface Database {
           id?: number
           product?: number | null
           skuLabel?: string | null
+          skusJSON?: string | null
           updatedAt?: string | null
           variantId: string
           variantName: string
@@ -1241,6 +1297,7 @@ export interface Database {
           id?: number
           product?: number | null
           skuLabel?: string | null
+          skusJSON?: string | null
           updatedAt?: string | null
           variantId?: string
           variantName?: string
@@ -1281,3 +1338,4 @@ export interface Database {
     }
   }
 }
+

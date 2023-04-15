@@ -16,6 +16,7 @@ type CustomizedVariant = {
   skuSelectable: number;
   skuLabel?: string | null;
   schedule: Omit<Schedule, "texts"> | null;
+  skusJSON: string | null;
 };
 
 export type Variants =
@@ -42,6 +43,7 @@ export const makeVariants = (
       deliverySchedule,
       skuLabel,
       ShopifyVariants_ShopifyCustomSKUs,
+      skusJSON,
     }) => {
       let schedule = null;
       if (deliverySchedule) {
@@ -58,6 +60,7 @@ export const makeVariants = (
         skuLabel,
         skuSelectable: customSelects,
         schedule,
+        skusJSON: sanitizeSkusJSON(skusJSON),
         skus:
           ShopifyVariants_ShopifyCustomSKUs?.sort(
             ({ sort: a, id: aId }, { sort: b, id: bId }) => {
@@ -93,4 +96,16 @@ export const makeVariants = (
       };
     }
   );
+};
+
+const sanitizeSkusJSON = (json: string | null) => {
+  if (typeof json !== "string") return null;
+  try {
+    const parsed = JSON.parse(json);
+    if (!Array.isArray(parsed)) return null;
+    if (parsed.some((s) => typeof s !== "string")) return null;
+    return json;
+  } catch (_) {
+    return null;
+  }
 };
