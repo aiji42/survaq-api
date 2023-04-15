@@ -16,7 +16,6 @@ type CustomizedVariant = {
   skuSelectable: number;
   skuLabel?: string | null;
   schedule: Omit<Schedule, "texts"> | null;
-  skusJSON: string | null;
 };
 
 export type Variants =
@@ -60,52 +59,59 @@ export const makeVariants = (
         skuLabel,
         skuSelectable: customSelects,
         schedule,
-        skusJSON: sanitizeSkusJSON(skusJSON),
         skus:
-          ShopifyVariants_ShopifyCustomSKUs?.sort(
-            ({ sort: a, id: aId }, { sort: b, id: bId }) => {
-              return a === null && b === null
-                ? aId - bId
-                : a === null
-                ? 1
-                : b === null
-                ? -1
-                : a - b;
-            }
-          )?.map(
-            ({
-              ShopifyCustomSKUs: { code, name, subName, deliverySchedule },
-            }) => {
-              let schedule = null;
-              if (deliverySchedule) {
-                const { texts, ...omitTexts } =
-                  makeScheduleFromDeliverySchedule(
-                    deliverySchedule as DeliverySchedule,
-                    locale
-                  );
-                schedule = omitTexts;
-              }
-              return {
+          ShopifyVariants_ShopifyCustomSKUs &&
+          ShopifyVariants_ShopifyCustomSKUs.length > 0
+            ? ShopifyVariants_ShopifyCustomSKUs.sort(
+                ({ sort: a, id: aId }, { sort: b, id: bId }) => {
+                  return a === null && b === null
+                    ? aId - bId
+                    : a === null
+                    ? 1
+                    : b === null
+                    ? -1
+                    : a - b;
+                }
+              ).map(
+                ({
+                  ShopifyCustomSKUs: { code, name, subName, deliverySchedule },
+                }) => {
+                  let schedule = null;
+                  if (deliverySchedule) {
+                    const { texts, ...omitTexts } =
+                      makeScheduleFromDeliverySchedule(
+                        deliverySchedule as DeliverySchedule,
+                        locale
+                      );
+                    schedule = omitTexts;
+                  }
+                  return {
+                    code,
+                    name,
+                    subName: subName ?? "",
+                    schedule,
+                  };
+                }
+              )
+            : sanitizeSkusJSON(skusJSON).map((code) => ({
                 code,
-                name,
-                subName: subName ?? "",
-                schedule,
-              };
-            }
-          ) ?? [],
+                name: "",
+                subName: "",
+                schedule: null,
+              })),
       };
     }
   );
 };
 
 const sanitizeSkusJSON = (json: string | null) => {
-  if (typeof json !== "string") return null;
+  if (typeof json !== "string") return [];
   try {
     const parsed = JSON.parse(json);
-    if (!Array.isArray(parsed)) return null;
-    if (parsed.some((s) => typeof s !== "string")) return null;
-    return json;
+    if (!Array.isArray(parsed)) return [];
+    if (parsed.some((s) => typeof s !== "string")) return [];
+    return parsed as string[];
   } catch (_) {
-    return null;
+    return [];
   }
 };
