@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { makeSchedule } from "./makeSchedule";
+import { earliest, latest, makeSchedule, Schedule } from "./makeSchedule";
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -415,6 +415,45 @@ describe("locale en", () => {
         ],
         year: 2023,
       });
+    });
+  });
+
+  describe("latest/earliest", () => {
+    test("latest", () => {
+      expect(
+        latest([
+          null,
+          null,
+          { year: 2024, month: 1, termIndex: 1 } as Schedule<boolean>,
+          { year: 2023, month: 12, termIndex: 1 } as Schedule<boolean>,
+          { year: 2023, month: 1, termIndex: 3 } as Schedule<boolean>,
+          { year: 2023, month: 1, termIndex: 1 } as Schedule<boolean>,
+        ])
+      ).toEqual({ year: 2024, month: 1, termIndex: 1 });
+    });
+
+    test("earliest", () => {
+      expect(
+        earliest([
+          { year: 2024, month: 1, termIndex: 1 } as Schedule<boolean>,
+          { year: 2023, month: 12, termIndex: 1 } as Schedule<boolean>,
+          { year: 2023, month: 1, termIndex: 3 } as Schedule<boolean>,
+          { year: 2023, month: 1, termIndex: 1 } as Schedule<boolean>,
+        ])
+      ).toEqual({ year: 2023, month: 1, termIndex: 1 });
+    });
+
+    test("earliest with null", () => {
+      expect(
+        earliest([
+          null,
+          null,
+          { year: 2024, month: 1, termIndex: 1 } as Schedule<boolean>,
+          { year: 2023, month: 12, termIndex: 1 } as Schedule<boolean>,
+          { year: 2023, month: 1, termIndex: 3 } as Schedule<boolean>,
+          { year: 2023, month: 1, termIndex: 1 } as Schedule<boolean>,
+        ])
+      ).toEqual(null);
     });
   });
 });

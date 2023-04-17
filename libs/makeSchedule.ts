@@ -13,36 +13,48 @@ const terms = {
   late: 2,
 } as const;
 
-export type Schedule = {
+export type Schedule<T extends boolean> = {
   year: number;
   month: number;
   term: keyof typeof terms;
   termIndex: number;
   text: string;
   subText: string;
-  texts: string[];
+  texts: T extends true ? string[] : never;
 };
 
 type Locale = "ja" | "en";
 
-export const makeScheduleFromDeliverySchedule = (
-  str: DeliverySchedule,
-  locale: Locale
-): Schedule => {
+type ResultType<T, W extends boolean> = T extends string
+  ? Schedule<W>
+  : T extends null
+  ? null
+  : never;
+
+export const makeScheduleFromDeliverySchedule = <T extends string | null>(
+  str: T,
+  locale: Locale,
+  withTexts: boolean = true
+): ResultType<T, typeof withTexts> => {
+  if (!str) return null as ResultType<T, typeof withTexts>;
   const [year, month, term] = str.split("-") as [
     string,
     string,
     keyof typeof terms
   ];
-  return schedule(year, month, term, locale);
+  return schedule(year, month, term, locale, withTexts) as ResultType<
+    T,
+    typeof withTexts
+  >;
 };
 
-const schedule = (
+const schedule = <W extends boolean>(
   year: string | number,
   month: string | number,
   term: keyof typeof terms,
-  locale: Locale
-): Schedule => {
+  locale: Locale,
+  withTexts: boolean = true
+): Schedule<W> => {
   const texts = createScheduleTextArray(
     {
       year,
@@ -59,9 +71,9 @@ const schedule = (
     term,
     termIndex: terms[term],
     text,
-    texts,
+    ...(withTexts ? { texts } : undefined),
     subText: monthWithDateRange(Number(year), Number(month) - 1, term, locale),
-  };
+  } as Schedule<W>;
 };
 
 const createScheduleTextArray = (
@@ -136,13 +148,15 @@ const months = [
 
 export const makeSchedule = (
   customSchedule: string | null,
-  locale: Locale = "ja"
-): Schedule => {
-  let scheduleMadeByCustom: undefined | Schedule;
+  locale: Locale = "ja",
+  withTexts: boolean = true
+): Schedule<typeof withTexts> => {
+  let scheduleMadeByCustom: undefined | Schedule<true>;
   if (customSchedule) {
     scheduleMadeByCustom = makeScheduleFromDeliverySchedule(
-      customSchedule as DeliverySchedule,
-      locale
+      customSchedule,
+      locale,
+      withTexts
     );
   }
   const date = dayjs().tz();
@@ -156,7 +170,7 @@ export const makeSchedule = (
   const term: keyof typeof terms =
     28 <= day || day <= 7 ? "early" : 8 <= day && day <= 17 ? "middle" : "late";
 
-  const scheduleMadeByCurrent = schedule(year, month, term, locale);
+  const scheduleMadeByCurrent = schedule(year, month, term, locale, withTexts);
 
   if (!scheduleMadeByCustom) return scheduleMadeByCurrent;
   if (
@@ -174,4 +188,32 @@ export const makeSchedule = (
     return scheduleMadeByCustom;
 
   return scheduleMadeByCurrent;
+};
+
+export const latest = (schedules: Array<null | Schedule<boolean>>) => {
+  return (
+    schedules.sort((a, b) => {
+      const l = a
+        ? Number(`${a.year}${String(a.month).padStart(2, "0")}${a.termIndex}`)
+        : 1000000;
+      const r = b
+        ? Number(`${b.year}${String(b.month).padStart(2, "0")}${b.termIndex}`)
+        : 1000000;
+      return l > r ? -1 : l < r ? 1 : 0;
+    })[0] ?? null
+  );
+};
+
+export const earliest = (schedules: Array<null | Schedule<boolean>>) => {
+  return (
+    schedules.sort((a, b) => {
+      const l = a
+        ? Number(`${a.year}${String(a.month).padStart(2, "0")}${a.termIndex}`)
+        : 1000000;
+      const r = b
+        ? Number(`${b.year}${String(b.month).padStart(2, "0")}${b.termIndex}`)
+        : 1000000;
+      return l > r ? 1 : l < r ? -1 : 0;
+    })[0] ?? null
+  );
 };

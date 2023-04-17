@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { Bindings } from "../bindings";
-import { makeSchedule } from "../libs/makeSchedule";
+import { earliest, makeSchedule } from "../libs/makeSchedule";
 import { makeVariants, Variants } from "../libs/makeVariants";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { Database } from "./database.type";
@@ -67,15 +67,18 @@ app.get("/products/:id/supabase", async (c) => {
     ? "en"
     : "ja";
 
-  const variants = makeVariants(
+  const variants = await makeVariants(
     data,
     (data.ShopifyVariants ?? []) as Variants,
-    locale
+    locale,
+    client
   );
+
+  const schedule = earliest(variants.map(({ schedule }) => schedule));
 
   return c.json({
     variants,
-    schedule: makeSchedule(data.ShopifyProductGroups.deliverySchedule, locale),
+    schedule: schedule ?? makeSchedule(schedule, locale),
   });
 });
 
@@ -117,17 +120,19 @@ app.get("/products/page-data/:code/supabase", async (c) => {
   )
     return c.text("invalid ShopifyProductGroups", 500);
 
+  const variants = await makeVariants(
+    ShopifyProducts,
+    (ShopifyProducts.ShopifyVariants ?? []) as Variants,
+    locale,
+    client
+  );
+
+  const schedule = earliest(variants.map(({ schedule }) => schedule));
+
   return c.json({
     ...page,
-    variants: makeVariants(
-      ShopifyProducts,
-      (ShopifyProducts.ShopifyVariants ?? []) as Variants,
-      locale
-    ),
-    schedule: makeSchedule(
-      ShopifyProducts.ShopifyProductGroups.deliverySchedule,
-      locale
-    ),
+    variants,
+    schedule: schedule ?? makeSchedule(schedule, locale),
     productId: ShopifyProducts.productId,
   });
 });
