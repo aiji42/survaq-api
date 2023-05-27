@@ -522,7 +522,7 @@ export interface Database {
           collection: string | null
           color: string | null
           filter: Json | null
-          icon: string
+          icon: string | null
           id: number
           layout: string | null
           layout_options: Json | null
@@ -537,7 +537,7 @@ export interface Database {
           collection?: string | null
           color?: string | null
           filter?: Json | null
-          icon?: string
+          icon?: string | null
           id?: number
           layout?: string | null
           layout_options?: Json | null
@@ -552,7 +552,7 @@ export interface Database {
           collection?: string | null
           color?: string | null
           filter?: Json | null
-          icon?: string
+          icon?: string | null
           id?: number
           layout?: string | null
           layout_options?: Json | null
@@ -1338,4 +1338,3 @@ export interface Database {
     }
   }
 }
-

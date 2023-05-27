@@ -3,7 +3,7 @@ import { cors } from "hono/cors";
 import { Bindings } from "../bindings";
 import { earliest, makeSchedule } from "../libs/makeSchedule";
 import { makeVariants, Variants } from "../libs/makeVariants";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 import { Database } from "./database.type";
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -18,10 +18,7 @@ app.use(
 );
 
 app.get("products/:id/funding", async (c) => {
-  const client = createSupabaseClient<Database>(
-    c.env.SUPABASE_URL,
-    c.env.SUPABASE_KEY
-  );
+  const client = createClient<Database>(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
 
   const { data, error } = await client
     .from("ShopifyProducts")
@@ -45,10 +42,7 @@ app.get("products/:id/funding", async (c) => {
 });
 
 app.get("/products/supabase", async (c) => {
-  const client = createSupabaseClient<Database>(
-    c.env.SUPABASE_URL,
-    c.env.SUPABASE_KEY
-  );
+  const client = createClient<Database>(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
 
   const { data } = await client
     .from("ShopifyProducts")
@@ -58,10 +52,7 @@ app.get("/products/supabase", async (c) => {
 });
 
 app.get("/products/:id/supabase", async (c) => {
-  const client = createSupabaseClient<Database>(
-    c.env.SUPABASE_URL,
-    c.env.SUPABASE_KEY
-  );
+  const client = createClient<Database>(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
 
   const { data, error } = await client
     .from("ShopifyProducts")
@@ -100,10 +91,7 @@ app.get("/products/page-data/:code/supabase", async (c) => {
     ? "en"
     : "ja";
 
-  const client = createSupabaseClient<Database>(
-    c.env.SUPABASE_URL,
-    c.env.SUPABASE_KEY
-  );
+  const client = createClient<Database>(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
 
   const { data, error } = await client
     .from("ShopifyPages")
@@ -151,10 +139,7 @@ app.get("/products/page-data/:code/supabase", async (c) => {
 });
 
 app.get("/products/page-data/by-domain/:domain/supabase", async (c) => {
-  const client = createSupabaseClient<Database>(
-    c.env.SUPABASE_URL,
-    c.env.SUPABASE_KEY
-  );
+  const client = createClient<Database>(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
 
   const { data, error } = await client
     .from("ShopifyPages")
@@ -185,10 +170,7 @@ app.post("/shopify/product", async (c) => {
   const data = await c.req.json<ShopifyProduct>();
   console.log(data);
 
-  const client = createSupabaseClient<Database>(
-    c.env.SUPABASE_URL,
-    c.env.SUPABASE_KEY
-  );
+  const client = createClient<Database>(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
 
   const { data: product, error: productError } = await client
     .from("ShopifyProducts")
