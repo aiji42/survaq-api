@@ -4,8 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "dev:worker": "wrangler dev --local",
-    "dev": "wrangler dev --local",
+    "dev:worker": "wrangler dev",
+    "dev": "wrangler dev",
     "deploy:worker": "wrangler publish -e production",
     "deploy": "wrangler publish -e production",
     "test": "vitest"

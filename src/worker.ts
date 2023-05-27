@@ -44,6 +44,19 @@ app.get("products/:id/funding", async (c) => {
   });
 });
 
+app.get("/products/supabase", async (c) => {
+  const client = createSupabaseClient<Database>(
+    c.env.SUPABASE_URL,
+    c.env.SUPABASE_KEY
+  );
+
+  const { data } = await client
+    .from("ShopifyProducts")
+    .select("productId,productName");
+
+  return c.json(data);
+});
+
 app.get("/products/:id/supabase", async (c) => {
   const client = createSupabaseClient<Database>(
     c.env.SUPABASE_URL,
