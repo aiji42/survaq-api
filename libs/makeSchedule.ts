@@ -18,6 +18,7 @@ export type Schedule<T extends boolean> = {
   month: number;
   term: keyof typeof terms;
   termIndex: number;
+  numeric: number;
   text: string;
   subText: string;
   texts: T extends true ? string[] : never;
@@ -70,6 +71,7 @@ const schedule = <W extends boolean>(
     month: Number(month),
     term,
     termIndex: terms[term],
+    numeric: Number(`${year}${String(month).padStart(2, "0")}${terms[term]}`),
     text,
     ...(withTexts ? { texts } : undefined),
     subText: monthWithDateRange(Number(year), Number(month) - 1, term, locale),
@@ -173,18 +175,7 @@ export const makeSchedule = (
   const scheduleMadeByCurrent = schedule(year, month, term, locale, withTexts);
 
   if (!scheduleMadeByCustom) return scheduleMadeByCurrent;
-  if (
-    Number(
-      `${scheduleMadeByCustom.year}${String(
-        scheduleMadeByCustom.month
-      ).padStart(2, "0")}${scheduleMadeByCustom.termIndex}`
-    ) >
-    Number(
-      `${scheduleMadeByCurrent.year}${String(
-        scheduleMadeByCurrent.month
-      ).padStart(2, "0")}${scheduleMadeByCurrent.termIndex}`
-    )
-  )
+  if (scheduleMadeByCustom.numeric > scheduleMadeByCurrent.numeric)
     return scheduleMadeByCustom;
 
   return scheduleMadeByCurrent;
@@ -193,12 +184,8 @@ export const makeSchedule = (
 export const latest = (schedules: Array<null | Schedule<boolean>>) => {
   return (
     schedules.sort((a, b) => {
-      const l = a
-        ? Number(`${a.year}${String(a.month).padStart(2, "0")}${a.termIndex}`)
-        : 1000000;
-      const r = b
-        ? Number(`${b.year}${String(b.month).padStart(2, "0")}${b.termIndex}`)
-        : 1000000;
+      const l = a ? a.numeric : 1000000;
+      const r = b ? b.numeric : 1000000;
       return l > r ? -1 : l < r ? 1 : 0;
     })[0] ?? null
   );
@@ -207,12 +194,8 @@ export const latest = (schedules: Array<null | Schedule<boolean>>) => {
 export const earliest = (schedules: Array<null | Schedule<boolean>>) => {
   return (
     schedules.sort((a, b) => {
-      const l = a
-        ? Number(`${a.year}${String(a.month).padStart(2, "0")}${a.termIndex}`)
-        : 1000000;
-      const r = b
-        ? Number(`${b.year}${String(b.month).padStart(2, "0")}${b.termIndex}`)
-        : 1000000;
+      const l = a ? a.numeric : 1000000;
+      const r = b ? b.numeric : 1000000;
       return l > r ? 1 : l < r ? -1 : 0;
     })[0] ?? null
   );

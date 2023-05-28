@@ -93,7 +93,6 @@ export const makeVariants = async (
           incomingStockDeliveryScheduleB,
           incomingStockDeliveryScheduleC,
         }) => {
-          let schedule = null;
           const deliverySchedule =
             availableStock === "REAL"
               ? null
