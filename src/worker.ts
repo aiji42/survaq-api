@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { Bindings } from "../bindings";
-import { makeSchedule } from "../libs/makeSchedule";
+import { earliest, makeSchedule } from "../libs/makeSchedule";
 import { makeVariants, Variants } from "../libs/makeVariants";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 import { Database } from "./database.type";
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -18,10 +18,7 @@ app.use(
 );
 
 app.get("products/:id/funding", async (c) => {
-  const client = createSupabaseClient<Database>(
-    c.env.SUPABASE_URL,
-    c.env.SUPABASE_KEY
-  );
+  const client = createClient<Database>(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
 
   const { data, error } = await client
     .from("ShopifyProducts")
@@ -44,11 +41,18 @@ app.get("products/:id/funding", async (c) => {
   });
 });
 
+app.get("/products/supabase", async (c) => {
+  const client = createClient<Database>(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
+
+  const { data } = await client
+    .from("ShopifyProducts")
+    .select("productId,productName");
+
+  return c.json(data);
+});
+
 app.get("/products/:id/supabase", async (c) => {
-  const client = createSupabaseClient<Database>(
-    c.env.SUPABASE_URL,
-    c.env.SUPABASE_KEY
-  );
+  const client = createClient<Database>(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
 
   const { data, error } = await client
     .from("ShopifyProducts")
@@ -67,15 +71,18 @@ app.get("/products/:id/supabase", async (c) => {
     ? "en"
     : "ja";
 
-  const variants = makeVariants(
+  const variants = await makeVariants(
     data,
     (data.ShopifyVariants ?? []) as Variants,
-    locale
+    locale,
+    client
   );
+
+  const schedule = earliest(variants.map(({ schedule }) => schedule));
 
   return c.json({
     variants,
-    schedule: makeSchedule(data.ShopifyProductGroups.deliverySchedule, locale),
+    schedule: schedule ?? makeSchedule(schedule, locale),
   });
 });
 
@@ -84,10 +91,7 @@ app.get("/products/page-data/:code/supabase", async (c) => {
     ? "en"
     : "ja";
 
-  const client = createSupabaseClient<Database>(
-    c.env.SUPABASE_URL,
-    c.env.SUPABASE_KEY
-  );
+  const client = createClient<Database>(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
 
   const { data, error } = await client
     .from("ShopifyPages")
@@ -117,26 +121,25 @@ app.get("/products/page-data/:code/supabase", async (c) => {
   )
     return c.text("invalid ShopifyProductGroups", 500);
 
+  const variants = await makeVariants(
+    ShopifyProducts,
+    (ShopifyProducts.ShopifyVariants ?? []) as Variants,
+    locale,
+    client
+  );
+
+  const schedule = earliest(variants.map(({ schedule }) => schedule));
+
   return c.json({
     ...page,
-    variants: makeVariants(
-      ShopifyProducts,
-      (ShopifyProducts.ShopifyVariants ?? []) as Variants,
-      locale
-    ),
-    schedule: makeSchedule(
-      ShopifyProducts.ShopifyProductGroups.deliverySchedule,
-      locale
-    ),
+    variants,
+    schedule: schedule ?? makeSchedule(schedule, locale),
     productId: ShopifyProducts.productId,
   });
 });
 
 app.get("/products/page-data/by-domain/:domain/supabase", async (c) => {
-  const client = createSupabaseClient<Database>(
-    c.env.SUPABASE_URL,
-    c.env.SUPABASE_KEY
-  );
+  const client = createClient<Database>(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
 
   const { data, error } = await client
     .from("ShopifyPages")
@@ -167,10 +170,7 @@ app.post("/shopify/product", async (c) => {
   const data = await c.req.json<ShopifyProduct>();
   console.log(data);
 
-  const client = createSupabaseClient<Database>(
-    c.env.SUPABASE_URL,
-    c.env.SUPABASE_KEY
-  );
+  const client = createClient<Database>(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
 
   const { data: product, error: productError } = await client
     .from("ShopifyProducts")

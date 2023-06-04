@@ -1,5 +1,11 @@
-import { makeScheduleFromDeliverySchedule, Schedule } from "./makeSchedule";
+import {
+  earliest,
+  latest,
+  makeScheduleFromDeliverySchedule,
+  Schedule,
+} from "./makeSchedule";
 import { Database } from "../src/database.type";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 type Locale = "ja" | "en";
 
@@ -11,11 +17,12 @@ type CustomizedVariant = {
     code: string;
     name: string;
     subName: string;
-    schedule: Omit<Schedule, "texts"> | null;
+    schedule: Schedule<false> | null;
+    availableStock: string;
   }[];
   skuSelectable: number;
   skuLabel?: string | null;
-  schedule: Omit<Schedule, "texts"> | null;
+  schedule: Schedule<false> | null;
 };
 
 export type Variants =
@@ -29,76 +36,99 @@ export type Variants =
       | null;
   })[];
 
-export const makeVariants = (
+export const makeVariants = async (
   product: Database["public"]["Tables"]["ShopifyProducts"]["Row"],
   variants: Variants,
-  locale: Locale
-): CustomizedVariant[] => {
+  locale: Locale,
+  supabaseClient: SupabaseClient<Database>
+): Promise<CustomizedVariant[]> => {
+  const skuCodes = [
+    ...new Set(variants.flatMap(({ skusJSON }) => sanitizeSkusJSON(skusJSON))),
+  ];
+  let skuMap = new Map<
+    string,
+    Database["public"]["Tables"]["ShopifyCustomSKUs"]["Row"]
+  >();
+  if (skuCodes.length) {
+    const { data } = await supabaseClient
+      .from("ShopifyCustomSKUs")
+      .select("*")
+      .in("code", skuCodes);
+    skuMap = new Map(data?.map((record) => [record.code, record]));
+  }
+
   return variants.map(
     ({
       variantId,
       variantName,
       customSelects,
-      deliverySchedule,
       skuLabel,
-      ShopifyVariants_ShopifyCustomSKUs,
+      ShopifyVariants_ShopifyCustomSKUs: mapping,
       skusJSON,
     }) => {
-      let schedule = null;
-      if (deliverySchedule) {
-        const { texts, ...omitTexts } = makeScheduleFromDeliverySchedule(
-          deliverySchedule as DeliverySchedule,
-          locale
-        );
-        schedule = omitTexts;
-      }
+      const skuRows =
+        mapping && mapping.length > 0
+          ? mapping
+              .sort(({ sort: a, id: aId }, { sort: b, id: bId }) => {
+                return a === null && b === null
+                  ? aId - bId
+                  : a === null
+                  ? 1
+                  : b === null
+                  ? -1
+                  : a - b;
+              })
+              .map(({ ShopifyCustomSKUs }) => ShopifyCustomSKUs)
+          : sanitizeSkusJSON(skusJSON).flatMap(
+              (code) => skuMap.get(code) ?? []
+            );
+
+      const skus = skuRows.map(
+        ({
+          code,
+          name,
+          subName,
+          availableStock,
+          incomingStockDeliveryScheduleA,
+          incomingStockDeliveryScheduleB,
+          incomingStockDeliveryScheduleC,
+        }) => {
+          const deliverySchedule =
+            availableStock === "REAL"
+              ? null
+              : availableStock === "A"
+              ? incomingStockDeliveryScheduleA
+              : availableStock === "B"
+              ? incomingStockDeliveryScheduleB
+              : availableStock === "C"
+              ? incomingStockDeliveryScheduleC
+              : null;
+
+          return {
+            code,
+            name,
+            subName: subName ?? "",
+            schedule: makeScheduleFromDeliverySchedule(
+              deliverySchedule,
+              locale,
+              false
+            ),
+            availableStock,
+          };
+        }
+      );
+
+      const skuSchedules = skus.map(({ schedule }) => schedule);
+
       return {
         productId: product.productId,
         variantId,
         variantName,
         skuLabel,
         skuSelectable: customSelects,
-        schedule,
-        skus:
-          ShopifyVariants_ShopifyCustomSKUs &&
-          ShopifyVariants_ShopifyCustomSKUs.length > 0
-            ? ShopifyVariants_ShopifyCustomSKUs.sort(
-                ({ sort: a, id: aId }, { sort: b, id: bId }) => {
-                  return a === null && b === null
-                    ? aId - bId
-                    : a === null
-                    ? 1
-                    : b === null
-                    ? -1
-                    : a - b;
-                }
-              ).map(
-                ({
-                  ShopifyCustomSKUs: { code, name, subName, deliverySchedule },
-                }) => {
-                  let schedule = null;
-                  if (deliverySchedule) {
-                    const { texts, ...omitTexts } =
-                      makeScheduleFromDeliverySchedule(
-                        deliverySchedule as DeliverySchedule,
-                        locale
-                      );
-                    schedule = omitTexts;
-                  }
-                  return {
-                    code,
-                    name,
-                    subName: subName ?? "",
-                    schedule,
-                  };
-                }
-              )
-            : sanitizeSkusJSON(skusJSON).map((code) => ({
-                code,
-                name: "",
-                subName: "",
-                schedule: null,
-              })),
+        schedule:
+          customSelects > 0 ? earliest(skuSchedules) : latest(skuSchedules),
+        skus,
       };
     }
   );

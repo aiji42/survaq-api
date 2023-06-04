@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { makeSchedule } from "./makeSchedule";
+import { earliest, latest, makeSchedule, Schedule } from "./makeSchedule";
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -18,6 +18,7 @@ describe("no custom schedules", () => {
       subText: "12/1〜12/10",
       term: "early",
       termIndex: 0,
+      numeric: 2022120,
       text: "2022年12月上旬",
       texts: [
         "2022年12月上旬",
@@ -37,6 +38,7 @@ describe("no custom schedules", () => {
       subText: "12/1〜12/10",
       term: "early",
       termIndex: 0,
+      numeric: 2022120,
       text: "2022年12月上旬",
       texts: [
         "2022年12月上旬",
@@ -58,6 +60,7 @@ describe("no custom schedules", () => {
       subText: "12/11〜12/20",
       term: "middle",
       termIndex: 1,
+      numeric: 2022121,
       text: "2022年12月中旬",
       texts: [
         "2022年12月中旬",
@@ -77,6 +80,7 @@ describe("no custom schedules", () => {
       subText: "12/11〜12/20",
       term: "middle",
       termIndex: 1,
+      numeric: 2022121,
       text: "2022年12月中旬",
       texts: [
         "2022年12月中旬",
@@ -98,6 +102,7 @@ describe("no custom schedules", () => {
       subText: "12/21〜12/31",
       term: "late",
       termIndex: 2,
+      numeric: 2022122,
       text: "2022年12月下旬",
       texts: [
         "2022年12月下旬",
@@ -117,6 +122,7 @@ describe("no custom schedules", () => {
       subText: "12/21〜12/31",
       term: "late",
       termIndex: 2,
+      numeric: 2022122,
       text: "2022年12月下旬",
       texts: [
         "2022年12月下旬",
@@ -138,6 +144,7 @@ describe("no custom schedules", () => {
       subText: "1/1〜1/10",
       term: "early",
       termIndex: 0,
+      numeric: 2023010,
       text: "2023年1月上旬",
       texts: [
         "2023年1月上旬",
@@ -161,6 +168,7 @@ describe("custom schedule", () => {
       subText: "1/1〜1/10",
       term: "early",
       termIndex: 0,
+      numeric: 2023010,
       text: "2023年1月上旬",
       texts: [
         "2023年1月上旬",
@@ -179,6 +187,7 @@ describe("custom schedule", () => {
       subText: "1/11〜1/20",
       term: "middle",
       termIndex: 1,
+      numeric: 2023011,
       text: "2023年1月中旬",
       texts: [
         "2023年1月中旬",
@@ -197,6 +206,7 @@ describe("custom schedule", () => {
       subText: "1/21〜1/31",
       term: "late",
       termIndex: 2,
+      numeric: 2023012,
       text: "2023年1月下旬",
       texts: [
         "2023年1月下旬",
@@ -213,10 +223,12 @@ describe("custom schedule", () => {
   test("If the current date/time is past the custom schedule, the schedule is calculated based on the current date/time", () => {
     vi.setSystemTime(new Date(2023, 0, 8));
     expect(makeSchedule("2023-01-early")).toEqual({
+      year: 2023,
       month: 1,
       subText: "1/11〜1/20",
       term: "middle",
       termIndex: 1,
+      numeric: 2023011,
       text: "2023年1月中旬",
       texts: [
         "2023年1月中旬",
@@ -227,7 +239,6 @@ describe("custom schedule", () => {
         "2022年11月下旬",
         "2022年11月中旬",
       ],
-      year: 2023,
     });
   });
 });
@@ -241,6 +252,7 @@ describe("locale en", () => {
       subText: "Dec. 1 - 10",
       term: "early",
       termIndex: 0,
+      numeric: 2022120,
       text: "early Dec. 2022",
       texts: [
         "early Dec. 2022",
@@ -260,6 +272,7 @@ describe("locale en", () => {
       subText: "Dec. 1 - 10",
       term: "early",
       termIndex: 0,
+      numeric: 2022120,
       text: "early Dec. 2022",
       texts: [
         "early Dec. 2022",
@@ -281,6 +294,7 @@ describe("locale en", () => {
       subText: "Dec. 11 - 20",
       term: "middle",
       termIndex: 1,
+      numeric: 2022121,
       text: "mid Dec. 2022",
       texts: [
         "mid Dec. 2022",
@@ -300,6 +314,7 @@ describe("locale en", () => {
       subText: "Dec. 11 - 20",
       term: "middle",
       termIndex: 1,
+      numeric: 2022121,
       text: "mid Dec. 2022",
       texts: [
         "mid Dec. 2022",
@@ -321,6 +336,7 @@ describe("locale en", () => {
       subText: "Dec. 21 - 31",
       term: "late",
       termIndex: 2,
+      numeric: 2022122,
       text: "late Dec. 2022",
       texts: [
         "late Dec. 2022",
@@ -340,6 +356,7 @@ describe("locale en", () => {
       subText: "Dec. 21 - 31",
       term: "late",
       termIndex: 2,
+      numeric: 2022122,
       text: "late Dec. 2022",
       texts: [
         "late Dec. 2022",
@@ -361,6 +378,7 @@ describe("locale en", () => {
       subText: "Jan. 1 - 10",
       term: "early",
       termIndex: 0,
+      numeric: 2023010,
       text: "early Jan. 2023",
       texts: [
         "early Jan. 2023",
@@ -383,6 +401,7 @@ describe("locale en", () => {
         subText: "Jan. 1 - 10",
         term: "early",
         termIndex: 0,
+        numeric: 2023010,
         text: "early Jan. 2023",
         texts: [
           "early Jan. 2023",
@@ -403,6 +422,7 @@ describe("locale en", () => {
         subText: "Jan. 11 - 20",
         term: "middle",
         termIndex: 1,
+        numeric: 2023011,
         text: "mid Jan. 2023",
         texts: [
           "mid Jan. 2023",
@@ -415,6 +435,45 @@ describe("locale en", () => {
         ],
         year: 2023,
       });
+    });
+  });
+
+  describe("latest/earliest", () => {
+    test("latest", () => {
+      expect(
+        latest([
+          null,
+          null,
+          makeSchedule("2024-01-early"),
+          makeSchedule("2023-12-early"),
+          makeSchedule("2024-01-late"),
+          makeSchedule("2024-01-early"),
+        ])
+      ).toEqual(makeSchedule("2024-01-late"));
+    });
+
+    test("earliest", () => {
+      expect(
+        earliest([
+          makeSchedule("2024-01-early"),
+          makeSchedule("2023-12-early"),
+          makeSchedule("2024-01-late"),
+          makeSchedule("2023-01-early"),
+        ])
+      ).toEqual(makeSchedule("2023-01-early"));
+    });
+
+    test("earliest with null", () => {
+      expect(
+        earliest([
+          null,
+          null,
+          makeSchedule("2024-01-early"),
+          makeSchedule("2023-12-early"),
+          makeSchedule("2024-01-late"),
+          makeSchedule("2023-01-early"),
+        ])
+      ).toEqual(null);
     });
   });
 });
