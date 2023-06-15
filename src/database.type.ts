@@ -46,6 +46,7 @@ export interface Database {
           user?: string | null
           user_agent?: string | null
         }
+        Relationships: []
       }
       directus_collections: {
         Row: {
@@ -108,6 +109,14 @@ export interface Database {
           translations?: Json | null
           unarchive_value?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "directus_collections_group_foreign"
+            columns: ["group"]
+            referencedRelation: "directus_collections"
+            referencedColumns: ["collection"]
+          }
+        ]
       }
       directus_dashboards: {
         Row: {
@@ -137,6 +146,14 @@ export interface Database {
           note?: string | null
           user_created?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "directus_dashboards_user_created_foreign"
+            columns: ["user_created"]
+            referencedRelation: "directus_users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       directus_fields: {
         Row: {
@@ -202,6 +219,7 @@ export interface Database {
           validation_message?: string | null
           width?: string | null
         }
+        Relationships: []
       }
       directus_files: {
         Row: {
@@ -273,6 +291,26 @@ export interface Database {
           uploaded_on?: string
           width?: number | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "directus_files_folder_foreign"
+            columns: ["folder"]
+            referencedRelation: "directus_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "directus_files_modified_by_foreign"
+            columns: ["modified_by"]
+            referencedRelation: "directus_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "directus_files_uploaded_by_foreign"
+            columns: ["uploaded_by"]
+            referencedRelation: "directus_users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       directus_flows: {
         Row: {
@@ -317,6 +355,14 @@ export interface Database {
           trigger?: string | null
           user_created?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "directus_flows_user_created_foreign"
+            columns: ["user_created"]
+            referencedRelation: "directus_users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       directus_folders: {
         Row: {
@@ -334,6 +380,14 @@ export interface Database {
           name?: string
           parent?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "directus_folders_parent_foreign"
+            columns: ["parent"]
+            referencedRelation: "directus_folders"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       directus_migrations: {
         Row: {
@@ -351,6 +405,7 @@ export interface Database {
           timestamp?: string | null
           version?: string
         }
+        Relationships: []
       }
       directus_notifications: {
         Row: {
@@ -386,6 +441,20 @@ export interface Database {
           subject?: string
           timestamp?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "directus_notifications_recipient_foreign"
+            columns: ["recipient"]
+            referencedRelation: "directus_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "directus_notifications_sender_foreign"
+            columns: ["sender"]
+            referencedRelation: "directus_users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       directus_operations: {
         Row: {
@@ -430,6 +499,32 @@ export interface Database {
           type?: string
           user_created?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "directus_operations_flow_foreign"
+            columns: ["flow"]
+            referencedRelation: "directus_flows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "directus_operations_reject_foreign"
+            columns: ["reject"]
+            referencedRelation: "directus_operations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "directus_operations_resolve_foreign"
+            columns: ["resolve"]
+            referencedRelation: "directus_operations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "directus_operations_user_created_foreign"
+            columns: ["user_created"]
+            referencedRelation: "directus_users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       directus_panels: {
         Row: {
@@ -483,6 +578,20 @@ export interface Database {
           user_created?: string | null
           width?: number
         }
+        Relationships: [
+          {
+            foreignKeyName: "directus_panels_dashboard_foreign"
+            columns: ["dashboard"]
+            referencedRelation: "directus_dashboards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "directus_panels_user_created_foreign"
+            columns: ["user_created"]
+            referencedRelation: "directus_users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       directus_permissions: {
         Row: {
@@ -515,6 +624,14 @@ export interface Database {
           role?: string | null
           validation?: Json | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "directus_permissions_role_foreign"
+            columns: ["role"]
+            referencedRelation: "directus_roles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       directus_presets: {
         Row: {
@@ -562,6 +679,20 @@ export interface Database {
           search?: string | null
           user?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "directus_presets_role_foreign"
+            columns: ["role"]
+            referencedRelation: "directus_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "directus_presets_user_foreign"
+            columns: ["user"]
+            referencedRelation: "directus_users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       directus_relations: {
         Row: {
@@ -600,6 +731,7 @@ export interface Database {
           one_field?: string | null
           sort_field?: string | null
         }
+        Relationships: []
       }
       directus_revisions: {
         Row: {
@@ -629,6 +761,20 @@ export interface Database {
           item?: string
           parent?: number | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "directus_revisions_activity_foreign"
+            columns: ["activity"]
+            referencedRelation: "directus_activity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "directus_revisions_parent_foreign"
+            columns: ["parent"]
+            referencedRelation: "directus_revisions"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       directus_roles: {
         Row: {
@@ -661,6 +807,7 @@ export interface Database {
           ip_access?: string | null
           name?: string
         }
+        Relationships: []
       }
       directus_sessions: {
         Row: {
@@ -690,6 +837,20 @@ export interface Database {
           user?: string | null
           user_agent?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "directus_sessions_share_foreign"
+            columns: ["share"]
+            referencedRelation: "directus_shares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "directus_sessions_user_foreign"
+            columns: ["user"]
+            referencedRelation: "directus_users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       directus_settings: {
         Row: {
@@ -761,6 +922,32 @@ export interface Database {
           storage_default_folder?: string | null
           translation_strings?: Json | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "directus_settings_project_logo_foreign"
+            columns: ["project_logo"]
+            referencedRelation: "directus_files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "directus_settings_public_background_foreign"
+            columns: ["public_background"]
+            referencedRelation: "directus_files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "directus_settings_public_foreground_foreign"
+            columns: ["public_foreground"]
+            referencedRelation: "directus_files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "directus_settings_storage_default_folder_foreign"
+            columns: ["storage_default_folder"]
+            referencedRelation: "directus_folders"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       directus_shares: {
         Row: {
@@ -805,6 +992,26 @@ export interface Database {
           times_used?: number | null
           user_created?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "directus_shares_collection_foreign"
+            columns: ["collection"]
+            referencedRelation: "directus_collections"
+            referencedColumns: ["collection"]
+          },
+          {
+            foreignKeyName: "directus_shares_role_foreign"
+            columns: ["role"]
+            referencedRelation: "directus_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "directus_shares_user_created_foreign"
+            columns: ["user_created"]
+            referencedRelation: "directus_users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       directus_users: {
         Row: {
@@ -879,6 +1086,14 @@ export interface Database {
           title?: string | null
           token?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "directus_users_role_foreign"
+            columns: ["role"]
+            referencedRelation: "directus_roles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       directus_webhooks: {
         Row: {
@@ -914,6 +1129,7 @@ export interface Database {
           status?: string
           url?: string
         }
+        Relationships: []
       }
       FacebookAdAlerts: {
         Row: {
@@ -961,6 +1177,7 @@ export interface Database {
           title?: string
           updatedAt?: string | null
         }
+        Relationships: []
       }
       FacebookAdAlerts_FacebookAdSets: {
         Row: {
@@ -978,6 +1195,20 @@ export interface Database {
           FacebookAdSets_id?: string | null
           id?: number
         }
+        Relationships: [
+          {
+            foreignKeyName: "facebookadalerts_facebookadsets_facebookadalerts_id_foreign"
+            columns: ["FacebookAdAlerts_id"]
+            referencedRelation: "FacebookAdAlerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facebookadalerts_facebookadsets_facebookadsets_id_foreign"
+            columns: ["FacebookAdSets_id"]
+            referencedRelation: "FacebookAdSets"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       FacebookAdsBudget: {
         Row: {
@@ -1007,6 +1238,7 @@ export interface Database {
           title?: string
           updatedAt?: string | null
         }
+        Relationships: []
       }
       FacebookAdsBudget_FacebookAdSets: {
         Row: {
@@ -1024,6 +1256,20 @@ export interface Database {
           FacebookAdSets_id?: string | null
           id?: number
         }
+        Relationships: [
+          {
+            foreignKeyName: "facebookadsbudget_facebookadsets_facebooka__4e5f3f6b_foreign"
+            columns: ["FacebookAdsBudget_id"]
+            referencedRelation: "FacebookAdsBudget"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facebookadsbudget_facebookadsets_facebookadsets_id_foreign"
+            columns: ["FacebookAdSets_id"]
+            referencedRelation: "FacebookAdSets"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       FacebookAdSets: {
         Row: {
@@ -1047,6 +1293,7 @@ export interface Database {
           setId?: string
           setName?: string
         }
+        Relationships: []
       }
       GoogleMerchantCenter: {
         Row: {
@@ -1073,6 +1320,14 @@ export interface Database {
           title?: string
           updatedAt?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "googlemerchantcenter_shopifyproductgroup_foreign"
+            columns: ["shopifyProductGroup"]
+            referencedRelation: "ShopifyProductGroups"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       ShopifyCustomSKUs: {
         Row: {
@@ -1080,6 +1335,7 @@ export interface Database {
           code: string
           createdAt: string | null
           deliverySchedule: string | null
+          displayName: string | null
           id: number
           incomingStockDateA: string | null
           incomingStockDateB: string | null
@@ -1093,6 +1349,7 @@ export interface Database {
           inventory: number
           lastSyncedAt: string | null
           name: string
+          skipDeliveryCalc: boolean | null
           stockBuffer: number | null
           subName: string | null
           unshippedOrderCount: number
@@ -1103,6 +1360,7 @@ export interface Database {
           code?: string
           createdAt?: string | null
           deliverySchedule?: string | null
+          displayName?: string | null
           id?: number
           incomingStockDateA?: string | null
           incomingStockDateB?: string | null
@@ -1116,6 +1374,7 @@ export interface Database {
           inventory?: number
           lastSyncedAt?: string | null
           name: string
+          skipDeliveryCalc?: boolean | null
           stockBuffer?: number | null
           subName?: string | null
           unshippedOrderCount?: number
@@ -1126,6 +1385,7 @@ export interface Database {
           code?: string
           createdAt?: string | null
           deliverySchedule?: string | null
+          displayName?: string | null
           id?: number
           incomingStockDateA?: string | null
           incomingStockDateB?: string | null
@@ -1139,11 +1399,13 @@ export interface Database {
           inventory?: number
           lastSyncedAt?: string | null
           name?: string
+          skipDeliveryCalc?: boolean | null
           stockBuffer?: number | null
           subName?: string | null
           unshippedOrderCount?: number
           updatedAt?: string | null
         }
+        Relationships: []
       }
       ShopifyPages: {
         Row: {
@@ -1200,6 +1462,26 @@ export interface Database {
           title?: string | null
           updatedAt?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "shopifypages_favicon_foreign"
+            columns: ["favicon"]
+            referencedRelation: "directus_files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopifypages_logo_foreign"
+            columns: ["logo"]
+            referencedRelation: "directus_files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopifypages_product_foreign"
+            columns: ["product"]
+            referencedRelation: "ShopifyProducts"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       ShopifyProductGroups: {
         Row: {
@@ -1238,6 +1520,7 @@ export interface Database {
           totalPrice?: number | null
           updatedAt?: string | null
         }
+        Relationships: []
       }
       ShopifyProducts: {
         Row: {
@@ -1264,6 +1547,14 @@ export interface Database {
           productName?: string
           updatedAt?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "shopifyproducts_productgroupid_foreign"
+            columns: ["productGroupId"]
+            referencedRelation: "ShopifyProductGroups"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       ShopifyVariants: {
         Row: {
@@ -1302,6 +1593,14 @@ export interface Database {
           variantId?: string
           variantName?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "shopifyvariants_product_foreign"
+            columns: ["product"]
+            referencedRelation: "ShopifyProducts"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       ShopifyVariants_ShopifyCustomSKUs: {
         Row: {
@@ -1322,6 +1621,20 @@ export interface Database {
           ShopifyVariants_id?: number | null
           sort?: number | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "shopifyvariants_shopifycustomskus_shopifycus__a6179f_foreign"
+            columns: ["ShopifyCustomSKUs_id"]
+            referencedRelation: "ShopifyCustomSKUs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopifyvariants_shopifycustomskus_shopifyvariants_id_foreign"
+            columns: ["ShopifyVariants_id"]
+            referencedRelation: "ShopifyVariants"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {

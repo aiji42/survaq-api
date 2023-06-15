@@ -89,20 +89,22 @@ export const makeVariants = async (
           name,
           subName,
           availableStock,
+          skipDeliveryCalc,
           incomingStockDeliveryScheduleA,
           incomingStockDeliveryScheduleB,
           incomingStockDeliveryScheduleC,
         }) => {
-          const deliverySchedule =
-            availableStock === "REAL"
-              ? null
-              : availableStock === "A"
-              ? incomingStockDeliveryScheduleA
-              : availableStock === "B"
-              ? incomingStockDeliveryScheduleB
-              : availableStock === "C"
-              ? incomingStockDeliveryScheduleC
-              : null;
+          const deliverySchedule = skipDeliveryCalc
+            ? null
+            : availableStock === "REAL"
+            ? null
+            : availableStock === "A"
+            ? incomingStockDeliveryScheduleA
+            : availableStock === "B"
+            ? incomingStockDeliveryScheduleB
+            : availableStock === "C"
+            ? incomingStockDeliveryScheduleC
+            : null;
 
           return {
             code,
