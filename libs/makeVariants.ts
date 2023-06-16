@@ -17,6 +17,7 @@ type CustomizedVariant = {
     code: string;
     name: string;
     subName: string;
+    displayName: string;
     schedule: Schedule<false> | null;
     availableStock: string;
   }[];
@@ -83,42 +84,7 @@ export const makeVariants = async (
               (code) => skuMap.get(code) ?? []
             );
 
-      const skus = skuRows.map(
-        ({
-          code,
-          name,
-          subName,
-          availableStock,
-          skipDeliveryCalc,
-          incomingStockDeliveryScheduleA,
-          incomingStockDeliveryScheduleB,
-          incomingStockDeliveryScheduleC,
-        }) => {
-          const deliverySchedule = skipDeliveryCalc
-            ? null
-            : availableStock === "REAL"
-            ? null
-            : availableStock === "A"
-            ? incomingStockDeliveryScheduleA
-            : availableStock === "B"
-            ? incomingStockDeliveryScheduleB
-            : availableStock === "C"
-            ? incomingStockDeliveryScheduleC
-            : null;
-
-          return {
-            code,
-            name,
-            subName: subName ?? "",
-            schedule: makeScheduleFromDeliverySchedule(
-              deliverySchedule,
-              locale,
-              true
-            ),
-            availableStock,
-          };
-        }
-      );
+      const skus = skuRows.map((row) => makeSKU(row, locale));
 
       const skuSchedules = skus.map(({ schedule }) => schedule);
 
@@ -134,6 +100,42 @@ export const makeVariants = async (
       };
     }
   );
+};
+
+export const makeSKU = (
+  {
+    code,
+    name,
+    subName,
+    displayName,
+    availableStock,
+    skipDeliveryCalc,
+    incomingStockDeliveryScheduleA,
+    incomingStockDeliveryScheduleB,
+    incomingStockDeliveryScheduleC,
+  }: Database["public"]["Tables"]["ShopifyCustomSKUs"]["Row"],
+  locale: Locale
+) => {
+  const deliverySchedule = skipDeliveryCalc
+    ? null
+    : availableStock === "REAL"
+    ? null
+    : availableStock === "A"
+    ? incomingStockDeliveryScheduleA
+    : availableStock === "B"
+    ? incomingStockDeliveryScheduleB
+    : availableStock === "C"
+    ? incomingStockDeliveryScheduleC
+    : null;
+
+  return {
+    code,
+    name,
+    subName: subName ?? "",
+    displayName: displayName ?? "",
+    schedule: makeScheduleFromDeliverySchedule(deliverySchedule, locale, true),
+    availableStock,
+  };
 };
 
 const sanitizeSkusJSON = (json: string | null) => {
