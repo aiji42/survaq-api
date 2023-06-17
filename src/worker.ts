@@ -1,8 +1,12 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { Bindings } from "../bindings";
-import { earliest, makeSchedule } from "../libs/makeSchedule";
-import { makeVariants, Variants } from "../libs/makeVariants";
+import {
+  earliest,
+  makeSchedule,
+  makeScheduleFromDeliverySchedule,
+} from "../libs/makeSchedule";
+import { makeSKU, makeVariants, Variants } from "../libs/makeVariants";
 import { createClient } from "@supabase/supabase-js";
 import { Database } from "./database.type";
 
@@ -39,6 +43,60 @@ app.get("products/:id/funding", async (c) => {
       (data.ShopifyProductGroups?.realSupporters ?? 0),
     closeOn: data.ShopifyProductGroups?.closeOn ?? null,
   });
+});
+
+app.get("products/:id/delivery", async (c) => {
+  const client = createClient<Database>(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
+
+  const { data, error } = await client
+    .from("ShopifyProducts")
+    .select(
+      "*,ShopifyProductGroups(*),ShopifyVariants(*,ShopifyVariants_ShopifyCustomSKUs(ShopifyCustomSKUs(*)))"
+    )
+    .match({ productId: c.req.param("id") })
+    .maybeSingle();
+
+  if (error) return c.json(error, 500);
+  if (!data) return c.notFound();
+  if (!data.ShopifyProductGroups || Array.isArray(data.ShopifyProductGroups))
+    return c.json(error, 500);
+
+  const locale = c.req.headers.get("accept-language")?.startsWith("en")
+    ? "en"
+    : "ja";
+
+  const variants = await makeVariants(
+    data,
+    (data.ShopifyVariants ?? []) as Variants,
+    locale,
+    client
+  );
+
+  const earliestSchedule = makeSchedule(null);
+
+  const res = variants
+    .flatMap(({ skus }) => skus)
+    .reduce<Array<{ code: string; name: string; schedule: any }>>(
+      (acc, sku) => {
+        if (
+          acc.find(({ code }) => code === sku.code) ||
+          !sku.schedule ||
+          sku.schedule.numeric === earliestSchedule.numeric
+        )
+          return acc;
+        return [
+          ...acc,
+          {
+            code: sku.code,
+            name: sku.displayName || sku.name,
+            schedule: sku.schedule,
+          },
+        ];
+      },
+      []
+    );
+
+  return c.json(res);
 });
 
 app.get("/products/supabase", async (c) => {
