@@ -111,7 +111,7 @@ export const makeVariants = async (
             schedule: makeScheduleFromDeliverySchedule(
               deliverySchedule,
               locale,
-              false
+              true
             ),
             availableStock,
           };
