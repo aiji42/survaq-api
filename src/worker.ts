@@ -70,7 +70,7 @@ app.get("products/:id/delivery", async (c) => {
 
   const earliestSchedule = makeSchedule(null);
 
-  const res = variants
+  const skus = variants
     .flatMap(({ skus }) => skus)
     .reduce<Array<{ code: string; name: string; schedule: any }>>(
       (acc, sku) => {
@@ -92,7 +92,10 @@ app.get("products/:id/delivery", async (c) => {
       []
     );
 
-  return c.json(res);
+  return c.json({
+    current: earliestSchedule,
+    skus,
+  });
 });
 
 app.get("/products/supabase", async (c) => {
