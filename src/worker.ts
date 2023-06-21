@@ -1,12 +1,8 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { Bindings } from "../bindings";
-import {
-  earliest,
-  makeSchedule,
-  makeScheduleFromDeliverySchedule,
-} from "../libs/makeSchedule";
-import { makeSKU, makeVariants, Variants } from "../libs/makeVariants";
+import { earliest, makeSchedule } from "../libs/makeSchedule";
+import { makeVariants, Variants } from "../libs/makeVariants";
 import { createClient } from "@supabase/supabase-js";
 import { Database } from "./database.type";
 
