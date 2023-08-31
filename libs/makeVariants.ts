@@ -86,7 +86,31 @@ export const makeVariants = async (
 
       const skus = skuRows.map((row) => makeSKU(row, locale));
 
+      const selectableSKUs =
+        mapping
+          ?.sort(({ sort: a, id: aId }, { sort: b, id: bId }) => {
+            return a === null && b === null
+              ? aId - bId
+              : a === null
+              ? 1
+              : b === null
+              ? -1
+              : a - b;
+          })
+          ?.map(({ ShopifyCustomSKUs }) =>
+            makeSKU(ShopifyCustomSKUs, locale)
+          ) ?? [];
+      const baseSKUs = sanitizeSkusJSON(skusJSON).flatMap((code) => {
+        const row = skuMap.get(code);
+        return row ? makeSKU(row, locale) : [];
+      });
+
       const skuSchedules = skus.map(({ schedule }) => schedule);
+
+      const defaultSchedule = latest([
+        latest(baseSKUs.map(({ schedule }) => schedule)),
+        earliest(selectableSKUs.map(({ schedule }) => schedule)),
+      ]);
 
       return {
         productId: product.productId,
@@ -94,9 +118,13 @@ export const makeVariants = async (
         variantName,
         skuLabel,
         skuSelectable: customSelects,
+        // 非推奨: 消す
         schedule:
           customSelects > 0 ? earliest(skuSchedules) : latest(skuSchedules),
-        skus,
+        skus, // 非推奨: 消す
+        selectableSKUs,
+        baseSKUs,
+        defaultSchedule,
       };
     }
   );

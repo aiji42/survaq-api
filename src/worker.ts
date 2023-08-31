@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { Bindings } from "../bindings";
-import { earliest, makeSchedule } from "../libs/makeSchedule";
+import { earliest, makeSchedule, Schedule } from "../libs/makeSchedule";
 import { makeVariants, Variants } from "../libs/makeVariants";
 import { createClient } from "@supabase/supabase-js";
 import { Database } from "./database.type";
@@ -70,9 +70,11 @@ app.get("products/:id/delivery", async (c) => {
 
   const earliestSchedule = makeSchedule(null);
 
+  // FIXME: baseSKUsとselectableSKUsを使うようにする
   const skus = variants
     .flatMap(({ skus }) => skus)
-    .reduce<Array<{ code: string; name: string; schedule: any }>>(
+    .reduce<Array<{ code: string; name: string; schedule: Schedule<false> }>>(
+      // FIXME: defaultScheduleを使うようにする
       (acc, sku) => {
         if (
           acc.find(({ code }) => code === sku.code) ||
@@ -135,6 +137,7 @@ app.get("/products/:id/supabase", async (c) => {
     client
   );
 
+  // FIXME: defaultScheduleを使うようにする
   const schedule = earliest(variants.map(({ schedule }) => schedule));
 
   return c.json({
@@ -185,6 +188,7 @@ app.get("/products/page-data/:code/supabase", async (c) => {
     client
   );
 
+  // FIXME: defaultScheduleを使うようにする
   const schedule = earliest(variants.map(({ schedule }) => schedule));
 
   return c.json({
