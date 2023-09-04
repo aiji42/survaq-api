@@ -70,11 +70,9 @@ app.get("products/:id/delivery", async (c) => {
 
   const earliestSchedule = makeSchedule(null);
 
-  // FIXME: baseSKUsとselectableSKUsを使うようにする
   const skus = variants
-    .flatMap(({ skus }) => skus)
+    .flatMap(({ baseSKUs, selectableSKUs }) => [...baseSKUs, ...selectableSKUs])
     .reduce<Array<{ code: string; name: string; schedule: Schedule<false> }>>(
-      // FIXME: defaultScheduleを使うようにする
       (acc, sku) => {
         if (
           acc.find(({ code }) => code === sku.code) ||
@@ -137,8 +135,9 @@ app.get("/products/:id/supabase", async (c) => {
     client
   );
 
-  // FIXME: defaultScheduleを使うようにする
-  const schedule = earliest(variants.map(({ schedule }) => schedule));
+  const schedule = earliest(
+    variants.map(({ defaultSchedule }) => defaultSchedule)
+  );
 
   return c.json({
     variants,
@@ -188,8 +187,9 @@ app.get("/products/page-data/:code/supabase", async (c) => {
     client
   );
 
-  // FIXME: defaultScheduleを使うようにする
-  const schedule = earliest(variants.map(({ schedule }) => schedule));
+  const schedule = earliest(
+    variants.map(({ defaultSchedule }) => defaultSchedule)
+  );
 
   return c.json({
     ...page,

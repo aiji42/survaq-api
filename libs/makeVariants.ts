@@ -9,21 +9,24 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 type Locale = "ja" | "en";
 
+type SKU = {
+  code: string;
+  name: string;
+  subName: string;
+  displayName: string;
+  schedule: Schedule<false> | null;
+  availableStock: string;
+};
+
 type CustomizedVariant = {
   productId?: string;
   variantId: string;
   variantName: string;
-  skus: {
-    code: string;
-    name: string;
-    subName: string;
-    displayName: string;
-    schedule: Schedule<false> | null;
-    availableStock: string;
-  }[];
+  baseSKUs: SKU[];
+  selectableSKUs: SKU[];
   skuSelectable: number;
   skuLabel?: string | null;
-  schedule: Schedule<false> | null;
+  defaultSchedule: Schedule<false> | null;
 };
 
 export type Variants =
@@ -67,25 +70,6 @@ export const makeVariants = async (
       ShopifyVariants_ShopifyCustomSKUs: mapping,
       skusJSON,
     }) => {
-      const skuRows =
-        mapping && mapping.length > 0
-          ? mapping
-              .sort(({ sort: a, id: aId }, { sort: b, id: bId }) => {
-                return a === null && b === null
-                  ? aId - bId
-                  : a === null
-                  ? 1
-                  : b === null
-                  ? -1
-                  : a - b;
-              })
-              .map(({ ShopifyCustomSKUs }) => ShopifyCustomSKUs)
-          : sanitizeSkusJSON(skusJSON).flatMap(
-              (code) => skuMap.get(code) ?? []
-            );
-
-      const skus = skuRows.map((row) => makeSKU(row, locale));
-
       const selectableSKUs =
         mapping
           ?.sort(({ sort: a, id: aId }, { sort: b, id: bId }) => {
@@ -105,8 +89,6 @@ export const makeVariants = async (
         return row ? makeSKU(row, locale) : [];
       });
 
-      const skuSchedules = skus.map(({ schedule }) => schedule);
-
       const defaultSchedule = latest([
         latest(baseSKUs.map(({ schedule }) => schedule)),
         earliest(selectableSKUs.map(({ schedule }) => schedule)),
@@ -118,10 +100,6 @@ export const makeVariants = async (
         variantName,
         skuLabel,
         skuSelectable: customSelects,
-        // 非推奨: 消す
-        schedule:
-          customSelects > 0 ? earliest(skuSchedules) : latest(skuSchedules),
-        skus, // 非推奨: 消す
         selectableSKUs,
         baseSKUs,
         defaultSchedule,
