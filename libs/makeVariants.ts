@@ -1,6 +1,7 @@
 import {
   earliest,
   latest,
+  makeSchedule,
   makeScheduleFromDeliverySchedule,
   Schedule,
 } from "./makeSchedule";
@@ -92,6 +93,8 @@ export const makeVariants = async (
       const defaultSchedule = latest([
         latest(baseSKUs.map(({ schedule }) => schedule)),
         earliest(selectableSKUs.map(({ schedule }) => schedule)),
+        // 本日ベースのスケジュールも入れて、誤って過去日がdefaultScheduleにならないようにする
+        makeSchedule(null),
       ]);
 
       return {
@@ -139,7 +142,11 @@ export const makeSKU = (
     name,
     subName: subName ?? "",
     displayName: displayName ?? "",
-    schedule: makeScheduleFromDeliverySchedule(deliverySchedule, locale, true),
+    schedule: latest([
+      makeScheduleFromDeliverySchedule(deliverySchedule, locale, true),
+      // 本日ベースのスケジュールも入れて、誤って過去日がscheduleにならないようにする
+      makeSchedule(null),
+    ]),
     availableStock,
   };
 };
