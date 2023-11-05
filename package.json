@@ -6,8 +6,7 @@
   "scripts": {
     "dev:worker": "wrangler dev",
     "dev": "wrangler dev",
-    "deploy:worker": "wrangler publish -e production",
-    "deploy": "wrangler publish -e production",
+    "deploy": "wrangler deploy -e production",
     "test": "vitest"
   },
   "devDependencies": {

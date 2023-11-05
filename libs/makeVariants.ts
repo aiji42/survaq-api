@@ -94,7 +94,7 @@ export const makeVariants = async (
         latest(baseSKUs.map(({ schedule }) => schedule)),
         earliest(selectableSKUs.map(({ schedule }) => schedule)),
         // 本日ベースのスケジュールも入れて、誤って過去日がdefaultScheduleにならないようにする
-        makeSchedule(null),
+        makeSchedule(null, locale),
       ]);
 
       return {
@@ -145,7 +145,7 @@ export const makeSKU = (
     schedule: latest([
       makeScheduleFromDeliverySchedule(deliverySchedule, locale, true),
       // 本日ベースのスケジュールも入れて、誤って過去日がscheduleにならないようにする
-      makeSchedule(null),
+      makeSchedule(null, locale),
     ]),
     availableStock,
   };

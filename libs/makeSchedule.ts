@@ -181,6 +181,7 @@ export const makeSchedule = (
   return scheduleMadeByCurrent;
 };
 
+// 引数が過去日とnullで構成される場合は、過去日が最遅として計算されてしまうので、それを防ぎたい場合にはmakeSchedule(null)で最短配送日をガードとして入れないといけないことに注意
 export const latest = (schedules: Array<null | Schedule<boolean>>) => {
   return (
     schedules.sort((a, b) => {
