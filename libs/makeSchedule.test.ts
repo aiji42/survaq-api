@@ -442,6 +442,18 @@ describe("locale en", () => {
     test("latest", () => {
       expect(
         latest([
+          makeSchedule("2024-01-early"),
+          makeSchedule("2023-12-early"),
+          makeSchedule("2024-01-late"),
+          makeSchedule("2024-01-early"),
+        ])
+      ).toEqual(makeSchedule("2024-01-late"));
+    });
+
+    test("latest with null and future dates", () => {
+      vi.setSystemTime(new Date(2023, 0, 1));
+      expect(
+        latest([
           null,
           null,
           makeSchedule("2024-01-early"),
@@ -450,6 +462,20 @@ describe("locale en", () => {
           makeSchedule("2024-01-early"),
         ])
       ).toEqual(makeSchedule("2024-01-late"));
+    });
+
+    test("latest with null and past dates", () => {
+      vi.setSystemTime(new Date(2024, 12, 1));
+      expect(
+        latest([
+          null,
+          null,
+          makeSchedule("2024-01-early"),
+          makeSchedule("2023-12-early"),
+          makeSchedule("2024-01-late"),
+          makeSchedule("2024-01-early"),
+        ])
+      ).toEqual(null);
     });
 
     test("earliest", () => {
@@ -464,6 +490,7 @@ describe("locale en", () => {
     });
 
     test("earliest with null", () => {
+      vi.setSystemTime(new Date(2023, 0, 1));
       expect(
         earliest([
           null,
