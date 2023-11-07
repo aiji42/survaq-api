@@ -3,7 +3,7 @@ export type Json =
   | number
   | boolean
   | null
-  | { [key: string]: Json }
+  | { [key: string]: Json | undefined }
   | Json[]
 
 export interface Database {
@@ -113,6 +113,7 @@ export interface Database {
           {
             foreignKeyName: "directus_collections_group_foreign"
             columns: ["group"]
+            isOneToOne: false
             referencedRelation: "directus_collections"
             referencedColumns: ["collection"]
           }
@@ -150,6 +151,7 @@ export interface Database {
           {
             foreignKeyName: "directus_dashboards_user_created_foreign"
             columns: ["user_created"]
+            isOneToOne: false
             referencedRelation: "directus_users"
             referencedColumns: ["id"]
           }
@@ -295,18 +297,21 @@ export interface Database {
           {
             foreignKeyName: "directus_files_folder_foreign"
             columns: ["folder"]
+            isOneToOne: false
             referencedRelation: "directus_folders"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "directus_files_modified_by_foreign"
             columns: ["modified_by"]
+            isOneToOne: false
             referencedRelation: "directus_users"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "directus_files_uploaded_by_foreign"
             columns: ["uploaded_by"]
+            isOneToOne: false
             referencedRelation: "directus_users"
             referencedColumns: ["id"]
           }
@@ -359,6 +364,7 @@ export interface Database {
           {
             foreignKeyName: "directus_flows_user_created_foreign"
             columns: ["user_created"]
+            isOneToOne: false
             referencedRelation: "directus_users"
             referencedColumns: ["id"]
           }
@@ -384,6 +390,7 @@ export interface Database {
           {
             foreignKeyName: "directus_folders_parent_foreign"
             columns: ["parent"]
+            isOneToOne: false
             referencedRelation: "directus_folders"
             referencedColumns: ["id"]
           }
@@ -445,12 +452,14 @@ export interface Database {
           {
             foreignKeyName: "directus_notifications_recipient_foreign"
             columns: ["recipient"]
+            isOneToOne: false
             referencedRelation: "directus_users"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "directus_notifications_sender_foreign"
             columns: ["sender"]
+            isOneToOne: false
             referencedRelation: "directus_users"
             referencedColumns: ["id"]
           }
@@ -503,24 +512,28 @@ export interface Database {
           {
             foreignKeyName: "directus_operations_flow_foreign"
             columns: ["flow"]
+            isOneToOne: false
             referencedRelation: "directus_flows"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "directus_operations_reject_foreign"
             columns: ["reject"]
+            isOneToOne: true
             referencedRelation: "directus_operations"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "directus_operations_resolve_foreign"
             columns: ["resolve"]
+            isOneToOne: true
             referencedRelation: "directus_operations"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "directus_operations_user_created_foreign"
             columns: ["user_created"]
+            isOneToOne: false
             referencedRelation: "directus_users"
             referencedColumns: ["id"]
           }
@@ -582,12 +595,14 @@ export interface Database {
           {
             foreignKeyName: "directus_panels_dashboard_foreign"
             columns: ["dashboard"]
+            isOneToOne: false
             referencedRelation: "directus_dashboards"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "directus_panels_user_created_foreign"
             columns: ["user_created"]
+            isOneToOne: false
             referencedRelation: "directus_users"
             referencedColumns: ["id"]
           }
@@ -628,6 +643,7 @@ export interface Database {
           {
             foreignKeyName: "directus_permissions_role_foreign"
             columns: ["role"]
+            isOneToOne: false
             referencedRelation: "directus_roles"
             referencedColumns: ["id"]
           }
@@ -683,12 +699,14 @@ export interface Database {
           {
             foreignKeyName: "directus_presets_role_foreign"
             columns: ["role"]
+            isOneToOne: false
             referencedRelation: "directus_roles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "directus_presets_user_foreign"
             columns: ["user"]
+            isOneToOne: false
             referencedRelation: "directus_users"
             referencedColumns: ["id"]
           }
@@ -765,12 +783,14 @@ export interface Database {
           {
             foreignKeyName: "directus_revisions_activity_foreign"
             columns: ["activity"]
+            isOneToOne: false
             referencedRelation: "directus_activity"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "directus_revisions_parent_foreign"
             columns: ["parent"]
+            isOneToOne: false
             referencedRelation: "directus_revisions"
             referencedColumns: ["id"]
           }
@@ -841,12 +861,14 @@ export interface Database {
           {
             foreignKeyName: "directus_sessions_share_foreign"
             columns: ["share"]
+            isOneToOne: false
             referencedRelation: "directus_shares"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "directus_sessions_user_foreign"
             columns: ["user"]
+            isOneToOne: false
             referencedRelation: "directus_users"
             referencedColumns: ["id"]
           }
@@ -926,24 +948,28 @@ export interface Database {
           {
             foreignKeyName: "directus_settings_project_logo_foreign"
             columns: ["project_logo"]
+            isOneToOne: false
             referencedRelation: "directus_files"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "directus_settings_public_background_foreign"
             columns: ["public_background"]
+            isOneToOne: false
             referencedRelation: "directus_files"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "directus_settings_public_foreground_foreign"
             columns: ["public_foreground"]
+            isOneToOne: false
             referencedRelation: "directus_files"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "directus_settings_storage_default_folder_foreign"
             columns: ["storage_default_folder"]
+            isOneToOne: false
             referencedRelation: "directus_folders"
             referencedColumns: ["id"]
           }
@@ -996,18 +1022,21 @@ export interface Database {
           {
             foreignKeyName: "directus_shares_collection_foreign"
             columns: ["collection"]
+            isOneToOne: false
             referencedRelation: "directus_collections"
             referencedColumns: ["collection"]
           },
           {
             foreignKeyName: "directus_shares_role_foreign"
             columns: ["role"]
+            isOneToOne: false
             referencedRelation: "directus_roles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "directus_shares_user_created_foreign"
             columns: ["user_created"]
+            isOneToOne: false
             referencedRelation: "directus_users"
             referencedColumns: ["id"]
           }
@@ -1090,6 +1119,7 @@ export interface Database {
           {
             foreignKeyName: "directus_users_role_foreign"
             columns: ["role"]
+            isOneToOne: false
             referencedRelation: "directus_roles"
             referencedColumns: ["id"]
           }
@@ -1199,12 +1229,14 @@ export interface Database {
           {
             foreignKeyName: "facebookadalerts_facebookadsets_facebookadalerts_id_foreign"
             columns: ["FacebookAdAlerts_id"]
+            isOneToOne: false
             referencedRelation: "FacebookAdAlerts"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "facebookadalerts_facebookadsets_facebookadsets_id_foreign"
             columns: ["FacebookAdSets_id"]
+            isOneToOne: false
             referencedRelation: "FacebookAdSets"
             referencedColumns: ["id"]
           }
@@ -1260,12 +1292,14 @@ export interface Database {
           {
             foreignKeyName: "facebookadsbudget_facebookadsets_facebooka__4e5f3f6b_foreign"
             columns: ["FacebookAdsBudget_id"]
+            isOneToOne: false
             referencedRelation: "FacebookAdsBudget"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "facebookadsbudget_facebookadsets_facebookadsets_id_foreign"
             columns: ["FacebookAdSets_id"]
+            isOneToOne: false
             referencedRelation: "FacebookAdSets"
             referencedColumns: ["id"]
           }
@@ -1324,6 +1358,7 @@ export interface Database {
           {
             foreignKeyName: "googlemerchantcenter_shopifyproductgroup_foreign"
             columns: ["shopifyProductGroup"]
+            isOneToOne: false
             referencedRelation: "ShopifyProductGroups"
             referencedColumns: ["id"]
           }
@@ -1350,6 +1385,7 @@ export interface Database {
           lastSyncedAt: string | null
           name: string
           skipDeliveryCalc: boolean | null
+          sortNumber: number
           stockBuffer: number | null
           subName: string | null
           unshippedOrderCount: number
@@ -1375,6 +1411,7 @@ export interface Database {
           lastSyncedAt?: string | null
           name: string
           skipDeliveryCalc?: boolean | null
+          sortNumber?: number
           stockBuffer?: number | null
           subName?: string | null
           unshippedOrderCount?: number
@@ -1400,6 +1437,7 @@ export interface Database {
           lastSyncedAt?: string | null
           name?: string
           skipDeliveryCalc?: boolean | null
+          sortNumber?: number
           stockBuffer?: number | null
           subName?: string | null
           unshippedOrderCount?: number
@@ -1466,18 +1504,21 @@ export interface Database {
           {
             foreignKeyName: "shopifypages_favicon_foreign"
             columns: ["favicon"]
+            isOneToOne: false
             referencedRelation: "directus_files"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "shopifypages_logo_foreign"
             columns: ["logo"]
+            isOneToOne: false
             referencedRelation: "directus_files"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "shopifypages_product_foreign"
             columns: ["product"]
+            isOneToOne: false
             referencedRelation: "ShopifyProducts"
             referencedColumns: ["id"]
           }
@@ -1551,6 +1592,7 @@ export interface Database {
           {
             foreignKeyName: "shopifyproducts_productgroupid_foreign"
             columns: ["productGroupId"]
+            isOneToOne: false
             referencedRelation: "ShopifyProductGroups"
             referencedColumns: ["id"]
           }
@@ -1559,7 +1601,7 @@ export interface Database {
       ShopifyVariants: {
         Row: {
           createdAt: string | null
-          customSelects: number
+          customSelects: number | null
           deliverySchedule: string | null
           id: number
           product: number | null
@@ -1571,7 +1613,7 @@ export interface Database {
         }
         Insert: {
           createdAt?: string | null
-          customSelects?: number
+          customSelects?: number | null
           deliverySchedule?: string | null
           id?: number
           product?: number | null
@@ -1583,7 +1625,7 @@ export interface Database {
         }
         Update: {
           createdAt?: string | null
-          customSelects?: number
+          customSelects?: number | null
           deliverySchedule?: string | null
           id?: number
           product?: number | null
@@ -1597,6 +1639,7 @@ export interface Database {
           {
             foreignKeyName: "shopifyvariants_product_foreign"
             columns: ["product"]
+            isOneToOne: false
             referencedRelation: "ShopifyProducts"
             referencedColumns: ["id"]
           }
@@ -1625,12 +1668,14 @@ export interface Database {
           {
             foreignKeyName: "shopifyvariants_shopifycustomskus_shopifycus__a6179f_foreign"
             columns: ["ShopifyCustomSKUs_id"]
+            isOneToOne: false
             referencedRelation: "ShopifyCustomSKUs"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "shopifyvariants_shopifycustomskus_shopifyvariants_id_foreign"
             columns: ["ShopifyVariants_id"]
+            isOneToOne: false
             referencedRelation: "ShopifyVariants"
             referencedColumns: ["id"]
           }
