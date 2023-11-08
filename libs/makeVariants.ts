@@ -11,12 +11,14 @@ import { SupabaseClient } from "@supabase/supabase-js";
 type Locale = "ja" | "en";
 
 type SKU = {
+  id: number;
   code: string;
   name: string;
   subName: string;
   displayName: string;
   schedule: Schedule<false> | null;
   availableStock: string;
+  sortNumber: number;
 };
 
 type CustomizedVariant = {
@@ -102,7 +104,7 @@ export const makeVariants = async (
         variantId,
         variantName,
         skuLabel,
-        skuSelectable: customSelects,
+        skuSelectable: customSelects ?? 0,
         selectableSKUs,
         baseSKUs,
         defaultSchedule,
@@ -113,6 +115,7 @@ export const makeVariants = async (
 
 export const makeSKU = (
   {
+    id,
     code,
     name,
     subName,
@@ -122,9 +125,10 @@ export const makeSKU = (
     incomingStockDeliveryScheduleA,
     incomingStockDeliveryScheduleB,
     incomingStockDeliveryScheduleC,
+    sortNumber,
   }: Database["public"]["Tables"]["ShopifyCustomSKUs"]["Row"],
   locale: Locale
-) => {
+): SKU => {
   const deliverySchedule = skipDeliveryCalc
     ? null
     : availableStock === "REAL"
@@ -138,6 +142,7 @@ export const makeSKU = (
     : null;
 
   return {
+    id,
     code,
     name,
     subName: subName ?? "",
@@ -148,6 +153,7 @@ export const makeSKU = (
       makeSchedule(null, locale),
     ]),
     availableStock,
+    sortNumber,
   };
 };
 

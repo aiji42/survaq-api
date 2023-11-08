@@ -72,25 +72,33 @@ app.get("products/:id/delivery", async (c) => {
 
   const skus = variants
     .flatMap(({ baseSKUs, selectableSKUs }) => [...baseSKUs, ...selectableSKUs])
-    .reduce<Array<{ code: string; name: string; schedule: Schedule<false> }>>(
-      (acc, sku) => {
-        if (
-          acc.find(({ code }) => code === sku.code) ||
-          !sku.schedule ||
-          sku.schedule.numeric === earliestSchedule.numeric
-        )
-          return acc;
-        return [
-          ...acc,
-          {
-            code: sku.code,
-            name: sku.displayName || sku.name,
-            schedule: sku.schedule,
-          },
-        ];
-      },
-      []
-    );
+    .reduce<
+      Array<{
+        id: number;
+        code: string;
+        name: string;
+        schedule: Schedule<false>;
+        sortNumber: number;
+      }>
+    >((acc, sku) => {
+      if (
+        acc.find(({ code }) => code === sku.code) ||
+        !sku.schedule ||
+        sku.schedule.numeric === earliestSchedule.numeric
+      )
+        return acc;
+      return [
+        ...acc,
+        {
+          id: sku.id,
+          code: sku.code,
+          name: sku.displayName || sku.name,
+          schedule: sku.schedule,
+          sortNumber: sku.sortNumber,
+        },
+      ];
+    }, [])
+    .sort((a, b) => a.sortNumber - b.sortNumber || a.id - b.id);
 
   return c.json({
     current: earliestSchedule,
