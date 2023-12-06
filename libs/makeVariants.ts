@@ -38,10 +38,18 @@ export type Variants =
       | {
           id: number;
           sort: number | null;
-          ShopifyCustomSKUs: Database["public"]["Tables"]["ShopifyCustomSKUs"]["Row"];
+          ShopifyCustomSKUs: SKURow;
         }[]
       | null;
   })[];
+
+type SKURow = Database["public"]["Tables"]["ShopifyCustomSKUs"]["Row"] & {
+  currentInventoryOrder:
+    | (Database["public"]["Tables"]["ShopifyInventoryOrderSKUs"]["Row"] & {
+        group: Database["public"]["Tables"]["ShopifyInventoryOrders"]["Row"];
+      })
+    | null;
+};
 
 export const makeVariants = async (
   product: Database["public"]["Tables"]["ShopifyProducts"]["Row"],
@@ -52,16 +60,17 @@ export const makeVariants = async (
   const skuCodes = [
     ...new Set(variants.flatMap(({ skusJSON }) => sanitizeSkusJSON(skusJSON))),
   ];
-  let skuMap = new Map<
-    string,
-    Database["public"]["Tables"]["ShopifyCustomSKUs"]["Row"]
-  >();
+  let skuMap = new Map<string, SKURow>();
   if (skuCodes.length) {
     const { data } = await supabaseClient
       .from("ShopifyCustomSKUs")
-      .select("*")
+      .select(
+        "*, currentInventoryOrder:ShopifyInventoryOrderSKUs!currentInventoryOrderSKUId(*, group:ShopifyInventoryOrders(*))"
+      )
       .in("code", skuCodes);
-    skuMap = new Map(data?.map((record) => [record.code, record]));
+    skuMap = new Map(
+      data?.map((record) => [record.code, record as unknown as SKURow])
+    );
   }
 
   return variants.map(
@@ -85,11 +94,11 @@ export const makeVariants = async (
               : a - b;
           })
           ?.map(({ ShopifyCustomSKUs }) =>
-            makeSKU(ShopifyCustomSKUs, locale)
+            makeSKUNew(ShopifyCustomSKUs, locale)
           ) ?? [];
       const baseSKUs = sanitizeSkusJSON(skusJSON).flatMap((code) => {
         const row = skuMap.get(code);
-        return row ? makeSKU(row, locale) : [];
+        return row ? makeSKUNew(row, locale) : [];
       });
 
       const defaultSchedule = latest([
@@ -153,6 +162,39 @@ export const makeSKU = (
       makeSchedule(null, locale),
     ]),
     availableStock,
+    sortNumber,
+  };
+};
+
+export const makeSKUNew = (
+  {
+    id,
+    code,
+    name,
+    subName,
+    displayName,
+    skipDeliveryCalc,
+    currentInventoryOrder,
+    sortNumber,
+  }: SKURow,
+  locale: Locale
+) => {
+  const deliverySchedule = skipDeliveryCalc
+    ? null
+    : currentInventoryOrder?.group.deliverySchedule ?? null;
+
+  return {
+    id,
+    code,
+    name,
+    subName: subName ?? "",
+    displayName: displayName ?? "",
+    schedule: latest([
+      makeScheduleFromDeliverySchedule(deliverySchedule, locale, true),
+      // 本日ベースのスケジュールも入れて、誤って過去日がscheduleにならないようにする
+      makeSchedule(null, locale),
+    ]),
+    availableStock: currentInventoryOrder?.group.name ?? "REAL",
     sortNumber,
   };
 };

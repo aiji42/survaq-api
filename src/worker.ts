@@ -47,7 +47,7 @@ app.get("products/:id/delivery", async (c) => {
   const { data, error } = await client
     .from("ShopifyProducts")
     .select(
-      "*,ShopifyProductGroups(*),ShopifyVariants(*,ShopifyVariants_ShopifyCustomSKUs(ShopifyCustomSKUs(*)))"
+      "*,ShopifyProductGroups(*),ShopifyVariants(*,ShopifyVariants_ShopifyCustomSKUs(ShopifyCustomSKUs(*, currentInventoryOrder:ShopifyInventoryOrderSKUs!currentInventoryOrderSKUId(*, group:ShopifyInventoryOrders(*)))))"
     )
     .match({ productId: c.req.param("id") })
     .maybeSingle();
@@ -63,7 +63,7 @@ app.get("products/:id/delivery", async (c) => {
 
   const variants = await makeVariants(
     data,
-    (data.ShopifyVariants ?? []) as Variants,
+    (data.ShopifyVariants ?? []) as unknown as Variants,
     locale,
     client
   );
@@ -122,7 +122,7 @@ app.get("/products/:id/supabase", async (c) => {
   const { data, error } = await client
     .from("ShopifyProducts")
     .select(
-      "*,ShopifyProductGroups(*),ShopifyVariants(*,ShopifyVariants_ShopifyCustomSKUs(ShopifyCustomSKUs(*)))"
+      "*,ShopifyProductGroups(*),ShopifyVariants(*,ShopifyVariants_ShopifyCustomSKUs(ShopifyCustomSKUs(*, currentInventoryOrder:ShopifyInventoryOrderSKUs!currentInventoryOrderSKUId(*, group:ShopifyInventoryOrders(*)))))"
     )
     .match({ productId: c.req.param("id") })
     .maybeSingle();
@@ -138,7 +138,7 @@ app.get("/products/:id/supabase", async (c) => {
 
   const variants = await makeVariants(
     data,
-    (data.ShopifyVariants ?? []) as Variants,
+    (data.ShopifyVariants ?? []) as unknown as Variants,
     locale,
     client
   );
@@ -163,7 +163,7 @@ app.get("/products/page-data/:code/supabase", async (c) => {
   const { data, error } = await client
     .from("ShopifyPages")
     .select(
-      "*,logo:shopifypages_logo_foreign(filename_disk,width,height),favicon:shopifypages_favicon_foreign(filename_disk),ShopifyProducts(*,ShopifyProductGroups(*),ShopifyVariants(*,ShopifyVariants_ShopifyCustomSKUs(ShopifyCustomSKUs(*))))"
+      "*,logo:shopifypages_logo_foreign(filename_disk,width,height),favicon:shopifypages_favicon_foreign(filename_disk),ShopifyProducts(*,ShopifyProductGroups(*),ShopifyVariants(*,ShopifyVariants_ShopifyCustomSKUs(ShopifyCustomSKUs(*, currentInventoryOrder:ShopifyInventoryOrderSKUs!currentInventoryOrderSKUId(*, group:ShopifyInventoryOrders(*))))))"
     )
     .match({ pathname: c.req.param("code") })
     .maybeSingle();
@@ -190,7 +190,7 @@ app.get("/products/page-data/:code/supabase", async (c) => {
 
   const variants = await makeVariants(
     ShopifyProducts,
-    (ShopifyProducts.ShopifyVariants ?? []) as Variants,
+    (ShopifyProducts.ShopifyVariants ?? []) as unknown as Variants,
     locale,
     client
   );

@@ -1369,6 +1369,7 @@ export interface Database {
           availableStock: string
           code: string
           createdAt: string | null
+          currentInventoryOrderSKUId: number | null
           deliverySchedule: string | null
           displayName: string | null
           id: number
@@ -1395,6 +1396,7 @@ export interface Database {
           availableStock?: string
           code?: string
           createdAt?: string | null
+          currentInventoryOrderSKUId?: number | null
           deliverySchedule?: string | null
           displayName?: string | null
           id?: number
@@ -1421,6 +1423,7 @@ export interface Database {
           availableStock?: string
           code?: string
           createdAt?: string | null
+          currentInventoryOrderSKUId?: number | null
           deliverySchedule?: string | null
           displayName?: string | null
           id?: number
@@ -1443,7 +1446,102 @@ export interface Database {
           unshippedOrderCount?: number
           updatedAt?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "shopifycustomskus_currentinventoryorderskuid_foreign"
+            columns: ["currentInventoryOrderSKUId"]
+            isOneToOne: false
+            referencedRelation: "ShopifyInventoryOrderSKUs"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      ShopifyInventoryOrders: {
+        Row: {
+          createdAt: string | null
+          deliveryDate: string
+          deliverySchedule: string | null
+          id: number
+          name: string
+          note: string | null
+          orderedDate: string
+          receivingDate: string
+          shippingDate: string
+          status: string | null
+          updatedAt: string | null
+        }
+        Insert: {
+          createdAt?: string | null
+          deliveryDate: string
+          deliverySchedule?: string | null
+          id?: number
+          name: string
+          note?: string | null
+          orderedDate: string
+          receivingDate: string
+          shippingDate: string
+          status?: string | null
+          updatedAt?: string | null
+        }
+        Update: {
+          createdAt?: string | null
+          deliveryDate?: string
+          deliverySchedule?: string | null
+          id?: number
+          name?: string
+          note?: string | null
+          orderedDate?: string
+          receivingDate?: string
+          shippingDate?: string
+          status?: string | null
+          updatedAt?: string | null
+        }
         Relationships: []
+      }
+      ShopifyInventoryOrderSKUs: {
+        Row: {
+          createdAt: string | null
+          heldQuantity: number
+          id: number
+          inventoryOrderId: number
+          quantity: number
+          skuId: number | null
+          updatedAt: string | null
+        }
+        Insert: {
+          createdAt?: string | null
+          heldQuantity?: number
+          id?: number
+          inventoryOrderId: number
+          quantity?: number
+          skuId?: number | null
+          updatedAt?: string | null
+        }
+        Update: {
+          createdAt?: string | null
+          heldQuantity?: number
+          id?: number
+          inventoryOrderId?: number
+          quantity?: number
+          skuId?: number | null
+          updatedAt?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopifyinventoryorderskus_inventoryorderid_foreign"
+            columns: ["inventoryOrderId"]
+            isOneToOne: false
+            referencedRelation: "ShopifyInventoryOrders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopifyinventoryorderskus_skuid_foreign"
+            columns: ["skuId"]
+            isOneToOne: false
+            referencedRelation: "ShopifyCustomSKUs"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       ShopifyPages: {
         Row: {
@@ -1696,3 +1794,83 @@ export interface Database {
     }
   }
 }
+
+export type Tables<
+  PublicTableNameOrOptions extends
+    | keyof (Database["public"]["Tables"] & Database["public"]["Views"])
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+        Database[PublicTableNameOrOptions["schema"]]["Views"])
+    : never = never
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : PublicTableNameOrOptions extends keyof (Database["public"]["Tables"] &
+      Database["public"]["Views"])
+  ? (Database["public"]["Tables"] &
+      Database["public"]["Views"])[PublicTableNameOrOptions] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : never
+
+export type TablesInsert<
+  PublicTableNameOrOptions extends
+    | keyof Database["public"]["Tables"]
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+    : never = never
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
+  ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : never
+
+export type TablesUpdate<
+  PublicTableNameOrOptions extends
+    | keyof Database["public"]["Tables"]
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+    : never = never
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
+  ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : never
+
+export type Enums<
+  PublicEnumNameOrOptions extends
+    | keyof Database["public"]["Enums"]
+    | { schema: keyof Database },
+  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+    : never = never
+> = PublicEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : PublicEnumNameOrOptions extends keyof Database["public"]["Enums"]
+  ? Database["public"]["Enums"][PublicEnumNameOrOptions]
+  : never
