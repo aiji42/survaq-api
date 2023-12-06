@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { getAllPages } from "../src/db";
+import { getAllPages, setClient } from "../src/db";
 
 describe("e2e", async () => {
   test("products/supabase", async () => {
@@ -76,6 +76,7 @@ describe("e2e", async () => {
     expect(production).toStrictEqual(development);
   });
 
+  setClient(import.meta.env.VITE_PRISMA_DATA_PROXY_URL);
   const pages = await getAllPages();
 
   test.each(pages)(
