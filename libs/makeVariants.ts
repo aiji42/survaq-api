@@ -9,18 +9,13 @@ import { getSKUs, Product, SKUs } from "../src/db";
 type Locale = "ja" | "en";
 
 export const makeVariants = async (product: Product, locale: Locale) => {
-  const skuCodes = [
-    ...new Set(
-      product.ShopifyVariants.flatMap(({ skusJSON }) =>
-        sanitizeSkusJSON(skusJSON)
-      )
-    ),
-  ];
-  let skuMap = new Map<string, SKUs[number]>();
-  if (skuCodes.length) {
-    const skus = await getSKUs(skuCodes);
-    skuMap = new Map(skus.map((record) => [record.code, record]));
-  }
+  const codes = product.ShopifyVariants.flatMap(({ skusJSON }) =>
+    sanitizeSkusJSON(skusJSON)
+  );
+  const skus = codes.length ? await getSKUs(codes) : [];
+  const skuMap = new Map<string, SKUs[number]>(
+    skus.map((sku) => [sku.code, sku])
+  );
 
   return product.ShopifyVariants.map(
     ({
