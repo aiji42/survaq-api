@@ -1,14 +1,28 @@
 import {
   earliest,
   latest,
+  Locale,
   makeSchedule,
   makeScheduleFromDeliverySchedule,
+  Schedule,
 } from "./makeSchedule";
 import { getSKUs, Product, SKUs } from "../src/db";
 
-type Locale = "ja" | "en";
+type MadeVariants = {
+  productId: string;
+  variantId: string;
+  variantName: string;
+  skuLabel: string | null;
+  skuSelectable: number;
+  selectableSKUs: MadeSKU[];
+  baseSKUs: MadeSKU[];
+  defaultSchedule: Schedule<false> | null;
+}[];
 
-export const makeVariants = async (product: Product, locale: Locale) => {
+export const makeVariants = async (
+  product: Product,
+  locale: Locale
+): Promise<MadeVariants> => {
   const codes = product.variants.flatMap((item) =>
     sanitizeSkusJSON(item.skusJson)
   );
@@ -48,6 +62,17 @@ export const makeVariants = async (product: Product, locale: Locale) => {
   );
 };
 
+type MadeSKU = {
+  id: number;
+  code: string;
+  name: string;
+  subName: string;
+  displayName: string;
+  schedule: Schedule<false> | null;
+  availableStock: string;
+  sortNumber: number;
+};
+
 export const makeSKU = (
   {
     id,
@@ -60,7 +85,7 @@ export const makeSKU = (
     sortNumber,
   }: SKUs[number],
   locale: Locale
-) => {
+): MadeSKU => {
   const deliverySchedule = skipDeliveryCalc
     ? null
     : crntInvOrderSKU?.invOrder.deliverySchedule ?? null;

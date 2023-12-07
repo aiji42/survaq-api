@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { Bindings } from "../bindings";
-import { earliest, makeSchedule, Schedule } from "../libs/makeSchedule";
+import { earliest, Locale, makeSchedule } from "../libs/makeSchedule";
 import { makeVariants } from "../libs/makeVariants";
 import {
   deleteVariantMany,
@@ -15,28 +15,32 @@ import {
   setClient,
   updateVariant,
 } from "./db";
+import { makeSKUsForDelivery } from "../libs/makeSKUsForDelivery";
 
-const app = new Hono<{ Bindings: Bindings }>();
+type Variables = {
+  locale: Locale;
+};
 
-app.use("/products/*", async (c, next) => {
+const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+
+app.use("/:top{(products|shopify)}/*", async (c, next) => {
   const pool = setClient(
     // Hyperdriveはデプロイしないと使えなくなったので、開発中はc.env.DATABASE_URLを利用する
     c.env.HYPERDRIVE?.connectionString ?? c.env.DATABASE_URL
   );
+
+  const locale = c.req.headers.get("accept-language")?.startsWith("en")
+    ? "en"
+    : "ja";
+  c.set("locale", locale);
+
   await next();
 
   // Hyperdrive を利用していなければ(dev環境) コネクションを切る
   !c.env.HYPERDRIVE?.connectionString && c.executionCtx.waitUntil(pool.end());
 });
 
-app.use(
-  "/products/*",
-  cors({
-    origin: "*",
-    allowMethods: ["GET", "OPTIONS"],
-    maxAge: 600,
-  })
-);
+app.use("*", cors({ origin: "*", maxAge: 600 }));
 
 app.get("products/:id/funding", async (c) => {
   const data = await getProduct(c.req.param("id"));
@@ -55,48 +59,13 @@ app.get("products/:id/delivery", async (c) => {
   const data = await getProduct(c.req.param("id"));
   if (!data) return c.notFound();
 
-  const locale = c.req.headers.get("accept-language")?.startsWith("en")
-    ? "en"
-    : "ja";
+  const variants = await makeVariants(data, c.get("locale"));
 
-  const variants = await makeVariants(data, locale);
+  const current = makeSchedule(null);
 
-  const earliestSchedule = makeSchedule(null);
+  const skus = makeSKUsForDelivery(variants);
 
-  const skus = variants
-    .flatMap(({ baseSKUs, selectableSKUs }) => [...baseSKUs, ...selectableSKUs])
-    .reduce<
-      Array<{
-        id: number;
-        code: string;
-        name: string;
-        schedule: Schedule<false>;
-        sortNumber: number;
-      }>
-    >((acc, sku) => {
-      if (
-        acc.find(({ code }) => code === sku.code) ||
-        !sku.schedule ||
-        sku.schedule.numeric === earliestSchedule.numeric
-      )
-        return acc;
-      return [
-        ...acc,
-        {
-          id: sku.id,
-          code: sku.code,
-          name: sku.displayName || sku.name,
-          schedule: sku.schedule,
-          sortNumber: sku.sortNumber,
-        },
-      ];
-    }, [])
-    .sort((a, b) => a.sortNumber - b.sortNumber || a.id - b.id);
-
-  return c.json({
-    current: earliestSchedule,
-    skus,
-  });
+  return c.json({ current, skus });
 });
 
 app.get("/products/supabase", async (c) => {
@@ -107,11 +76,7 @@ app.get("/products/:id/supabase", async (c) => {
   const data = await getProduct(c.req.param("id"));
   if (!data) return c.notFound();
 
-  const locale = c.req.headers.get("accept-language")?.startsWith("en")
-    ? "en"
-    : "ja";
-
-  const variants = await makeVariants(data, locale);
+  const variants = await makeVariants(data, c.get("locale"));
 
   const schedule = earliest(
     variants.map(({ defaultSchedule }) => defaultSchedule)
@@ -119,21 +84,17 @@ app.get("/products/:id/supabase", async (c) => {
 
   return c.json({
     variants,
-    schedule: schedule ?? makeSchedule(schedule, locale),
+    schedule: schedule ?? makeSchedule(schedule, c.get("locale")),
   });
 });
 
 app.get("/products/page-data/:code/supabase", async (c) => {
-  const locale = c.req.headers.get("accept-language")?.startsWith("en")
-    ? "en"
-    : "ja";
-
   const data = await getPage(c.req.param("code"));
   if (!data) return c.notFound();
 
   const { product, faviconFile: favicon, logoFile: logo, ...page } = data;
 
-  const variants = await makeVariants(product, locale);
+  const variants = await makeVariants(product, c.get("locale"));
 
   const schedule = earliest(
     variants.map(({ defaultSchedule }) => defaultSchedule)
@@ -144,7 +105,7 @@ app.get("/products/page-data/:code/supabase", async (c) => {
     favicon,
     logo,
     variants,
-    schedule: schedule ?? makeSchedule(schedule, locale),
+    schedule: schedule ?? makeSchedule(schedule, c.get("locale")),
     productId: product.productId,
   });
 });

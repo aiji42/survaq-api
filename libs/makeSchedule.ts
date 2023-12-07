@@ -24,7 +24,7 @@ export type Schedule<T extends boolean> = {
   texts: T extends true ? string[] : never;
 };
 
-type Locale = "ja" | "en";
+export type Locale = "ja" | "en";
 
 type ResultType<T, W extends boolean> = T extends string
   ? Schedule<W>
