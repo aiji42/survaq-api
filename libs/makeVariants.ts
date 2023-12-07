@@ -9,28 +9,20 @@ import { getSKUs, Product, SKUs } from "../src/db";
 type Locale = "ja" | "en";
 
 export const makeVariants = async (product: Product, locale: Locale) => {
-  const codes = product.ShopifyVariants.flatMap(({ skusJSON }) =>
-    sanitizeSkusJSON(skusJSON)
+  const codes = product.variants.flatMap((item) =>
+    sanitizeSkusJSON(item.skusJson)
   );
   const skus = codes.length ? await getSKUs(codes) : [];
   const skuMap = new Map<string, SKUs[number]>(
     skus.map((sku) => [sku.code, sku])
   );
 
-  return product.ShopifyVariants.map(
-    ({
-      variantId,
-      variantName,
-      customSelects,
-      skuLabel,
-      ShopifyVariants_ShopifyCustomSKUs: mapping,
-      skusJSON,
-    }) => {
-      const selectableSKUs =
-        mapping?.flatMap(({ ShopifyCustomSKUs }) =>
-          ShopifyCustomSKUs ? makeSKU(ShopifyCustomSKUs, locale) : []
-        ) ?? [];
-      const baseSKUs = sanitizeSkusJSON(skusJSON).flatMap((code) => {
+  return product.variants.map(
+    ({ variantId, variantName, customSelects, skuLabel, skus, skusJson }) => {
+      const selectableSKUs = skus.flatMap(({ sku }) =>
+        sku ? makeSKU(sku, locale) : []
+      );
+      const baseSKUs = sanitizeSkusJSON(skusJson).flatMap((code) => {
         const row = skuMap.get(code);
         return row ? makeSKU(row, locale) : [];
       });
@@ -64,14 +56,14 @@ export const makeSKU = (
     subName,
     displayName,
     skipDeliveryCalc,
-    currentInventoryOrderSKU,
+    crntInvOrderSKU,
     sortNumber,
   }: SKUs[number],
   locale: Locale
 ) => {
   const deliverySchedule = skipDeliveryCalc
     ? null
-    : currentInventoryOrderSKU?.ShopifyInventoryOrders.deliverySchedule ?? null;
+    : crntInvOrderSKU?.invOrder.deliverySchedule ?? null;
 
   return {
     id,
@@ -84,8 +76,7 @@ export const makeSKU = (
       // 本日ベースのスケジュールも入れて、誤って過去日がscheduleにならないようにする
       makeSchedule(null, locale),
     ]),
-    availableStock:
-      currentInventoryOrderSKU?.ShopifyInventoryOrders.name ?? "REAL",
+    availableStock: crntInvOrderSKU?.invOrder.name ?? "REAL",
     sortNumber,
   };
 };

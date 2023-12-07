@@ -85,7 +85,7 @@ describe("e2e", async () => {
     }
   );
 
-  setClient(import.meta.env.VITE_PRISMA_DATA_PROXY_URL);
+  setClient(import.meta.env.VITE_DATABASE_URL);
   const pages = await getAllPages();
 
   test.each(pages)(

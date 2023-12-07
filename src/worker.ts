@@ -18,6 +18,17 @@ import {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
+app.use("/products/*", async (c, next) => {
+  const pool = setClient(
+    // Hyperdriveはデプロイしないと使えなくなったので、開発中はc.env.DATABASE_URLを利用する
+    c.env.HYPERDRIVE?.connectionString ?? c.env.DATABASE_URL
+  );
+  await next();
+
+  // Hyperdrive を利用していなければ(dev環境) コネクションを切る
+  !c.env.HYPERDRIVE?.connectionString && c.executionCtx.waitUntil(pool.end());
+});
+
 app.use(
   "/products/*",
   cors({
@@ -27,24 +38,16 @@ app.use(
   })
 );
 
-app.all("*", (c, next) => {
-  setClient(c.env.PRISMA_DATA_PROXY_URL);
-  return next();
-});
-
 app.get("products/:id/funding", async (c) => {
   const data = await getProduct(c.req.param("id"));
   if (!data) return c.notFound();
 
   return c.json({
     totalPrice:
-      (data.ShopifyProductGroups?.totalPrice ?? 0) +
-      (data.ShopifyProductGroups?.realTotalPrice ?? 0),
+      (data.group?.totalPrice ?? 0) + (data.group?.realTotalPrice ?? 0),
     supporters:
-      (data.ShopifyProductGroups?.supporters ?? 0) +
-      (data.ShopifyProductGroups?.realSupporters ?? 0),
-    closeOn:
-      data.ShopifyProductGroups?.closeOn.toISOString().slice(0, 10) ?? null,
+      (data.group?.supporters ?? 0) + (data.group?.realSupporters ?? 0),
+    closeOn: data.group?.closeOn ?? null,
   });
 });
 
@@ -128,12 +131,7 @@ app.get("/products/page-data/:code/supabase", async (c) => {
   const data = await getPage(c.req.param("code"));
   if (!data) return c.notFound();
 
-  const {
-    ShopifyProducts: product,
-    faviconFile: favicon,
-    logoFile: logo,
-    ...page
-  } = data;
+  const { product, faviconFile: favicon, logoFile: logo, ...page } = data;
 
   const variants = await makeVariants(product, locale);
 
@@ -181,12 +179,12 @@ app.post("/shopify/product", async (c) => {
     // activeかつ、CMS上にまだ商品がないなら商品を追加
     if (!product && data.status === "active") {
       console.log("insert new product", data.id, data.title);
-      const newProduct = await insertProduct({
+      const [newProduct] = await insertProduct({
         productId: String(data.id),
         productName: data.title,
       });
-      console.log("inserted new product record id:", newProduct.id);
-      productRecordId = newProduct.id;
+      console.log("inserted new product record id:", newProduct?.id);
+      productRecordId = newProduct?.id;
     }
 
     const shopifyVariants = Object.fromEntries(
@@ -233,7 +231,7 @@ app.post("/shopify/product", async (c) => {
       if (shouldDeleteVariantIds.length) {
         console.log("delete variants", shouldDeleteVariantIds);
         const deletedVariants = await deleteVariantMany(shouldDeleteVariantIds);
-        console.log("deleted variant", deletedVariants.count, "record(s)");
+        console.log("deleted variant", deletedVariants.rowCount, "record(s)");
       }
 
       if (shouldUpdateVariantIds.length) {
@@ -258,7 +256,7 @@ app.post("/shopify/product", async (c) => {
       const deletedVariants = await deleteVariantManyByProductId(
         productRecordId
       );
-      console.log("deleted variant", deletedVariants.count, "record(s)");
+      console.log("deleted variant", deletedVariants.rowCount, "record(s)");
     }
 
     return c.json({ message: "synced" });

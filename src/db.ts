@@ -1,116 +1,137 @@
-import { PrismaClient, Prisma } from "@prisma/client/edge";
+import { Pool } from "pg";
+import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
+import * as base from "../drizzle/schema";
+import * as relations from "../drizzle/relations";
+import { eq, or, inArray } from "drizzle-orm";
+import { PgInsertValue, PgUpdateSetSource } from "drizzle-orm/pg-core";
 
-let prisma: PrismaClient;
+const schema = {
+  ...base,
+  ...relations,
+};
+
+let client: NodePgDatabase<typeof schema>;
 
 export const setClient = (url: string) => {
-  prisma = new PrismaClient({
-    datasourceUrl: url,
-  });
+  const pool = new Pool({ connectionString: url });
+  client = drizzle(pool, { schema });
+
+  return pool;
 };
 
 export const getAllProducts = () => {
-  return prisma.shopifyProducts.findMany({
-    select: { productName: true, productId: true },
+  return client.query.shopifyProducts.findMany({
+    columns: {
+      productName: true,
+      productId: true,
+    },
   });
 };
 
-export const getProduct = (productId: string) => {
-  return prisma.shopifyProducts.findFirst({
-    include: {
-      ShopifyProductGroups: true,
-      ShopifyVariants: {
-        include: {
-          ShopifyVariants_ShopifyCustomSKUs: {
-            include: {
-              ShopifyCustomSKUs: {
-                include: {
-                  currentInventoryOrderSKU: {
-                    include: {
-                      ShopifyInventoryOrders: true,
+export const getProduct = async (productId: string) => {
+  return client.query.shopifyProducts.findFirst({
+    with: {
+      group: true,
+      variants: {
+        with: {
+          skus: {
+            with: {
+              sku: {
+                with: {
+                  crntInvOrderSKU: {
+                    with: {
+                      invOrder: true,
                     },
                   },
                 },
               },
             },
-            orderBy: [{ sort: "asc" }, { id: "asc" }],
+            orderBy: (record, { asc }) => [asc(record.sort), asc(record.id)],
           },
         },
       },
     },
-    where: { productId },
+    where: eq(schema.shopifyProducts.productId, productId),
   });
 };
-export type Product = Exclude<Awaited<ReturnType<typeof getProduct>>, null>;
+export type Product = Exclude<
+  Awaited<ReturnType<typeof getProduct>>,
+  null | undefined
+>;
 
-export const insertProduct = (data: Prisma.ShopifyProductsCreateInput) => {
-  return prisma.shopifyProducts.create({
-    data: {
+export const insertProduct = (
+  data: PgInsertValue<typeof schema.shopifyProducts>
+) => {
+  return client
+    .insert(schema.shopifyProducts)
+    .values({
       ...data,
-      updatedAt: new Date(),
-      createdAt: new Date(),
-    },
-  });
+      updatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    })
+    .returning();
 };
 
 export const getVariants = (productId: number) => {
-  return prisma.shopifyVariants.findMany({
-    where: {
-      product: productId,
-    },
+  return client.query.shopifyVariants.findMany({
+    where: eq(schema.shopifyVariants.product, productId),
   });
 };
 
 export const insertVariantMany = (
-  data: Prisma.ShopifyVariantsCreateManyInput[]
+  data: PgInsertValue<typeof schema.shopifyVariants>[]
 ) => {
-  return prisma.shopifyVariants.createMany({
-    data: data.map((item) => ({
+  return client.insert(schema.shopifyVariants).values(
+    data.map((item) => ({
       ...item,
-      updatedAt: new Date(),
-      createdAt: new Date(),
-    })),
-    skipDuplicates: true,
-  });
+      updatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    }))
+  );
 };
 
 export const deleteVariantMany = (variantIds: string[]) => {
-  return prisma.shopifyVariants.deleteMany({
-    where: { variantId: { in: variantIds } },
-  });
+  return client
+    .delete(schema.shopifyVariants)
+    .where(inArray(schema.shopifyVariants.variantId, variantIds));
 };
 
 export const deleteVariantManyByProductId = (productId: number) => {
-  return prisma.shopifyVariants.deleteMany({
-    where: { product: productId },
-  });
+  return client
+    .delete(schema.shopifyVariants)
+    .where(eq(schema.shopifyVariants.product, productId));
 };
 
 export const updateVariant = (
   variantId: string,
-  data: Prisma.ShopifyVariantsUpdateInput
+  data: PgUpdateSetSource<typeof schema.shopifyVariants>
 ) => {
-  return prisma.shopifyVariants.update({ data, where: { variantId } });
+  return client
+    .update(schema.shopifyVariants)
+    .set({
+      ...data,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(eq(schema.shopifyVariants.variantId, variantId));
 };
 
 export const getSKUs = (codes: string[]) => {
-  return prisma.shopifyCustomSKUs.findMany({
-    include: {
-      currentInventoryOrderSKU: {
-        include: {
-          ShopifyInventoryOrders: true,
+  return client.query.shopifyCustomSkUs.findMany({
+    with: {
+      crntInvOrderSKU: {
+        with: {
+          invOrder: true,
         },
       },
     },
-    where: {
-      code: { in: codes },
-    },
+    where: inArray(schema.shopifyCustomSkUs.code, codes),
   });
 };
 export type SKUs = Awaited<ReturnType<typeof getSKUs>>;
 
 export const getAllPages = () => {
-  return prisma.shopifyPages.findMany({
-    select: {
+  return client.query.shopifyPages.findMany({
+    columns: {
       pathname: true,
       domain: true,
     },
@@ -118,41 +139,45 @@ export const getAllPages = () => {
 };
 
 export const getPage = (pathnameOrDomain: string) => {
-  return prisma.shopifyPages.findFirst({
-    where: {
-      OR: [{ pathname: pathnameOrDomain }, { domain: pathnameOrDomain }],
-    },
-    include: {
+  return client.query.shopifyPages.findFirst({
+    where: or(
+      eq(schema.shopifyPages.pathname, pathnameOrDomain),
+      eq(schema.shopifyPages.domain, pathnameOrDomain)
+    ),
+    with: {
       logoFile: {
-        select: {
+        columns: {
           filename_disk: true,
           width: true,
           height: true,
         },
       },
       faviconFile: {
-        select: {
+        columns: {
           filename_disk: true,
         },
       },
-      ShopifyProducts: {
-        include: {
-          ShopifyProductGroups: true,
-          ShopifyVariants: {
-            include: {
-              ShopifyVariants_ShopifyCustomSKUs: {
-                include: {
-                  ShopifyCustomSKUs: {
-                    include: {
-                      currentInventoryOrderSKU: {
-                        include: {
-                          ShopifyInventoryOrders: true,
+      product: {
+        with: {
+          group: true,
+          variants: {
+            with: {
+              skus: {
+                with: {
+                  sku: {
+                    with: {
+                      crntInvOrderSKU: {
+                        with: {
+                          invOrder: true,
                         },
                       },
                     },
                   },
                 },
-                orderBy: [{ sort: "asc" }, { id: "asc" }],
+                orderBy: (record, { asc }) => [
+                  asc(record.sort),
+                  asc(record.id),
+                ],
               },
             },
           },
