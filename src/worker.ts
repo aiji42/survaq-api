@@ -16,12 +16,16 @@ import {
   updateVariant,
 } from "./db";
 import { makeSKUsForDelivery } from "../libs/makeSKUsForDelivery";
+import { endTime, startTime, timing } from "hono/timing";
 
 type Variables = {
   locale: Locale;
 };
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+
+app.use("*", cors({ origin: "*", maxAge: 600 }));
+app.use("*", timing());
 
 app.use("/:top{(products|shopify)}/*", async (c, next) => {
   const pool = setClient(
@@ -34,16 +38,18 @@ app.use("/:top{(products|shopify)}/*", async (c, next) => {
     : "ja";
   c.set("locale", locale);
 
+  startTime(c, "main_process");
   await next();
+  endTime(c, "main_process");
 
   // Hyperdrive を利用していなければ(dev環境) コネクションを切る
   !c.env.HYPERDRIVE?.connectionString && c.executionCtx.waitUntil(pool.end());
 });
 
-app.use("*", cors({ origin: "*", maxAge: 600 }));
-
 app.get("products/:id/funding", async (c) => {
+  startTime(c, "db");
   const data = await getProduct(c.req.param("id"));
+  endTime(c, "db");
   if (!data) return c.notFound();
 
   return c.json({
@@ -56,10 +62,12 @@ app.get("products/:id/funding", async (c) => {
 });
 
 app.get("products/:id/delivery", async (c) => {
+  startTime(c, "db");
   const data = await getProduct(c.req.param("id"));
+  endTime(c, "db");
   if (!data) return c.notFound();
 
-  const variants = await makeVariants(data, c.get("locale"));
+  const variants = await makeVariants(data, c.get("locale"), c);
 
   const current = makeSchedule(null);
 
@@ -73,10 +81,12 @@ app.get("/products/supabase", async (c) => {
 });
 
 app.get("/products/:id/supabase", async (c) => {
+  startTime(c, "db");
   const data = await getProduct(c.req.param("id"));
+  endTime(c, "db");
   if (!data) return c.notFound();
 
-  const variants = await makeVariants(data, c.get("locale"));
+  const variants = await makeVariants(data, c.get("locale"), c);
 
   const schedule = earliest(
     variants.map(({ defaultSchedule }) => defaultSchedule)
@@ -89,12 +99,14 @@ app.get("/products/:id/supabase", async (c) => {
 });
 
 app.get("/products/page-data/:code/supabase", async (c) => {
+  startTime(c, "db");
   const data = await getPage(c.req.param("code"));
+  endTime(c, "db");
   if (!data) return c.notFound();
 
   const { product, faviconFile: favicon, logoFile: logo, ...page } = data;
 
-  const variants = await makeVariants(product, c.get("locale"));
+  const variants = await makeVariants(product, c.get("locale"), c);
 
   const schedule = earliest(
     variants.map(({ defaultSchedule }) => defaultSchedule)
@@ -111,7 +123,9 @@ app.get("/products/page-data/:code/supabase", async (c) => {
 });
 
 app.get("/products/page-data/by-domain/:domain/supabase", async (c) => {
+  startTime(c, "db");
   const data = await getPage(c.req.param("domain"));
+  endTime(c, "db");
   if (!data) return c.notFound();
 
   return c.json({ pathname: data.pathname });
