@@ -5,22 +5,27 @@
   "license": "MIT",
   "scripts": {
     "dev:worker": "wrangler dev",
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy -e production",
+    "dev": "wrangler dev --remote --port 8787",
+    "deploy:preview": "wrangler deploy -e preview",
+    "deploy:prod": "wrangler deploy -e production",
+    "db:pull": "drizzle-kit introspect:pg",
     "test": "vitest"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230518.0",
     "@types/node": "^20.3.1",
+    "@types/pg": "^8.10.9",
+    "drizzle-kit": "^0.20.6",
     "prettier": "^2.8.8",
     "typescript": "^5.1.3",
-    "vite": "^4.3.9",
-    "vitest": "^0.32.2",
-    "wrangler": "^3.1.1"
+    "vite": "^5.0.5",
+    "vitest": "0.34.3",
+    "wrangler": "^3.19.0"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.26.0",
     "dayjs": "^1.11.8",
-    "hono": "^3.2.5"
+    "drizzle-orm": "^0.29.1",
+    "hono": "^3.11.3",
+    "pg": "^8.11.3"
   }
 }

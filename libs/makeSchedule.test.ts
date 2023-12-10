@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { earliest, latest, makeSchedule, Schedule } from "./makeSchedule";
+import { earliest, latest, makeSchedule } from "./makeSchedule";
 
 beforeEach(() => {
   vi.useFakeTimers();

@@ -1,93 +1,47 @@
 import {
   earliest,
   latest,
+  Locale,
   makeSchedule,
   makeScheduleFromDeliverySchedule,
   Schedule,
 } from "./makeSchedule";
-import { Database } from "../src/database.type";
-import { SupabaseClient } from "@supabase/supabase-js";
+import { getSKUs, Product, SKUs } from "../src/db";
+import { Context } from "hono";
+import { endTime, startTime } from "hono/timing";
 
-type Locale = "ja" | "en";
-
-type SKU = {
-  id: number;
-  code: string;
-  name: string;
-  subName: string;
-  displayName: string;
-  schedule: Schedule<false> | null;
-  availableStock: string;
-  sortNumber: number;
-};
-
-type CustomizedVariant = {
-  productId?: string;
+type MadeVariants = {
+  productId: string;
   variantId: string;
   variantName: string;
-  baseSKUs: SKU[];
-  selectableSKUs: SKU[];
+  skuLabel: string | null;
   skuSelectable: number;
-  skuLabel?: string | null;
+  selectableSKUs: MadeSKU[];
+  baseSKUs: MadeSKU[];
   defaultSchedule: Schedule<false> | null;
-};
-
-export type Variants =
-  (Database["public"]["Tables"]["ShopifyVariants"]["Row"] & {
-    ShopifyVariants_ShopifyCustomSKUs:
-      | {
-          id: number;
-          sort: number | null;
-          ShopifyCustomSKUs: Database["public"]["Tables"]["ShopifyCustomSKUs"]["Row"];
-        }[]
-      | null;
-  })[];
+}[];
 
 export const makeVariants = async (
-  product: Database["public"]["Tables"]["ShopifyProducts"]["Row"],
-  variants: Variants,
+  product: Product,
   locale: Locale,
-  supabaseClient: SupabaseClient<Database>
-): Promise<CustomizedVariant[]> => {
-  const skuCodes = [
-    ...new Set(variants.flatMap(({ skusJSON }) => sanitizeSkusJSON(skusJSON))),
-  ];
-  let skuMap = new Map<
-    string,
-    Database["public"]["Tables"]["ShopifyCustomSKUs"]["Row"]
-  >();
-  if (skuCodes.length) {
-    const { data } = await supabaseClient
-      .from("ShopifyCustomSKUs")
-      .select("*")
-      .in("code", skuCodes);
-    skuMap = new Map(data?.map((record) => [record.code, record]));
-  }
+  c: Context
+): Promise<MadeVariants> => {
+  const codes = product.variants.flatMap((item) =>
+    sanitizeSkusJSON(item.skusJson)
+  );
+  startTime(c, "db_sub");
+  const skus = codes.length ? await getSKUs(codes) : [];
+  endTime(c, "db_sub");
+  const skuMap = new Map<string, SKUs[number]>(
+    skus.map((sku) => [sku.code, sku])
+  );
 
-  return variants.map(
-    ({
-      variantId,
-      variantName,
-      customSelects,
-      skuLabel,
-      ShopifyVariants_ShopifyCustomSKUs: mapping,
-      skusJSON,
-    }) => {
-      const selectableSKUs =
-        mapping
-          ?.sort(({ sort: a, id: aId }, { sort: b, id: bId }) => {
-            return a === null && b === null
-              ? aId - bId
-              : a === null
-              ? 1
-              : b === null
-              ? -1
-              : a - b;
-          })
-          ?.map(({ ShopifyCustomSKUs }) =>
-            makeSKU(ShopifyCustomSKUs, locale)
-          ) ?? [];
-      const baseSKUs = sanitizeSkusJSON(skusJSON).flatMap((code) => {
+  return product.variants.map(
+    ({ variantId, variantName, customSelects, skuLabel, skus, skusJson }) => {
+      const selectableSKUs = skus.flatMap(({ sku }) =>
+        sku ? makeSKU(sku, locale) : []
+      );
+      const baseSKUs = sanitizeSkusJSON(skusJson).flatMap((code) => {
         const row = skuMap.get(code);
         return row ? makeSKU(row, locale) : [];
       });
@@ -113,6 +67,17 @@ export const makeVariants = async (
   );
 };
 
+type MadeSKU = {
+  id: number;
+  code: string;
+  name: string;
+  subName: string;
+  displayName: string;
+  schedule: Schedule<false> | null;
+  availableStock: string;
+  sortNumber: number;
+};
+
 export const makeSKU = (
   {
     id,
@@ -120,26 +85,15 @@ export const makeSKU = (
     name,
     subName,
     displayName,
-    availableStock,
     skipDeliveryCalc,
-    incomingStockDeliveryScheduleA,
-    incomingStockDeliveryScheduleB,
-    incomingStockDeliveryScheduleC,
+    crntInvOrderSKU,
     sortNumber,
-  }: Database["public"]["Tables"]["ShopifyCustomSKUs"]["Row"],
+  }: SKUs[number],
   locale: Locale
-): SKU => {
+): MadeSKU => {
   const deliverySchedule = skipDeliveryCalc
     ? null
-    : availableStock === "REAL"
-    ? null
-    : availableStock === "A"
-    ? incomingStockDeliveryScheduleA
-    : availableStock === "B"
-    ? incomingStockDeliveryScheduleB
-    : availableStock === "C"
-    ? incomingStockDeliveryScheduleC
-    : null;
+    : crntInvOrderSKU?.invOrder.deliverySchedule ?? null;
 
   return {
     id,
@@ -152,7 +106,7 @@ export const makeSKU = (
       // 本日ベースのスケジュールも入れて、誤って過去日がscheduleにならないようにする
       makeSchedule(null, locale),
     ]),
-    availableStock,
+    availableStock: crntInvOrderSKU?.invOrder.name ?? "REAL",
     sortNumber,
   };
 };
