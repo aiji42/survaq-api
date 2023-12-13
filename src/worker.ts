@@ -5,7 +5,7 @@ import { earliest, Locale, makeSchedule } from "../libs/makeSchedule";
 import { makeSKUCodes, makeVariants } from "../libs/makeVariants";
 import { Client, getClient } from "./db";
 import { makeSKUsForDelivery } from "../libs/makeSKUsForDelivery";
-import { endTime, startTime, timing } from "hono/timing";
+import { endTime, startTime, timing, setMetric } from "hono/timing";
 
 type Variables = {
   locale: Locale;
@@ -18,6 +18,8 @@ app.use("*", cors({ origin: "*", maxAge: 600 }));
 app.use("*", timing());
 
 app.use("/:top{(products|shopify)}/*", async (c, next) => {
+  setMetric(c, "colo", (c.req.raw.cf?.colo as string | undefined) ?? "");
+
   const client = getClient(
     // Hyperdriveはデプロイしないと使えなくなったので、開発中はc.env.DATABASE_URLを利用する
     c.env.HYPERDRIVE?.connectionString ?? c.env.DATABASE_URL
