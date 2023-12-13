@@ -77,7 +77,11 @@ app.get("products/:id/delivery", async (c) => {
 });
 
 app.get("/products/supabase", async (c) => {
-  return c.json(await getAllProducts());
+  startTime(c, "db");
+  const data = await getAllProducts();
+  endTime(c, "db");
+
+  return c.json(data);
 });
 
 app.get("/products/:id/supabase", async (c) => {
