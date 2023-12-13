@@ -1,7 +1,17 @@
-import { describe, expect, test } from "vitest";
-import { getAllPages, setClient } from "../src/db";
+import { afterAll, describe, expect, test } from "vitest";
+import { getClient } from "../src/db";
 
 describe("e2e", async () => {
+  const client = getClient(import.meta.env.VITE_DATABASE_URL);
+  const pages = await client.getAllPages();
+  const products: { productId: string }[] = await (
+    await fetch("https://api.survaq.com/products/supabase")
+  ).json();
+
+  afterAll(async () => {
+    await client.cleanUp();
+  });
+
   test("products list data path: /products/supabase", async () => {
     const production = await (
       await fetch("https://api.survaq.com/products/supabase")
@@ -12,10 +22,6 @@ describe("e2e", async () => {
 
     expect(production).toStrictEqual(development);
   });
-
-  const products: { productId: string }[] = await (
-    await fetch("https://api.survaq.com/products/supabase")
-  ).json();
 
   test.each(products)(
     "product funding data path: /products/$productId/funding",
@@ -84,9 +90,6 @@ describe("e2e", async () => {
       expect(production).toStrictEqual(development);
     }
   );
-
-  setClient(import.meta.env.VITE_DATABASE_URL);
-  const pages = await getAllPages();
 
   test.each(pages)(
     "page detail data path: /products/page-data/$pathname/supabase",

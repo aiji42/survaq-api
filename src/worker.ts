@@ -2,24 +2,14 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { Bindings } from "../bindings";
 import { earliest, Locale, makeSchedule } from "../libs/makeSchedule";
-import { makeVariants } from "../libs/makeVariants";
-import {
-  deleteVariantMany,
-  deleteVariantManyByProductId,
-  getAllProducts,
-  getPage,
-  getProduct,
-  getVariants,
-  insertProduct,
-  insertVariantMany,
-  setClient,
-  updateVariant,
-} from "./db";
+import { makeSKUCodes, makeVariants } from "../libs/makeVariants";
+import { Client, getClient } from "./db";
 import { makeSKUsForDelivery } from "../libs/makeSKUsForDelivery";
 import { endTime, startTime, timing } from "hono/timing";
 
 type Variables = {
   locale: Locale;
+  client: Client;
 };
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -28,10 +18,11 @@ app.use("*", cors({ origin: "*", maxAge: 600 }));
 app.use("*", timing());
 
 app.use("/:top{(products|shopify)}/*", async (c, next) => {
-  const pool = setClient(
+  const client = getClient(
     // Hyperdriveはデプロイしないと使えなくなったので、開発中はc.env.DATABASE_URLを利用する
     c.env.HYPERDRIVE?.connectionString ?? c.env.DATABASE_URL
   );
+  c.set("client", client);
 
   const locale = c.req.headers.get("accept-language")?.startsWith("en")
     ? "en"
@@ -43,10 +34,12 @@ app.use("/:top{(products|shopify)}/*", async (c, next) => {
   endTime(c, "main_process");
 
   // Hyperdrive を利用していなければ(dev環境) コネクションを切る
-  !c.env.HYPERDRIVE?.connectionString && c.executionCtx.waitUntil(pool.end());
+  !c.env.HYPERDRIVE?.connectionString &&
+    c.executionCtx.waitUntil(client.cleanUp());
 });
 
 app.get("products/:id/funding", async (c) => {
+  const { getProduct } = c.get("client");
   startTime(c, "db");
   const data = await getProduct(c.req.param("id"));
   endTime(c, "db");
@@ -62,12 +55,18 @@ app.get("products/:id/funding", async (c) => {
 });
 
 app.get("products/:id/delivery", async (c) => {
+  const { getProduct, getSKUs } = c.get("client");
   startTime(c, "db");
   const data = await getProduct(c.req.param("id"));
   endTime(c, "db");
   if (!data) return c.notFound();
 
-  const variants = await makeVariants(data, c.get("locale"), c);
+  const codes = makeSKUCodes(data);
+  startTime(c, "db_sku");
+  const skusData = codes.length ? await getSKUs(codes) : [];
+  endTime(c, "db_sku");
+
+  const variants = await makeVariants(data, skusData, c.get("locale"));
 
   const current = makeSchedule(null);
 
@@ -77,6 +76,7 @@ app.get("products/:id/delivery", async (c) => {
 });
 
 app.get("/products/supabase", async (c) => {
+  const { getAllProducts } = c.get("client");
   startTime(c, "db");
   const data = await getAllProducts();
   endTime(c, "db");
@@ -85,12 +85,18 @@ app.get("/products/supabase", async (c) => {
 });
 
 app.get("/products/:id/supabase", async (c) => {
+  const { getProduct, getSKUs } = c.get("client");
   startTime(c, "db");
   const data = await getProduct(c.req.param("id"));
   endTime(c, "db");
   if (!data) return c.notFound();
 
-  const variants = await makeVariants(data, c.get("locale"), c);
+  const codes = makeSKUCodes(data);
+  startTime(c, "db_sku");
+  const skusData = codes.length ? await getSKUs(codes) : [];
+  endTime(c, "db_sku");
+
+  const variants = await makeVariants(data, skusData, c.get("locale"));
 
   const schedule = earliest(
     variants.map(({ defaultSchedule }) => defaultSchedule)
@@ -103,6 +109,7 @@ app.get("/products/:id/supabase", async (c) => {
 });
 
 app.get("/products/page-data/:code/supabase", async (c) => {
+  const { getPage, getSKUs } = c.get("client");
   startTime(c, "db");
   const data = await getPage(c.req.param("code"));
   endTime(c, "db");
@@ -110,7 +117,12 @@ app.get("/products/page-data/:code/supabase", async (c) => {
 
   const { product, faviconFile: favicon, logoFile: logo, ...page } = data;
 
-  const variants = await makeVariants(product, c.get("locale"), c);
+  const codes = makeSKUCodes(product);
+  startTime(c, "db_sku");
+  const skusData = codes.length ? await getSKUs(codes) : [];
+  endTime(c, "db_sku");
+
+  const variants = await makeVariants(product, skusData, c.get("locale"));
 
   const schedule = earliest(
     variants.map(({ defaultSchedule }) => defaultSchedule)
@@ -127,6 +139,7 @@ app.get("/products/page-data/:code/supabase", async (c) => {
 });
 
 app.get("/products/page-data/by-domain/:domain/supabase", async (c) => {
+  const { getPage } = c.get("client");
   startTime(c, "db");
   const data = await getPage(c.req.param("domain"));
   endTime(c, "db");
@@ -148,6 +161,15 @@ type ShopifyProduct = {
 };
 
 app.post("/shopify/product", async (c) => {
+  const {
+    getProduct,
+    insertProduct,
+    getVariants,
+    insertVariantMany,
+    deleteVariantMany,
+    deleteVariantManyByProductId,
+    updateVariant,
+  } = c.get("client");
   try {
     const data = await c.req.json<ShopifyProduct>();
     console.log(data);

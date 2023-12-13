@@ -6,9 +6,7 @@ import {
   makeScheduleFromDeliverySchedule,
   Schedule,
 } from "./makeSchedule";
-import { getSKUs, Product, SKUs } from "../src/db";
-import { Context } from "hono";
-import { endTime, startTime } from "hono/timing";
+import { Product, SKUs } from "../src/db";
 
 type MadeVariants = {
   productId: string;
@@ -21,17 +19,15 @@ type MadeVariants = {
   defaultSchedule: Schedule<false> | null;
 }[];
 
+export const makeSKUCodes = (product: Product) => {
+  return product.variants.flatMap((item) => sanitizeSkusJSON(item.skusJson));
+};
+
 export const makeVariants = async (
   product: Product,
-  locale: Locale,
-  c: Context
+  skus: SKUs,
+  locale: Locale
 ): Promise<MadeVariants> => {
-  const codes = product.variants.flatMap((item) =>
-    sanitizeSkusJSON(item.skusJson)
-  );
-  startTime(c, "db_sub");
-  const skus = codes.length ? await getSKUs(codes) : [];
-  endTime(c, "db_sub");
   const skuMap = new Map<string, SKUs[number]>(
     skus.map((sku) => [sku.code, sku])
   );
