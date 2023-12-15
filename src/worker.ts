@@ -22,7 +22,8 @@ app.use("/:top{(products|shopify)}/*", async (c, next) => {
 
   const client = getClient(
     // Hyperdriveはデプロイしないと使えなくなったので、開発中はc.env.DATABASE_URLを利用する
-    c.env.HYPERDRIVE?.connectionString ?? c.env.DATABASE_URL
+    // c.env.HYPERDRIVE?.connectionString ??
+    c.env.DATABASE_URL
   );
   c.set("client", client);
 
@@ -36,8 +37,9 @@ app.use("/:top{(products|shopify)}/*", async (c, next) => {
   endTime(c, "main_process");
 
   // Hyperdrive を利用していなければ(dev環境) コネクションを切る
-  !c.env.HYPERDRIVE?.connectionString &&
-    c.executionCtx.waitUntil(client.cleanUp());
+  // pgBouncerを信じてコネクションを切らずに頑張る
+  // !c.env.HYPERDRIVE?.connectionString &&
+  //   c.executionCtx.waitUntil(client.cleanUp());
 });
 
 app.get("products/:id/funding", async (c) => {
