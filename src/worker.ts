@@ -74,7 +74,8 @@ app.get("products/:id/delivery", async (c) => {
 
   const current = makeSchedule(null);
 
-  const skus = makeSKUsForDelivery(variants);
+  const filterDelaying = !(c.req.query("filter") === "false");
+  const skus = makeSKUsForDelivery(variants, filterDelaying);
 
   return c.json({ current, skus });
 });

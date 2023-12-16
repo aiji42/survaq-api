@@ -10,18 +10,19 @@ type SKUsForDelivery = Array<{
 }>;
 
 export const makeSKUsForDelivery = (
-  variants: Awaited<ReturnType<typeof makeVariants>>
+  variants: Awaited<ReturnType<typeof makeVariants>>,
+  filterDelaying = true
 ): SKUsForDelivery => {
   const earliestSchedule = makeSchedule(null);
 
   return variants
     .flatMap(({ baseSKUs, selectableSKUs }) => [...baseSKUs, ...selectableSKUs])
     .reduce<SKUsForDelivery>((acc, sku) => {
+      const schedule = sku.schedule ?? earliestSchedule;
       if (
         acc.find(({ code }) => code === sku.code) ||
-        !sku.schedule ||
         // 現在時点基準よりも以前にスケジュールが組まれているものは除く
-        sku.schedule.numeric <= earliestSchedule.numeric
+        (filterDelaying && schedule.numeric <= earliestSchedule.numeric)
       )
         return acc;
       return [
@@ -30,7 +31,7 @@ export const makeSKUsForDelivery = (
           id: sku.id,
           code: sku.code,
           name: sku.displayName || sku.name,
-          schedule: sku.schedule,
+          schedule,
           sortNumber: sku.sortNumber,
         },
       ];
