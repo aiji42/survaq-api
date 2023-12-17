@@ -34,10 +34,17 @@
   resolved "https://registry.yarnpkg.com/@cloudflare/workerd-windows-64/-/workerd-windows-64-1.20231030.0.tgz#d1aba21f13ec65f00d1009e0686a1a8ec6c1f8dd"
   integrity sha512-fb/Jgj8Yqy3PO1jLhk7mTrHMkR8jklpbQFud6rL/aMAn5d6MQbaSrYOCjzkKGp0Zng8D2LIzSl+Fc0C9Sggxjg==
 
-"@cloudflare/workers-types@^4.20230518.0":
-  version "4.20230518.0"
-  resolved "https://registry.yarnpkg.com/@cloudflare/workers-types/-/workers-types-4.20230518.0.tgz#de1b0f71d68e2eac1b546542968ea2b837cb967e"
-  integrity sha512-A0w1V+5SUawGaaPRlhFhSC/SCDT9oQG8TMoWOKFLA4qbqagELqEAFD4KySBIkeVOvCBLT1DZSYBMCxbXddl0kw==
+"@cloudflare/workers-types@^4.20231218.0":
+  version "4.20231218.0"
+  resolved "https://registry.yarnpkg.com/@cloudflare/workers-types/-/workers-types-4.20231218.0.tgz#3deac906c68aa5c8d8cdefe828146215eed6804c"
+  integrity sha512-Vs1FKjfUjXYGbCsXzkl+ITp0Iyb6QiW6+vTERTNThC+v96T0IvPVAioH4tT20rXwoxAfxh380mAaxYtTrJUNVg==
+
+"@cspotcode/source-map-support@0.8.1":
+  version "0.8.1"
+  resolved "https://registry.yarnpkg.com/@cspotcode/source-map-support/-/source-map-support-0.8.1.tgz#00629c35a688e05a88b1cda684fb9d5e73f000a1"
+  integrity sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==
+  dependencies:
+    "@jridgewell/trace-mapping" "0.3.9"
 
 "@drizzle-team/studio@^0.0.35":
   version "0.0.35"
@@ -417,10 +424,23 @@
   dependencies:
     "@sinclair/typebox" "^0.27.8"
 
-"@jridgewell/sourcemap-codec@^1.4.15":
+"@jridgewell/resolve-uri@^3.0.3":
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/@jridgewell/resolve-uri/-/resolve-uri-3.1.1.tgz#c08679063f279615a3326583ba3a90d1d82cc721"
+  integrity sha512-dSYZh7HhCDtCKm4QakX0xFpsRDqjjtZf/kjI/v3T3Nwt5r8/qz/M19F9ySyOqU94SXBmeG9ttTul+YnR4LOxFA==
+
+"@jridgewell/sourcemap-codec@^1.4.10", "@jridgewell/sourcemap-codec@^1.4.15":
   version "1.4.15"
   resolved "https://registry.yarnpkg.com/@jridgewell/sourcemap-codec/-/sourcemap-codec-1.4.15.tgz#d7c6e6755c78567a951e04ab52ef0fd26de59f32"
   integrity sha512-eF2rxCRulEKXHTRiDrDy6erMYWqNw4LPdQ8UQA4huuxaQsVeRPFl2oM8oDGxMFhJUWZf9McpLtJasDDZb/Bpeg==
+
+"@jridgewell/trace-mapping@0.3.9":
+  version "0.3.9"
+  resolved "https://registry.yarnpkg.com/@jridgewell/trace-mapping/-/trace-mapping-0.3.9.tgz#6534fd5933a53ba7cbf3a17615e273a0d1273ff9"
+  integrity sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==
+  dependencies:
+    "@jridgewell/resolve-uri" "^3.0.3"
+    "@jridgewell/sourcemap-codec" "^1.4.10"
 
 "@rollup/rollup-android-arm-eabi@4.6.1":
   version "4.6.1"
@@ -506,10 +526,12 @@
   dependencies:
     undici-types "~5.26.4"
 
-"@types/node@^20.3.1":
-  version "20.3.1"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.3.1.tgz#e8a83f1aa8b649377bb1fb5d7bac5cb90e784dfe"
-  integrity sha512-EhcH/wvidPy1WeML3TtYFGR83UzjxeWRen9V402T8aUGYsCHOmfoisV3ZSg03gAFIbLq8TnWOJ0f4cALtnSEUg==
+"@types/node@^20.10.5":
+  version "20.10.5"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.10.5.tgz#47ad460b514096b7ed63a1dae26fad0914ed3ab2"
+  integrity sha512-nNPsNE65wjMxEKI93yOP+NPGGBJz/PoN3kZsVLee0XMiJolxSekEVD8wRwBUBqkwc7UWop0edW50yrCQW4CyRw==
+  dependencies:
+    undici-types "~5.26.4"
 
 "@types/pg@^8.10.9":
   version "8.10.9"
@@ -741,10 +763,10 @@ data-uri-to-buffer@^2.0.0:
   resolved "https://registry.yarnpkg.com/data-uri-to-buffer/-/data-uri-to-buffer-2.0.2.tgz#d296973d5a4897a5dbe31716d118211921f04770"
   integrity sha512-ND9qDTLc6diwj+Xe5cdAgVTbLVdXbtxTJRXRhli8Mowuaan+0EJOtdqJ0QCHNSSPyoXGx9HX2/VMnKeC34AChA==
 
-dayjs@^1.11.8:
-  version "1.11.8"
-  resolved "https://registry.yarnpkg.com/dayjs/-/dayjs-1.11.8.tgz#4282f139c8c19dd6d0c7bd571e30c2d0ba7698ea"
-  integrity sha512-LcgxzFoWMEPO7ggRv1Y2N31hUf2R0Vj7fuy/m+Bg1K8rr+KAs1AEy4y9jd5DXe8pbHgX+srkHNS7TH6Q6ZhYeQ==
+dayjs@^1.11.10:
+  version "1.11.10"
+  resolved "https://registry.yarnpkg.com/dayjs/-/dayjs-1.11.10.tgz#68acea85317a6e164457d6d6947564029a6a16a0"
+  integrity sha512-vjAczensTgRcqDERK0SR2XMwsF/tSvnvlv6VcF2GIhg6Sx4yOIt/irsr1RDJsKiIyBzJDpCoXiWWq28MqH2cnQ==
 
 debug@^4.3.1, debug@^4.3.4:
   version "4.3.4"
@@ -779,10 +801,10 @@ dreamopt@~0.8.0:
   dependencies:
     wordwrap ">=0.0.2"
 
-drizzle-kit@^0.20.6:
-  version "0.20.6"
-  resolved "https://registry.yarnpkg.com/drizzle-kit/-/drizzle-kit-0.20.6.tgz#d6d5a47f0905cff7dbf075daa019e5209169ed9c"
-  integrity sha512-+AYQY+tJUnfMJYIeh6aEjI21mpMCekqz0LEu2QdFdc/3zSmjyfEhH5dkXlRFME8v1rtisiHfp7bP+gVVKDPiUg==
+drizzle-kit@^0.20.7:
+  version "0.20.7"
+  resolved "https://registry.yarnpkg.com/drizzle-kit/-/drizzle-kit-0.20.7.tgz#61ca8953ceb8c199d94364d65771b33b090122e7"
+  integrity sha512-3LjTvgVAI1jd3JHLG2tMW5ew49NuD7SMymRv+h9xUxb/geS+U/O1yENni0HhyjZH+Gc8hdStL9v1xY9Ob3s3/g==
   dependencies:
     "@drizzle-team/studio" "^0.0.35"
     "@esbuild-kit/esm-loader" "^2.5.5"
@@ -1044,10 +1066,10 @@ hanji@^0.0.5:
   resolved "https://registry.yarnpkg.com/heap/-/heap-0.2.7.tgz#1e6adf711d3f27ce35a81fe3b7bd576c2260a8fc"
   integrity sha512-2bsegYkkHO+h/9MGbn6KWcE45cHZgPANo5LXF7EvWdT0yT2EguSVO1nDgU5c8+ZOPwp2vMNa7YFsJhVcDR9Sdg==
 
-hono@^3.11.3:
-  version "3.11.3"
-  resolved "https://registry.yarnpkg.com/hono/-/hono-3.11.3.tgz#e6f8bcc4827c40c0db128d44665492db96caccc8"
-  integrity sha512-MWYBcIS4dZJo9e/852Zwl+gqBiUSRknMOZ/MbW7kW8JiWixTJ58pzXVIeBq7jnvFq3AZ9uQ35QyVpzV05sdNFw==
+hono@^3.11.9:
+  version "3.11.9"
+  resolved "https://registry.yarnpkg.com/hono/-/hono-3.11.9.tgz#0495490442e51dac764c9064c1dfe5a6f444aeaf"
+  integrity sha512-vjwVHw/y9xXPf7a87XjAPE9d3NFLyDiDBHmTU5SsGiJoe4BSiU/Yiu5UB9orhP+YGkSwD7fzXmuG7lpvKnr15w==
 
 inflight@^1.0.4:
   version "1.0.6"
@@ -1178,6 +1200,24 @@ miniflare@3.20231030.3:
   version "3.20231030.3"
   resolved "https://registry.yarnpkg.com/miniflare/-/miniflare-3.20231030.3.tgz#e6acd6fea11a53c33ff6a9c0c1a1e38146fb3ab5"
   integrity sha512-lquHSh0XiO8uoWDujOLHtDS9mkUTJTc5C5amiQ6A++5y0f+DWiMqbDBvvwjlYf4Dvqk6ChFya9dztk7fg2ZVxA==
+  dependencies:
+    acorn "^8.8.0"
+    acorn-walk "^8.2.0"
+    capnp-ts "^0.7.0"
+    exit-hook "^2.2.1"
+    glob-to-regexp "^0.4.1"
+    source-map-support "0.5.21"
+    stoppable "^1.1.0"
+    undici "^5.22.1"
+    workerd "1.20231030.0"
+    ws "^8.11.0"
+    youch "^3.2.2"
+    zod "^3.20.6"
+
+miniflare@3.20231030.4:
+  version "3.20231030.4"
+  resolved "https://registry.yarnpkg.com/miniflare/-/miniflare-3.20231030.4.tgz#309b76f4dd1198504bc5b3be7fcdc35876797464"
+  integrity sha512-7MBz0ArLuDop1WJGZC6tFgN6c5MRyDOIlxbm3yp0TRBpvDS/KsTuWCQcCjsxN4QQ5zvL3JTkuIZbQzRRw/j6ow==
   dependencies:
     acorn "^8.8.0"
     acorn-walk "^8.2.0"
@@ -1687,10 +1727,10 @@ type@^2.7.2:
   resolved "https://registry.yarnpkg.com/type/-/type-2.7.2.tgz#2376a15a3a28b1efa0f5350dcf72d24df6ef98d0"
   integrity sha512-dzlvlNlt6AXU7EBSfpAscydQ7gXB+pPGsPnfJnZpiNJBDj7IaJzQlBZYGdEi4R9HmPdBv2XmWJ6YUtoTa7lmCw==
 
-typescript@^5.1.3:
-  version "5.1.3"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.1.3.tgz#8d84219244a6b40b6fb2b33cc1c062f715b9e826"
-  integrity sha512-XH627E9vkeqhlZFQuL+UsyAXEnibT0kWR2FWONlr4sTjvxyJYnyefgrkyECLzM5NenmKzRAy2rR/OlYLA1HkZw==
+typescript@^5.3.3:
+  version "5.3.3"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.3.3.tgz#b3ce6ba258e72e6305ba66f5c9b452aaee3ffe37"
+  integrity sha512-pXWcraxM0uxAS+tN0AG/BF2TyqmHO014Z070UsJ+pFvYuRSq8KH8DmWpnbXe0pEPDHXZV3FcAbJkijJ5oNEnWw==
 
 ufo@^1.1.2:
   version "1.1.2"
@@ -1737,10 +1777,10 @@ vite-node@0.34.3:
   optionalDependencies:
     fsevents "~2.3.2"
 
-vite@^5.0.5:
-  version "5.0.5"
-  resolved "https://registry.yarnpkg.com/vite/-/vite-5.0.5.tgz#3eebe3698e3b32cea36350f58879258fec858a3c"
-  integrity sha512-OekeWqR9Ls56f3zd4CaxzbbS11gqYkEiBtnWFFgYR2WV8oPJRRKq0mpskYy/XaoCL3L7VINDhqqOMNDiYdGvGg==
+vite@^5.0.10:
+  version "5.0.10"
+  resolved "https://registry.yarnpkg.com/vite/-/vite-5.0.10.tgz#1e13ef5c3cf5aa4eed81f5df6d107b3c3f1f6356"
+  integrity sha512-2P8J7WWgmc355HUMlFrwofacvr98DAjoE52BfdbwQtyLH06XKwaL/FMnmKM2crF0iX4MpmMKoDlNCB1ok7zHCw==
   dependencies:
     esbuild "^0.19.3"
     postcss "^8.4.32"
@@ -1802,7 +1842,29 @@ workerd@1.20231030.0:
     "@cloudflare/workerd-linux-arm64" "1.20231030.0"
     "@cloudflare/workerd-windows-64" "1.20231030.0"
 
-wrangler@^3.19.0, wrangler@^3.7.0:
+wrangler@^3.22.1:
+  version "3.22.1"
+  resolved "https://registry.yarnpkg.com/wrangler/-/wrangler-3.22.1.tgz#402c77db861a3d90d5755129bd45d6fd618199b8"
+  integrity sha512-fN7WOF6Ono/TV5V90PuJQNf0azS7B+5C/N/KRjqhlAIQBz+c0yLOGkF6kC/akxjr1yIAC9AzcPk9+OuTSq0C+g==
+  dependencies:
+    "@cloudflare/kv-asset-handler" "^0.2.0"
+    "@cspotcode/source-map-support" "0.8.1"
+    "@esbuild-plugins/node-globals-polyfill" "^0.2.3"
+    "@esbuild-plugins/node-modules-polyfill" "^0.2.2"
+    blake3-wasm "^2.1.5"
+    chokidar "^3.5.3"
+    esbuild "0.17.19"
+    miniflare "3.20231030.4"
+    nanoid "^3.3.3"
+    path-to-regexp "^6.2.0"
+    resolve.exports "^2.0.2"
+    selfsigned "^2.0.1"
+    source-map "0.6.1"
+    xxhash-wasm "^1.0.1"
+  optionalDependencies:
+    fsevents "~2.3.2"
+
+wrangler@^3.7.0:
   version "3.19.0"
   resolved "https://registry.yarnpkg.com/wrangler/-/wrangler-3.19.0.tgz#70ea02a842b0606b4bd82607df07db9872128a5e"
   integrity sha512-pY7xWqkQn6DJ+1vz9YHz2pCftEmK+JCTj9sqnucp0NZnlUiILDmBWegsjjCLZycgfiA62J213N7NvjLPr2LB8w==
