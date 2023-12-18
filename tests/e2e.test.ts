@@ -4,9 +4,9 @@ import { getClient } from "../src/db";
 describe("e2e", async () => {
   const client = getClient(import.meta.env.VITE_DATABASE_URL);
   const pages = await client.getAllPages();
-  const products: { productId: string }[] = await (
+  const products = (await (
     await fetch("https://api.survaq.com/products/supabase")
-  ).json();
+  ).json()) as { productId: string }[];
 
   afterAll(async () => {
     await client.cleanUp();
@@ -61,6 +61,26 @@ describe("e2e", async () => {
       ).json();
 
       expect(production).toStrictEqual(development);
+    }
+  );
+
+  test.each(products)(
+    "product delivery schedule data path: /products/$productId/delivery with filter query",
+    async ({ productId }) => {
+      let production = await (
+        await fetch(
+          `https://api.survaq.com/products/${productId}/delivery?filter=false`
+        )
+      ).json();
+      let development = await (
+        await fetch(
+          `http://0.0.0.0:8787/products/${productId}/delivery?filter=false`
+        )
+      ).json();
+
+      expect(production).toStrictEqual(development);
+
+      // ...skip en
     }
   );
 
