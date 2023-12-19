@@ -72,6 +72,7 @@ type MadeSKU = {
   schedule: Schedule<false> | null;
   availableStock: string;
   sortNumber: number;
+  skipDeliveryCalc: boolean;
 };
 
 export const makeSKU = (
@@ -104,6 +105,7 @@ export const makeSKU = (
     ]),
     availableStock: crntInvOrderSKU?.invOrder.name ?? "REAL",
     sortNumber,
+    skipDeliveryCalc: skipDeliveryCalc ?? false,
   };
 };
 
