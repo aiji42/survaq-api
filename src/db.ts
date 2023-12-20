@@ -74,14 +74,14 @@ export const getClient = (url: string) => {
     },
 
     insertVariantMany: (
-      data: PgInsertValue<typeof schema.shopifyVariants>[]
+      data: PgInsertValue<typeof schema.shopifyVariants>[],
     ) => {
       return client.insert(schema.shopifyVariants).values(
         data.map((item) => ({
           ...item,
           updatedAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),
-        }))
+        })),
       );
     },
 
@@ -99,7 +99,7 @@ export const getClient = (url: string) => {
 
     updateVariant: (
       variantId: string,
-      data: PgUpdateSetSource<typeof schema.shopifyVariants>
+      data: PgUpdateSetSource<typeof schema.shopifyVariants>,
     ) => {
       return client
         .update(schema.shopifyVariants)
@@ -136,7 +136,7 @@ export const getClient = (url: string) => {
       return client.query.shopifyPages.findFirst({
         where: or(
           eq(schema.shopifyPages.pathname, pathnameOrDomain),
-          eq(schema.shopifyPages.domain, pathnameOrDomain)
+          eq(schema.shopifyPages.domain, pathnameOrDomain),
         ),
         with: {
           logoFile: {

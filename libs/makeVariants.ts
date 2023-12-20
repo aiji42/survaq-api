@@ -26,16 +26,16 @@ export const makeSKUCodes = (product: Product) => {
 export const makeVariants = async (
   product: Product,
   skus: SKUs,
-  locale: Locale
+  locale: Locale,
 ): Promise<MadeVariants> => {
   const skuMap = new Map<string, SKUs[number]>(
-    skus.map((sku) => [sku.code, sku])
+    skus.map((sku) => [sku.code, sku]),
   );
 
   return product.variants.map(
     ({ variantId, variantName, customSelects, skuLabel, skus, skusJson }) => {
       const selectableSKUs = skus.flatMap(({ sku }) =>
-        sku ? makeSKU(sku, locale) : []
+        sku ? makeSKU(sku, locale) : [],
       );
       const baseSKUs = sanitizeSkusJSON(skusJson).flatMap((code) => {
         const row = skuMap.get(code);
@@ -59,7 +59,7 @@ export const makeVariants = async (
         baseSKUs,
         defaultSchedule,
       };
-    }
+    },
   );
 };
 
@@ -86,7 +86,7 @@ export const makeSKU = (
     crntInvOrderSKU,
     sortNumber,
   }: SKUs[number],
-  locale: Locale
+  locale: Locale,
 ): MadeSKU => {
   const deliverySchedule = skipDeliveryCalc
     ? null

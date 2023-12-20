@@ -446,7 +446,7 @@ describe("locale en", () => {
           makeSchedule("2023-12-early"),
           makeSchedule("2024-01-late"),
           makeSchedule("2024-01-early"),
-        ])
+        ]),
       ).toEqual(makeSchedule("2024-01-late"));
     });
 
@@ -460,7 +460,7 @@ describe("locale en", () => {
           makeSchedule("2023-12-early"),
           makeSchedule("2024-01-late"),
           makeSchedule("2024-01-early"),
-        ])
+        ]),
       ).toEqual(makeSchedule("2024-01-late"));
     });
 
@@ -474,7 +474,7 @@ describe("locale en", () => {
           makeSchedule("2023-12-early"),
           makeSchedule("2024-01-late"),
           makeSchedule("2024-01-early"),
-        ])
+        ]),
       ).toEqual(null);
     });
 
@@ -485,7 +485,7 @@ describe("locale en", () => {
           makeSchedule("2023-12-early"),
           makeSchedule("2024-01-late"),
           makeSchedule("2023-01-early"),
-        ])
+        ]),
       ).toEqual(makeSchedule("2023-01-early"));
     });
 
@@ -499,7 +499,7 @@ describe("locale en", () => {
           makeSchedule("2023-12-early"),
           makeSchedule("2024-01-late"),
           makeSchedule("2023-01-early"),
-        ])
+        ]),
       ).toEqual(null);
     });
   });

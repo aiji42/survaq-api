@@ -23,7 +23,7 @@ app.use("/:top{(products|shopify)}/*", async (c, next) => {
   const client = getClient(
     // Hyperdriveはデプロイしないと使えなくなったので、開発中はc.env.DATABASE_URLを利用する
     // c.env.HYPERDRIVE?.connectionString ??
-    c.env.DATABASE_URL
+    c.env.DATABASE_URL,
   );
   c.set("client", client);
 
@@ -104,7 +104,7 @@ app.get("/products/:id/supabase", async (c) => {
   const variants = await makeVariants(data, skusData, c.get("locale"));
 
   const schedule = earliest(
-    variants.map(({ defaultSchedule }) => defaultSchedule)
+    variants.map(({ defaultSchedule }) => defaultSchedule),
   );
 
   return c.json({
@@ -130,7 +130,7 @@ app.get("/products/page-data/:code/supabase", async (c) => {
   const variants = await makeVariants(product, skusData, c.get("locale"));
 
   const schedule = earliest(
-    variants.map(({ defaultSchedule }) => defaultSchedule)
+    variants.map(({ defaultSchedule }) => defaultSchedule),
   );
 
   return c.json({
@@ -194,7 +194,7 @@ app.post("/shopify/product", async (c) => {
     }
 
     const shopifyVariants = Object.fromEntries(
-      data.variants?.map(({ id, title }) => [String(id), title]) ?? []
+      data.variants?.map(({ id, title }) => [String(id), title]) ?? [],
     );
     const shopifyVariantIds = Object.keys(shopifyVariants);
 
@@ -209,13 +209,13 @@ app.post("/shopify/product", async (c) => {
 
       // FIXME: Object.groupByが来たらリファクタ
       const shouldInsertVariantIds = shopifyVariantIds.filter(
-        (id) => !cmsVariantIds.includes(id)
+        (id) => !cmsVariantIds.includes(id),
       );
       const shouldDeleteVariantIds = cmsVariantIds.filter(
-        (id) => !shopifyVariantIds.includes(id)
+        (id) => !shopifyVariantIds.includes(id),
       );
       const shouldUpdateVariantIds = shopifyVariantIds.filter((id) =>
-        cmsVariantIds.includes(id)
+        cmsVariantIds.includes(id),
       );
 
       if (shouldInsertVariantIds.length) {
@@ -229,7 +229,7 @@ app.post("/shopify/product", async (c) => {
             variantId,
             variantName,
             product: productRecordId,
-          }))
+          })),
         );
         console.log("inserted new variant record ids:", insertedVariants);
       }
@@ -248,8 +248,8 @@ app.post("/shopify/product", async (c) => {
         console.log("update variants", updateData);
         const updatedVariants = await Promise.all(
           updateData.map(async ({ variantId, variantName }) =>
-            updateVariant(variantId, { variantName })
-          )
+            updateVariant(variantId, { variantName }),
+          ),
         );
         console.log("updated variant record ids:", updatedVariants);
       }
@@ -259,9 +259,8 @@ app.post("/shopify/product", async (c) => {
     // バリエーション削除時に、SKU紐付け用の中間テーブルが残らないようにする
     if (data.status !== "active" && productRecordId) {
       console.log("delete variants by product record id", productRecordId);
-      const deletedVariants = await deleteVariantManyByProductId(
-        productRecordId
-      );
+      const deletedVariants =
+        await deleteVariantManyByProductId(productRecordId);
       console.log("deleted variant", deletedVariants.rowCount, "record(s)");
     }
 

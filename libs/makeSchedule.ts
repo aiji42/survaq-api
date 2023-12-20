@@ -29,19 +29,19 @@ export type Locale = "ja" | "en";
 type ResultType<T, W extends boolean> = T extends string
   ? Schedule<W>
   : T extends null
-  ? null
-  : never;
+    ? null
+    : never;
 
 export const makeScheduleFromDeliverySchedule = <T extends string | null>(
   str: T,
   locale: Locale,
-  withTexts: boolean = true
+  withTexts: boolean = true,
 ): ResultType<T, typeof withTexts> => {
   if (!str) return null as ResultType<T, typeof withTexts>;
   const [year, month, term] = str.split("-") as [
     string,
     string,
-    keyof typeof terms
+    keyof typeof terms,
   ];
   return schedule(year, month, term, locale, withTexts) as ResultType<
     T,
@@ -54,7 +54,7 @@ const schedule = <W extends boolean>(
   month: string | number,
   term: keyof typeof terms,
   locale: Locale,
-  withTexts: boolean = true
+  withTexts: boolean = true,
 ): Schedule<W> => {
   const texts = createScheduleTextArray(
     {
@@ -62,7 +62,7 @@ const schedule = <W extends boolean>(
       month,
       term,
     },
-    locale
+    locale,
   );
   const text = texts[0];
   if (!text) throw new Error();
@@ -89,10 +89,10 @@ const createScheduleTextArray = (
     term?: keyof typeof terms;
   },
   locale: "ja" | "en" = "ja",
-  size = 7
+  size = 7,
 ): string[] => {
   const begin = dayjs(
-    `${year}-${month}-${term === "late" ? 28 : term === "middle" ? 18 : 8}`
+    `${year}-${month}-${term === "late" ? 28 : term === "middle" ? 18 : 8}`,
   );
   return Array.from({ length: size }).map((_, index) => {
     const date = begin.add(-1 * index * 10, "days");
@@ -104,7 +104,7 @@ const yearMonthTerm = (
   year: number,
   monthIndex: number,
   date: number,
-  locale: "ja" | "en" = "ja"
+  locale: "ja" | "en" = "ja",
 ) => {
   if (locale === "ja")
     return `${year}年${monthIndex + 1}月${
@@ -120,7 +120,7 @@ const monthWithDateRange = (
   year: number,
   monthIndex: number,
   term: keyof typeof terms,
-  locale: "ja" | "en" = "ja"
+  locale: "ja" | "en" = "ja",
 ) => {
   const month = monthIndex + 1;
   const daysInMonth = dayjs(new Date(year, monthIndex, 1)).daysInMonth();
@@ -151,14 +151,14 @@ const months = [
 export const makeSchedule = (
   customSchedule: string | null,
   locale: Locale = "ja",
-  withTexts: boolean = true
+  withTexts: boolean = true,
 ): Schedule<typeof withTexts> => {
   let scheduleMadeByCustom: undefined | Schedule<true>;
   if (customSchedule) {
     scheduleMadeByCustom = makeScheduleFromDeliverySchedule(
       customSchedule,
       locale,
-      withTexts
+      withTexts,
     );
   }
   const date = dayjs().tz();

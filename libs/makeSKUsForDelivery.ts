@@ -12,7 +12,7 @@ type SKUsForDelivery = Array<{
 
 export const makeSKUsForDelivery = (
   variants: Awaited<ReturnType<typeof makeVariants>>,
-  onlyDelaying = true
+  onlyDelaying = true,
 ): SKUsForDelivery => {
   const earliestSchedule = makeSchedule(null);
 
