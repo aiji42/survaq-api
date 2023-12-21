@@ -1,23 +1,13 @@
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { Bindings } from "../bindings";
-import { earliest, Locale, makeSchedule } from "../libs/makeSchedule";
+import { earliest, makeSchedule } from "../libs/makeSchedule";
 import { makeSKUCodes, makeVariants } from "../libs/makeVariants";
-import { Client, getClient } from "./db";
+import { getClient } from "./db";
 import { makeSKUsForDelivery } from "../libs/makeSKUsForDelivery";
 import { endTime, startTime, timing, setMetric } from "hono/timing";
-
-type Variables = {
-  locale: Locale;
-  client: Client;
-};
-
-const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
-
-app.use("*", cors({ origin: "*", maxAge: 600 }));
-app.use("*", timing());
+import "./sandobox/wc-preview";
+import app from "./app";
 
 app.use("/:top{(products|shopify)}/*", async (c, next) => {
+  // @ts-ignore
   setMetric(c, "colo", (c.req.raw.cf?.colo as string | undefined) ?? "");
 
   const client = getClient(

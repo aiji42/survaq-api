@@ -9,7 +9,8 @@
     "deploy:preview": "wrangler deploy -e preview",
     "deploy:prod": "wrangler deploy -e production",
     "db:pull": "drizzle-kit introspect:pg",
-    "test": "vitest"
+    "test": "vitest",
+    "build:wc": "vite build"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231218.0",
@@ -26,6 +27,7 @@
     "dayjs": "^1.11.10",
     "drizzle-orm": "^0.29.1",
     "hono": "^3.11.9",
+    "lit": "^3.1.0",
     "pg": "^8.11.3"
   }
 }

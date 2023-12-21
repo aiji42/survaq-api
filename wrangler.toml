@@ -3,6 +3,9 @@ main = "src/worker.ts"
 compatibility_date = "2023-12-07"
 node_compat = true
 
+[site]
+bucket = "./assets"
+
 # devではhyperdriveが利用できなくなってしまった
 # In development, you should use a local postgres connection string to emulate hyperdrive functionality.
 # Please setup postgres locally and set the value of "HYPERDRIVE"'s "localConnectionString" to the postgres connection string in your wrangler.toml
