@@ -1,5 +1,5 @@
 import type { FC } from "hono/jsx";
-import app from "../app";
+import { Hono } from "hono";
 
 const Layout: FC = ({ children }) => {
   return (
@@ -22,6 +22,10 @@ export const Preview = () => {
   );
 };
 
-app.get("/sandbox/wc-preview", (c) => {
+const app = new Hono();
+
+app.get("/wc-preview", (c) => {
   return c.html(<Preview />);
 });
+
+export default app;

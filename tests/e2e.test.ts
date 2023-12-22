@@ -1,23 +1,23 @@
 import { afterAll, describe, expect, test } from "vitest";
-import { getClient } from "../src/db";
+import { getClient } from "../src/libs/db";
 
 describe("e2e", async () => {
   const client = getClient(import.meta.env.VITE_DATABASE_URL);
   const pages = await client.getAllPages();
   const products = (await (
-    await fetch("https://api.survaq.com/products/supabase")
+    await fetch("http://0.0.0.0:8787/products")
   ).json()) as { productId: string }[];
 
   afterAll(async () => {
     await client.cleanUp();
   });
 
-  test("products list data path: /products/supabase", async () => {
+  test("products list data path: /products", async () => {
     const production = await (
-      await fetch("https://api.survaq.com/products/supabase")
+      await fetch("https://api.survaq.com/products")
     ).json();
     const development = await (
-      await fetch("http://0.0.0.0:8787/products/supabase")
+      await fetch("http://0.0.0.0:8787/products")
     ).json();
 
     expect(production).toStrictEqual(development);

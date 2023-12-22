@@ -1,7 +1,7 @@
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
-import * as base from "../drizzle/schema";
-import * as relations from "../drizzle/relations";
+import * as base from "../../drizzle/schema";
+import * as relations from "../../drizzle/relations";
 import { eq, or, inArray } from "drizzle-orm";
 import { PgInsertValue, PgUpdateSetSource } from "drizzle-orm/pg-core";
 

@@ -6,7 +6,7 @@ import {
   makeScheduleFromDeliverySchedule,
   Schedule,
 } from "./makeSchedule";
-import { Product, SKUs } from "../src/db";
+import { Product, SKUs } from "./db";
 
 type MadeVariants = {
   productId: string;

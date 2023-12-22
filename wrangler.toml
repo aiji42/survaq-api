@@ -1,5 +1,5 @@
 name = "survaq-api"
-main = "src/worker.ts"
+main = "src/entry.ts"
 compatibility_date = "2023-12-07"
 node_compat = true
 
