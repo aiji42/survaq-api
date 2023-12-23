@@ -46,24 +46,26 @@ class SurvaqDeliverySchedule extends BaseLitElement {
       pending: () => html``,
       complete: (product) => {
         const hasDelayed = product.skus.some(({ delaying }) => delaying);
+        if (this.hideWhenNoDelay && !hasDelayed) return null;
         return html`<div class="pb-4">
-          ${hasDelayed &&
-          html`
-            <p
-              class="text-slate-800 text-center text-sm font-bold block p-1 my-1 mx-0 border-y-4 border-double border-gray-400"
-            >
-              <span class="inline-block">下記商品につきましては、</span>
-              <span class="inline-block">
-                ${product.current.text.slice(5)}発送分の在庫が完売のため
-              </span>
-              <span class="inline-block">発送時期が異なります。</span>
-            </p>
-          `}
+          ${hasDelayed
+            ? html`
+                <p
+                  class="text-slate-700 text-center text-sm font-bold block p-1 my-1 mx-0 border-y-4 border-double border-gray-400"
+                >
+                  <span class="inline-block">下記商品につきましては、</span>
+                  <span class="inline-block">
+                    ${product.current.text.slice(5)}発送分の在庫が完売のため
+                  </span>
+                  <span class="inline-block">発送時期が異なります。</span>
+                </p>
+              `
+            : null}
           <table class="w-full">
             <thead></thead>
             <tbody>
               ${product.skus.map(
-                (sku) =>
+                (sku, index) =>
                   html`<tr>
                     <th
                       class="bg-neutral-400 p-2 text-white text-xs border-y border-white min-w-38 sm:w-52 w-40"
@@ -71,20 +73,20 @@ class SurvaqDeliverySchedule extends BaseLitElement {
                       <span>${unsafeHTML(sku.name)}</span>
                     </th>
                     <td
-                      class="p-1 text-center font-bold text-gray-800 border-y border-gray-400"
+                      class="p-1 text-center font-bold text-slate-700 border-y border-neutral-400 pt-1 pb-2"
                     >
-                      <p class="text-xl text-red-500 m-0">
+                      <p class="text-2xl text-red-500 m-0">
                         ${!sku.delaying ? "◎" : "△"}
                       </p>
-                      <span class="text-xs">
+                      <p class="text-xs leading-none">
                         ${sku.schedule.text.slice(5)}発送予定
-                      </span>
+                      </p>
                     </td>
                   </tr>`,
               )}
             </tbody>
           </table>
-          <p class="my-1 text-center text-xs">
+          <p class="my-1 text-center text-xs text-slate-700">
             ◎：在庫あり｜△：残りわずか｜×：完売
           </p>
         </div>`;
