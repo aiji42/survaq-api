@@ -1,14 +1,16 @@
-import { LitElement, html } from "lit";
+import { html } from "lit";
 import { Task } from "@lit/task";
 import { customElement, property } from "lit/decorators.js";
+import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { hc } from "hono/client";
 import { deliveryRoute } from "../routes/_apis/products";
+import { BaseLitElement } from "./BaseLitElement";
 
 // TODO: 本番と開発と分けたい
-const client = hc<typeof deliveryRoute>("http://localhost:8787/products/");
+const client = hc<typeof deliveryRoute>("https://api.survaq.com/products/");
 
 @customElement("survaq-delivery-schedule")
-class SurvaqDeliverySchedule extends LitElement {
+class SurvaqDeliverySchedule extends BaseLitElement {
   @property() productId?: string;
   @property({ type: Boolean }) delayedOnly: boolean = false;
   @property({ type: Boolean }) hideWhenNoDelay: boolean = false;
@@ -44,37 +46,45 @@ class SurvaqDeliverySchedule extends LitElement {
       pending: () => html``,
       complete: (product) => {
         const hasDelayed = product.skus.some(({ delaying }) => delaying);
-        return html`<div class="schedule_wrapper__NN_1_">
+        return html`<div class="pb-4">
           ${hasDelayed &&
           html`
-            <p class="schedule_message___KURN">
-              <span>下記商品につきましては、</span>
-              <span>${product.current.text}発送分の在庫が完売のため</span>
-              <span>発送時期が異なります。</span>
+            <p
+              class="text-slate-800 text-center text-sm font-bold block p-1 my-1 mx-0 border-y-4 border-double border-gray-400"
+            >
+              <span class="inline-block">下記商品につきましては、</span>
+              <span class="inline-block">
+                ${product.current.text.slice(5)}発送分の在庫が完売のため
+              </span>
+              <span class="inline-block">発送時期が異なります。</span>
             </p>
           `}
-          <table class="schedule_table__4bbMs">
+          <table class="w-full">
             <thead></thead>
             <tbody>
               ${product.skus.map(
                 (sku) =>
                   html`<tr>
-                    <th class="schedule_rowHead__IE4_6">
-                      <span>${sku.name}</span>
+                    <th
+                      class="bg-neutral-400 p-2 text-white text-xs border-y border-white min-w-38 sm:w-52 w-40"
+                    >
+                      <span>${unsafeHTML(sku.name)}</span>
                     </th>
-                    <td>
-                      <p class="schedule_icon__XmjaK">
+                    <td
+                      class="p-1 text-center font-bold text-gray-800 border-y border-gray-400"
+                    >
+                      <p class="text-xl text-red-500 m-0">
                         ${!sku.delaying ? "◎" : "△"}
                       </p>
-                      <span class="schedule_schedule__zcyxT">
-                        ${sku.schedule.text}発送予定
+                      <span class="text-xs">
+                        ${sku.schedule.text.slice(5)}発送予定
                       </span>
                     </td>
                   </tr>`,
               )}
             </tbody>
           </table>
-          <p class="schedule_annotation__77p3p">
+          <p class="my-1 text-center text-xs">
             ◎：在庫あり｜△：残りわずか｜×：完売
           </p>
         </div>`;
