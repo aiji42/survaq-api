@@ -20,7 +20,7 @@ export const makeSKUsForDelivery = (
     .flatMap(({ baseSKUs, selectableSKUs }) => [...baseSKUs, ...selectableSKUs])
     .reduce<SKUsForDelivery>((acc, sku) => {
       const schedule = sku.schedule ?? earliestSchedule;
-      const delaying = schedule.numeric <= earliestSchedule.numeric;
+      const delaying = schedule.numeric > earliestSchedule.numeric;
       if (
         acc.find(({ code }) => code === sku.code) ||
         sku.skipDeliveryCalc ||
