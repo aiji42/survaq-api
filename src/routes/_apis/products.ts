@@ -35,9 +35,8 @@ app.use("*", async (c, next) => {
   endTime(c, "main_process");
 
   // Hyperdrive を利用していなければ(dev環境) コネクションを切る
-  // pgBouncerを信じてコネクションを切らずに頑張る
   // !c.env.HYPERDRIVE?.connectionString &&
-  //   c.executionCtx.waitUntil(client.cleanUp());
+  c.executionCtx.waitUntil(client.cleanUp());
 });
 
 app.get("/", async (c) => {
