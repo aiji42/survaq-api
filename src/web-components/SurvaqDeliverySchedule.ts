@@ -86,9 +86,11 @@ class SurvaqDeliverySchedule extends BaseLitElement {
               )}
             </tbody>
           </table>
-          <p class="my-1 text-center text-xs text-slate-700">
-            ◎：在庫あり｜△：残りわずか｜×：完売
-          </p>
+          ${product.skus.length > 0
+            ? html`<p class="my-1 text-center text-xs text-slate-700">
+                ◎：在庫あり｜△：残りわずか｜×：完売
+              </p>`
+            : null}
         </div>`;
       },
       error: (e) => html`<p>${e}</p>`,
