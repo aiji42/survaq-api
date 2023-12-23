@@ -5,7 +5,8 @@ export default defineConfig({
   build: {
     lib: {
       entry: './src/web-components/index.ts',
-      name: 'survaqWC'
+      name: 'survaqWC',
+      formats: ['umd']
     },
     rollupOptions: {
       output: {

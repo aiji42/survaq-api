@@ -5,6 +5,7 @@ import { makeSKUCodes, makeVariants } from "../../libs/makeVariants";
 import { makeSKUsForDelivery } from "../../libs/makeSKUsForDelivery";
 import { Client, getClient } from "../../libs/db";
 import { Bindings } from "../../../bindings";
+import { validator } from "hono/validator";
 
 type Variables = {
   locale: Locale;
@@ -64,27 +65,38 @@ app.get("/:id/funding", async (c) => {
   });
 });
 
-app.get("/:id/delivery", async (c) => {
-  const { getProduct, getSKUs } = c.get("client");
-  startTime(c, "db");
-  const data = await getProduct(c.req.param("id"));
-  endTime(c, "db");
-  if (!data) return c.notFound();
+export const deliveryRoute = app.get(
+  "/:id/delivery",
+  validator("query", (value, c) => {
+    const filter = value["filter"] === "false";
+    return {
+      filter: String(!filter),
+    };
+  }),
+  async (c) => {
+    const { getProduct, getSKUs } = c.get("client");
+    startTime(c, "db");
+    const data = await getProduct(c.req.param("id"));
+    endTime(c, "db");
 
-  const codes = makeSKUCodes(data);
-  startTime(c, "db_sku");
-  const skusData = codes.length ? await getSKUs(codes) : [];
-  endTime(c, "db_sku");
+    const current = makeSchedule(null);
 
-  const variants = await makeVariants(data, skusData, c.get("locale"));
+    // RPCを使用したいので、c.notFound() は使用しない
+    if (!data) return c.json({ current, skus: [] }, 404);
 
-  const current = makeSchedule(null);
+    const codes = makeSKUCodes(data);
+    startTime(c, "db_sku");
+    const skusData = codes.length ? await getSKUs(codes) : [];
+    endTime(c, "db_sku");
 
-  const filterDelaying = !(c.req.query("filter") === "false");
-  const skus = makeSKUsForDelivery(variants, filterDelaying);
+    const variants = await makeVariants(data, skusData, c.get("locale"));
 
-  return c.json({ current, skus });
-});
+    const filterDelaying = c.req.valid("query").filter === "true";
+    const skus = makeSKUsForDelivery(variants, filterDelaying);
+
+    return c.json({ current, skus });
+  },
+);
 
 app.get("/:id/supabase", async (c) => {
   const { getProduct, getSKUs } = c.get("client");

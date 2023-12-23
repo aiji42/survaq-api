@@ -3,6 +3,10 @@ main = "src/entry.ts"
 compatibility_date = "2023-12-07"
 node_compat = true
 
+[build]
+command = "npm run build:wc"
+watch_dir = "./src"
+
 [site]
 bucket = "./assets"
 

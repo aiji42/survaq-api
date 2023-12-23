@@ -24,6 +24,7 @@
     "wrangler": "^3.22.1"
   },
   "dependencies": {
+    "@lit/task": "^1.0.0",
     "dayjs": "^1.11.10",
     "drizzle-orm": "^0.29.1",
     "hono": "^3.11.9",

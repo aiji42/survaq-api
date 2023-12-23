@@ -7,25 +7,23 @@ const Layout: FC = ({ children }) => {
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>sandbox</title>
-        <script src="/static/web-component.js" />
+        <script src="/static/web-components.js" />
       </head>
       <body>{children}</body>
     </html>
   );
 };
 
-export const Preview = () => {
-  return (
-    <Layout>
-      <survaq-delivery-schedule />
-    </Layout>
-  );
-};
-
 const app = new Hono();
 
 app.get("/wc-preview", (c) => {
-  return c.html(<Preview />);
+  return c.html(
+    <Layout>
+      <survaq-delivery-schedule productId="8719571812557" />
+      <survaq-delivery-schedule productId="8719571812557" filter />
+      <survaq-delivery-schedule productId="8719571812557a" />
+    </Layout>,
+  );
 });
 
 export default app;
