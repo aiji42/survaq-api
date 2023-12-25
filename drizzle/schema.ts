@@ -60,7 +60,7 @@ export const directusCollections = pgTable(
     unarchiveValue: varchar("unarchive_value", { length: 255 }),
     sortField: varchar("sort_field", { length: 64 }),
     accountability: varchar("accountability", { length: 255 }).default(
-      sql`'all'::character varying`
+      sql`'all'::character varying`,
     ),
     color: varchar("color", { length: 255 }),
     itemDuplicationFields: json("item_duplication_fields"),
@@ -78,7 +78,7 @@ export const directusCollections = pgTable(
         name: "directus_collections_group_foreign",
       }),
     };
-  }
+  },
 );
 
 export const directusRoles = pgTable("directus_roles", {
@@ -108,10 +108,10 @@ export const directusUsers = pgTable(
     tags: json("tags"),
     avatar: uuid("avatar"),
     language: varchar("language", { length: 255 }).default(
-      sql`NULL::character varying`
+      sql`NULL::character varying`,
     ),
     theme: varchar("theme", { length: 20 }).default(
-      sql`'auto'::character varying`
+      sql`'auto'::character varying`,
     ),
     tfaSecret: varchar("tfa_secret", { length: 255 }),
     status: varchar("status", { length: 16 })
@@ -136,16 +136,16 @@ export const directusUsers = pgTable(
   (table) => {
     return {
       directusUsersEmailUnique: unique("directus_users_email_unique").on(
-        table.email
+        table.email,
       ),
       directusUsersTokenUnique: unique("directus_users_token_unique").on(
-        table.token
+        table.token,
       ),
       directusUsersExternalIdentifierUnique: unique(
-        "directus_users_external_identifier_unique"
+        "directus_users_external_identifier_unique",
       ).on(table.externalIdentifier),
     };
-  }
+  },
 );
 
 export const directusFields = pgTable("directus_fields", {
@@ -161,7 +161,7 @@ export const directusFields = pgTable("directus_fields", {
   hidden: boolean("hidden").default(false).notNull(),
   sort: integer("sort"),
   width: varchar("width", { length: 30 }).default(
-    sql`'full'::character varying`
+    sql`'full'::character varying`,
   ),
   translations: json("translations"),
   note: text("note"),
@@ -233,7 +233,7 @@ export const directusFolders = pgTable(
         name: "directus_folders_parent_foreign",
       }),
     };
-  }
+  },
 );
 
 export const directusPermissions = pgTable("directus_permissions", {
@@ -264,10 +264,10 @@ export const googleMerchantCenter = pgTable(
   (table) => {
     return {
       googlemerchantcenterMerchantcenteridUnique: unique(
-        "googlemerchantcenter_merchantcenterid_unique"
+        "googlemerchantcenter_merchantcenterid_unique",
       ).on(table.merchantCenterId),
     };
-  }
+  },
 );
 
 export const directusRevisions = pgTable(
@@ -291,7 +291,7 @@ export const directusRevisions = pgTable(
         name: "directus_revisions_parent_foreign",
       }),
     };
-  }
+  },
 );
 
 export const directusSessions = pgTable("directus_sessions", {
@@ -400,14 +400,14 @@ export const directusSettings = pgTable("directus_settings", {
     .notNull(),
   projectUrl: varchar("project_url", { length: 255 }),
   projectColor: varchar("project_color", { length: 50 }).default(
-    sql`NULL::character varying`
+    sql`NULL::character varying`,
   ),
   projectLogo: uuid("project_logo").references(() => directusFiles.id),
   publicForeground: uuid("public_foreground").references(
-    () => directusFiles.id
+    () => directusFiles.id,
   ),
   publicBackground: uuid("public_background").references(
-    () => directusFiles.id
+    () => directusFiles.id,
   ),
   publicNote: text("public_note"),
   authLoginAttempts: integer("auth_login_attempts").default(25),
@@ -419,7 +419,7 @@ export const directusSettings = pgTable("directus_settings", {
   customCss: text("custom_css"),
   storageDefaultFolder: uuid("storage_default_folder").references(
     () => directusFolders.id,
-    { onDelete: "set null" }
+    { onDelete: "set null" },
   ),
   basemaps: json("basemaps"),
   mapboxKey: varchar("mapbox_key", { length: 255 }),
@@ -439,7 +439,7 @@ export const directusNotifications = pgTable("directus_notifications", {
     mode: "string",
   }).defaultNow(),
   status: varchar("status", { length: 255 }).default(
-    sql`'inbox'::character varying`
+    sql`'inbox'::character varying`,
   ),
   recipient: uuid("recipient")
     .notNull()
@@ -456,7 +456,7 @@ export const directusShares = pgTable("directus_shares", {
   name: varchar("name", { length: 255 }),
   collection: varchar("collection", { length: 64 }).references(
     () => directusCollections.collection,
-    { onDelete: "cascade" }
+    { onDelete: "cascade" },
   ),
   item: varchar("item", { length: 255 }),
   role: uuid("role").references(() => directusRoles.id, {
@@ -488,14 +488,14 @@ export const directusPresets = pgTable("directus_presets", {
   collection: varchar("collection", { length: 64 }),
   search: varchar("search", { length: 100 }),
   layout: varchar("layout", { length: 100 }).default(
-    sql`'tabular'::character varying`
+    sql`'tabular'::character varying`,
   ),
   layoutQuery: json("layout_query"),
   layoutOptions: json("layout_options"),
   refreshInterval: integer("refresh_interval"),
   filter: json("filter"),
   icon: varchar("icon", { length: 30 }).default(
-    sql`'bookmark'::character varying`
+    sql`'bookmark'::character varying`,
   ),
   color: varchar("color", { length: 255 }),
 });
@@ -513,7 +513,7 @@ export const directusFlows = pgTable(
       .notNull(),
     trigger: varchar("trigger", { length: 255 }),
     accountability: varchar("accountability", { length: 255 }).default(
-      sql`'all'::character varying`
+      sql`'all'::character varying`,
     ),
     options: json("options"),
     operation: uuid("operation"),
@@ -528,10 +528,10 @@ export const directusFlows = pgTable(
   (table) => {
     return {
       directusFlowsOperationUnique: unique(
-        "directus_flows_operation_unique"
+        "directus_flows_operation_unique",
       ).on(table.operation),
     };
-  }
+  },
 );
 
 export const directusOperations = pgTable(
@@ -570,13 +570,13 @@ export const directusOperations = pgTable(
         name: "directus_operations_resolve_foreign",
       }),
       directusOperationsResolveUnique: unique(
-        "directus_operations_resolve_unique"
+        "directus_operations_resolve_unique",
       ).on(table.resolve),
       directusOperationsRejectUnique: unique(
-        "directus_operations_reject_unique"
+        "directus_operations_reject_unique",
       ).on(table.reject),
     };
-  }
+  },
 );
 
 export const shopifyProductGroups = pgTable(
@@ -591,19 +591,16 @@ export const shopifyProductGroups = pgTable(
     closeOn: date("closeOn").notNull(),
     realSupporters: integer("realSupporters").default(0).notNull(),
     title: varchar("title", { length: 255 }).default(
-      sql`NULL::character varying`
-    ),
-    deliverySchedule: varchar("deliverySchedule", { length: 255 }).default(
-      sql`NULL::character varying`
+      sql`NULL::character varying`,
     ),
   },
   (table) => {
     return {
       shopifyproductgroupsTitleUnique: unique(
-        "shopifyproductgroups_title_unique"
+        "shopifyproductgroups_title_unique",
       ).on(table.title),
     };
-  }
+  },
 );
 
 export const facebookAdsBudget = pgTable("FacebookAdsBudget", {
@@ -634,21 +631,18 @@ export const shopifyVariants = pgTable(
     variantName: varchar("variantName", { length: 255 }).notNull(),
     customSelects: integer("customSelects").default(0),
     variantId: varchar("variantId", { length: 255 }).notNull(),
-    deliverySchedule: varchar("deliverySchedule", { length: 255 }).default(
-      sql`NULL::character varying`
-    ),
     skuLabel: varchar("skuLabel", { length: 255 }),
     skusJson: varchar("skusJSON", { length: 255 }).default(
-      sql`NULL::character varying`
+      sql`NULL::character varying`,
     ),
   },
   (table) => {
     return {
       shopifyvariantsVariantidUnique: unique(
-        "shopifyvariants_variantid_unique"
+        "shopifyvariants_variantid_unique",
       ).on(table.variantId),
     };
-  }
+  },
 );
 
 export const facebookAdSets = pgTable("FacebookAdSets", {
@@ -673,11 +667,11 @@ export const shopifyInventoryOrders = pgTable("ShopifyInventoryOrders", {
   receivingDate: date("receivingDate").notNull(),
   deliveryDate: date("deliveryDate").notNull(),
   deliverySchedule: varchar("deliverySchedule", { length: 255 }).default(
-    sql`NULL::character varying`
+    sql`NULL::character varying`,
   ),
   note: text("note"),
   status: varchar("status", { length: 255 }).default(
-    sql`NULL::character varying`
+    sql`NULL::character varying`,
   ),
 });
 
@@ -692,36 +686,15 @@ export const shopifyCustomSkUs = pgTable(
       .notNull(),
     name: varchar("name", { length: 255 }).notNull(),
     subName: varchar("subName", { length: 255 }),
-    deliverySchedule: varchar("deliverySchedule", { length: 255 }).default(
-      sql`NULL::character varying`
-    ),
     inventory: integer("inventory").default(0).notNull(),
-    incomingStockQtyA: integer("incomingStockQtyA"),
-    incomingStockDateA: date("incomingStockDateA"),
-    incomingStockQtyB: integer("incomingStockQtyB"),
-    incomingStockQtyC: integer("incomingStockQtyC"),
-    incomingStockDateB: date("incomingStockDateB"),
-    incomingStockDateC: date("incomingStockDateC"),
-    availableStock: varchar("availableStock", { length: 255 })
-      .default(sql`'REAL'::character varying`)
-      .notNull(),
     unshippedOrderCount: integer("unshippedOrderCount").default(0).notNull(),
     lastSyncedAt: timestamp("lastSyncedAt", { mode: "string" }),
     stockBuffer: integer("stockBuffer").default(5),
-    incomingStockDeliveryScheduleA: varchar("incomingStockDeliveryScheduleA", {
-      length: 255,
-    }).default(sql`NULL::character varying`),
-    incomingStockDeliveryScheduleB: varchar("incomingStockDeliveryScheduleB", {
-      length: 255,
-    }).default(sql`NULL::character varying`),
-    incomingStockDeliveryScheduleC: varchar("incomingStockDeliveryScheduleC", {
-      length: 255,
-    }).default(sql`NULL::character varying`),
     skipDeliveryCalc: boolean("skipDeliveryCalc").default(false),
     displayName: varchar("displayName", { length: 255 }),
     sortNumber: integer("sortNumber").default(0).notNull(),
     currentInventoryOrderSkuId: integer(
-      "currentInventoryOrderSKUId"
+      "currentInventoryOrderSKUId",
     ).references((): AnyPgColumn => shopifyInventoryOrderSkUs.id, {
       onDelete: "set null",
     }),
@@ -729,10 +702,10 @@ export const shopifyCustomSkUs = pgTable(
   (table) => {
     return {
       shopifycustomskusCodeUnique: unique("shopifycustomskus_code_unique").on(
-        table.code
+        table.code,
       ),
     };
-  }
+  },
 );
 
 export const shopifyInventoryOrderSkUs = pgTable("ShopifyInventoryOrderSKUs", {
@@ -755,13 +728,13 @@ export const shopifyVariantsShopifyCustomSkUs = pgTable(
     id: serial("id").primaryKey().notNull(),
     shopifyVariantsId: integer("ShopifyVariants_id").references(
       () => shopifyVariants.id,
-      { onDelete: "cascade" }
+      { onDelete: "cascade" },
     ),
     shopifyCustomSkUsId: integer("ShopifyCustomSKUs_id").references(
-      () => shopifyCustomSkUs.id
+      () => shopifyCustomSkUs.id,
     ),
     sort: integer("sort"),
-  }
+  },
 );
 
 export const facebookAdAlerts = pgTable("FacebookAdAlerts", {
@@ -792,13 +765,13 @@ export const facebookAdAlertsFacebookAdSets = pgTable(
     id: serial("id").primaryKey().notNull(),
     facebookAdAlertsId: uuid("FacebookAdAlerts_id").references(
       () => facebookAdAlerts.id,
-      { onDelete: "cascade" }
+      { onDelete: "cascade" },
     ),
     facebookAdSetsId: uuid("FacebookAdSets_id").references(
       () => facebookAdSets.id,
-      { onDelete: "cascade" }
+      { onDelete: "cascade" },
     ),
-  }
+  },
 );
 
 export const facebookAdsBudgetFacebookAdSets = pgTable(
@@ -807,13 +780,13 @@ export const facebookAdsBudgetFacebookAdSets = pgTable(
     id: serial("id").primaryKey().notNull(),
     facebookAdsBudgetId: uuid("FacebookAdsBudget_id").references(
       () => facebookAdsBudget.id,
-      { onDelete: "cascade" }
+      { onDelete: "cascade" },
     ),
     facebookAdSetsId: uuid("FacebookAdSets_id").references(
       () => facebookAdSets.id,
-      { onDelete: "cascade" }
+      { onDelete: "cascade" },
     ),
-  }
+  },
 );
 
 export const shopifyPages = pgTable(
@@ -845,10 +818,10 @@ export const shopifyPages = pgTable(
   (table) => {
     return {
       shopifypagesPathnameUnique: unique("shopifypages_pathname_unique").on(
-        table.pathname
+        table.pathname,
       ),
     };
-  }
+  },
 );
 
 export const shopifyProducts = pgTable(
@@ -860,14 +833,14 @@ export const shopifyProducts = pgTable(
     productName: varchar("productName", { length: 255 }).notNull(),
     productId: varchar("productId", { length: 255 }).notNull(),
     productGroupId: integer("productGroupId").references(
-      () => shopifyProductGroups.id
+      () => shopifyProductGroups.id,
     ),
   },
   (table) => {
     return {
       shopifyproductsProductidUnique: unique(
-        "shopifyproducts_productid_unique"
+        "shopifyproducts_productid_unique",
       ).on(table.productId),
     };
-  }
+  },
 );
