@@ -1,7 +1,15 @@
 import { Hono } from "hono";
-import { earliest, Locale, makeSchedule } from "../../libs/makeSchedule";
+import {
+  earliest,
+  Locale,
+  makeSchedule,
+  Schedule,
+} from "../../libs/makeSchedule";
 import { makeSKUCodes, makeVariants } from "../../libs/makeVariants";
-import { makeSKUsForDelivery } from "../../libs/makeSKUsForDelivery";
+import {
+  makeSKUsForDelivery,
+  SKUsForDelivery,
+} from "../../libs/makeSKUsForDelivery";
 import { Client, getClient } from "../../libs/db";
 import { Bindings } from "../../../bindings";
 import { validator } from "hono/validator";
@@ -54,6 +62,7 @@ app.get("/:id/funding", async (c) => {
   });
 });
 
+// TODO: リファクタ
 export const deliveryRoute = app.get(
   "/:id/delivery",
   validator("query", (value, c) => {
@@ -63,23 +72,56 @@ export const deliveryRoute = app.get(
     };
   }),
   async (c) => {
-    const { getProduct, getSKUs } = c.get("client");
-    const data = await getProduct(c.req.param("id"));
+    const makeData = async () => {
+      const { getProduct, getSKUs } = c.get("client");
 
-    const current = makeSchedule(null);
+      const data = await getProduct(c.req.param("id"));
 
-    // RPCを使用したいので、c.notFound() は使用しない
-    if (!data) return c.json({ current, skus: [] }, 404);
+      const current = makeSchedule(null);
 
-    const codes = makeSKUCodes(data);
-    const skusData = codes.length ? await getSKUs(codes) : [];
+      if (!data) return { current, skus: [] };
 
-    const variants = await makeVariants(data, skusData, c.get("locale"));
+      const codes = makeSKUCodes(data);
+      const skusData = codes.length ? await getSKUs(codes) : [];
 
-    const filterDelaying = c.req.valid("query").filter === "true";
-    const skus = makeSKUsForDelivery(variants, filterDelaying);
+      const variants = await makeVariants(data, skusData, c.get("locale"));
 
-    return c.json({ current, skus });
+      const filterDelaying = c.req.valid("query").filter === "true";
+      const skus = makeSKUsForDelivery(variants, filterDelaying);
+
+      return { current, skus };
+    };
+
+    const cache = await c.env.CACHE.get<{
+      current: Schedule<boolean>;
+      skus: SKUsForDelivery;
+    }>(c.req.url + c.get("locale"), "json");
+
+    if (cache) {
+      c.executionCtx.waitUntil(
+        (async () => {
+          const data = await makeData();
+          console.log("update cache", "key: ", c.req.url + c.get("locale"));
+          await c.env.CACHE.put(
+            c.req.url + c.get("locale"),
+            JSON.stringify(data),
+          );
+        })(),
+      );
+      return c.json(cache);
+    }
+
+    const data = await makeData();
+    c.executionCtx.waitUntil(
+      (async () => {
+        await c.env.CACHE.put(
+          c.req.url + c.get("locale"),
+          JSON.stringify(data),
+        );
+      })(),
+    );
+
+    return c.json(data);
   },
 );
 

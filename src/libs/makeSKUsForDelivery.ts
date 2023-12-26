@@ -1,7 +1,7 @@
 import { makeVariants } from "./makeVariants";
 import { makeSchedule, Schedule } from "./makeSchedule";
 
-type SKUsForDelivery = Array<{
+export type SKUsForDelivery = Array<{
   id: number;
   code: string;
   name: string;
