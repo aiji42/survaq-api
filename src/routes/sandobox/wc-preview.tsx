@@ -22,6 +22,7 @@ app.get("/wc-preview", (c) => {
       <survaq-delivery-schedule productId="8719571812557" />
       <survaq-delivery-schedule productId="8719571812557" delayedOnly />
       <survaq-delivery-schedule productId="7266231288013" />
+      <survaq-delivery-schedule productId="7266231288013" delayedOnly />
       <survaq-delivery-schedule productId="8719571812557a" />
     </Layout>,
   );

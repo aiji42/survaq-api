@@ -6,9 +6,6 @@ import { hc } from "hono/client";
 import { deliveryRoute } from "../routes/_apis/products";
 import { BaseLitElement } from "./BaseLitElement";
 
-// TODO: 本番と開発と分けたい
-const client = hc<typeof deliveryRoute>("https://api.survaq.com/products/");
-
 @customElement("survaq-delivery-schedule")
 class SurvaqDeliverySchedule extends BaseLitElement {
   @property() productId?: string;
@@ -16,8 +13,17 @@ class SurvaqDeliverySchedule extends BaseLitElement {
   @property({ type: Boolean }) hideWhenNoDelay: boolean = false;
 
   private _productTask = new Task(this, {
-    task: async ([productId, delayedOnly]) => {
+    task: async ([productId, delayedOnly], { signal }) => {
       if (!productId) throw new Error("productIdを指定してください。");
+
+      const client = hc<typeof deliveryRoute>(
+        // TODO: 本番と開発と分けたい
+        "https://api.survaq.com/products/",
+        {
+          fetch: (...[input, init]: Parameters<typeof fetch>) =>
+            fetch(input, { ...init, signal }),
+        },
+      );
 
       const response = await client[":id"].delivery.$get({
         param: {
@@ -46,9 +52,11 @@ class SurvaqDeliverySchedule extends BaseLitElement {
       pending: () => html``,
       complete: (product) => {
         const hasDelayed = product.skus.some(({ delaying }) => delaying);
+        const allDelayed = product.skus.every(({ delaying }) => delaying);
         if (this.hideWhenNoDelay && !hasDelayed) return null;
+        if (product.skus.length < 1) return null;
         return html`<div class="pb-4">
-          ${hasDelayed
+          ${allDelayed
             ? html`
                 <p
                   class="text-slate-700 text-center text-sm font-bold block p-1 my-1 mx-0 border-y-4 border-double border-gray-400"
@@ -75,9 +83,7 @@ class SurvaqDeliverySchedule extends BaseLitElement {
                     <td
                       class="p-1 text-center font-bold text-slate-700 border-y border-neutral-400 pt-1 pb-2"
                     >
-                      <p class="text-2xl text-red-500 m-0">
-                        ${!sku.delaying ? "◎" : "△"}
-                      </p>
+                      <p class="text-2xl text-red-500 m-0">△</p>
                       <p class="text-xs leading-none">
                         ${sku.schedule.text.slice(5)}発送予定
                       </p>
@@ -86,11 +92,9 @@ class SurvaqDeliverySchedule extends BaseLitElement {
               )}
             </tbody>
           </table>
-          ${product.skus.length > 0
-            ? html`<p class="my-1 text-center text-xs text-slate-700">
-                ◎：在庫あり｜△：残りわずか｜×：完売
-              </p>`
-            : null}
+          <p class="my-1 text-center text-xs text-slate-700">
+            ◎：在庫あり｜△：残りわずか｜×：完売
+          </p>
         </div>`;
       },
       error: (e) => html`<p>${e}</p>`,
