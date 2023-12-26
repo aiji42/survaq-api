@@ -16,7 +16,8 @@ const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 app.use("*", async (c, next) => {
   const client = getClient(
     // Hyperdriveはデプロイしないと使えなくなったので、開発中はc.env.DATABASE_URLを利用する
-    c.env.HYPERDRIVE?.connectionString ?? c.env.DATABASE_URL,
+    // c.env.HYPERDRIVE?.connectionString ??
+    c.env.DATABASE_URL,
   );
   c.set("client", client);
 
@@ -28,8 +29,8 @@ app.use("*", async (c, next) => {
   await next();
 
   // Hyperdrive を利用していなければ(dev環境) コネクションを切る
-  !c.env.HYPERDRIVE?.connectionString &&
-    c.executionCtx.waitUntil(client.cleanUp());
+  // !c.env.HYPERDRIVE?.connectionString &&
+  // c.executionCtx.waitUntil(client.cleanUp());
 });
 
 app.get("/", async (c) => {
