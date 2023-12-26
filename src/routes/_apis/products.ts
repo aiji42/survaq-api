@@ -92,23 +92,28 @@ export const deliveryRoute = app.get(
       return { current, skus };
     };
 
-    const cache = await c.env.CACHE.get<{
-      current: Schedule<boolean>;
-      skus: SKUsForDelivery;
-    }>(c.req.url + c.get("locale"), "json");
+    const { value, metadata } = await c.env.CACHE.getWithMetadata<
+      {
+        current: Schedule<boolean>;
+        skus: SKUsForDelivery;
+      },
+      { staleAt: number }
+    >(c.req.url + c.get("locale"), "json");
 
-    if (cache) {
-      c.executionCtx.waitUntil(
-        (async () => {
-          const data = await makeData();
-          console.log("update cache", "key: ", c.req.url + c.get("locale"));
-          await c.env.CACHE.put(
-            c.req.url + c.get("locale"),
-            JSON.stringify(data),
-          );
-        })(),
-      );
-      return c.json(cache);
+    if (value) {
+      if ((metadata?.staleAt ?? 0) < Date.now())
+        c.executionCtx.waitUntil(
+          (async () => {
+            const data = await makeData();
+            console.log("update cache", "key: ", c.req.url + c.get("locale"));
+            await c.env.CACHE.put(
+              c.req.url + c.get("locale"),
+              JSON.stringify(data),
+              { metadata: { staleAt: Date.now() + 10000 } },
+            );
+          })(),
+        );
+      return c.json(value);
     }
 
     const data = await makeData();
@@ -117,6 +122,7 @@ export const deliveryRoute = app.get(
         await c.env.CACHE.put(
           c.req.url + c.get("locale"),
           JSON.stringify(data),
+          { metadata: { staleAt: Date.now() + 10000 } },
         );
       })(),
     );
