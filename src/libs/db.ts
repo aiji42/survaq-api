@@ -26,19 +26,58 @@ export const getClient = (url: string) => {
       });
     },
 
-    getProduct: async (productId: string) => {
+    getProductWithGroup: (productId: string) => {
       return client.query.shopifyProducts.findFirst({
         with: {
           group: true,
+        },
+        where: eq(schema.shopifyProducts.productId, productId),
+      });
+    },
+
+    getProduct: (productId: string) => {
+      return client.query.shopifyProducts.findFirst({
+        columns: {
+          id: true,
+          productName: true,
+          productId: true,
+        },
+        with: {
           variants: {
+            columns: {
+              id: true,
+              variantName: true,
+              variantId: true,
+              skusJson: true,
+              customSelects: true,
+              skuLabel: true,
+            },
             with: {
               skus: {
                 with: {
                   sku: {
+                    columns: {
+                      id: true,
+                      code: true,
+                      name: true,
+                      subName: true,
+                      displayName: true,
+                      skipDeliveryCalc: true,
+                      sortNumber: true,
+                    },
                     with: {
                       crntInvOrderSKU: {
+                        columns: {
+                          id: true,
+                        },
                         with: {
-                          invOrder: true,
+                          invOrder: {
+                            columns: {
+                              id: true,
+                              name: true,
+                              deliverySchedule: true,
+                            },
+                          },
                         },
                       },
                     },
@@ -112,10 +151,28 @@ export const getClient = (url: string) => {
 
     getSKUs: (codes: string[]) => {
       return client.query.shopifyCustomSkUs.findMany({
+        columns: {
+          id: true,
+          code: true,
+          name: true,
+          subName: true,
+          displayName: true,
+          skipDeliveryCalc: true,
+          sortNumber: true,
+        },
         with: {
           crntInvOrderSKU: {
+            columns: {
+              id: true,
+            },
             with: {
-              invOrder: true,
+              invOrder: {
+                columns: {
+                  id: true,
+                  name: true,
+                  deliverySchedule: true,
+                },
+              },
             },
           },
         },

@@ -41,8 +41,8 @@ app.get("/", async (c) => {
 });
 
 app.get("/:id/funding", async (c) => {
-  const { getProduct } = c.get("client");
-  const data = await getProduct(c.req.param("id"));
+  const { getProductWithGroup } = c.get("client");
+  const data = await getProductWithGroup(c.req.param("id"));
   if (!data) return c.notFound();
 
   return c.json({
