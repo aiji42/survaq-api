@@ -109,7 +109,7 @@ export const deliveryRoute = app.get(
             await c.env.CACHE.put(
               c.req.url + c.get("locale"),
               JSON.stringify(data),
-              { metadata: { staleAt: Date.now() + 10000 } },
+              { metadata: { staleAt: Date.now() + 30000 } },
             );
           })(),
         );
@@ -122,7 +122,7 @@ export const deliveryRoute = app.get(
         await c.env.CACHE.put(
           c.req.url + c.get("locale"),
           JSON.stringify(data),
-          { metadata: { staleAt: Date.now() + 10000 } },
+          { metadata: { staleAt: Date.now() + 30000 } },
         );
       })(),
     );
