@@ -108,6 +108,10 @@ export const getClient = (url: string) => {
 
     getVariants: (productId: number) => {
       return client.query.shopifyVariants.findMany({
+        columns: {
+          variantId: true,
+          variantName: true,
+        },
         where: eq(schema.shopifyVariants.product, productId),
       });
     },
