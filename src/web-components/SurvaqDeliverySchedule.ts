@@ -2,8 +2,7 @@ import { html } from "lit";
 import { Task } from "@lit/task";
 import { customElement, property } from "lit/decorators.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
-import { hc } from "hono/client";
-import { deliveryRoute } from "../routes/_apis/products";
+import { DeliveryRouteResponse } from "../routes/_apis/products";
 import { BaseLitElement } from "./BaseLitElement";
 
 @customElement("survaq-delivery-schedule")
@@ -16,23 +15,13 @@ class SurvaqDeliverySchedule extends BaseLitElement {
     task: async ([productId, delayedOnly], { signal }) => {
       if (!productId) throw new Error("productIdを指定してください。");
 
-      const client = hc<typeof deliveryRoute>(
-        // TODO: 本番と開発と分けたい
-        "https://api.survaq.com/products/",
-        {
-          fetch: (...[input, init]: Parameters<typeof fetch>) =>
-            fetch(input, { ...init, signal }),
-        },
+      // TODO: 本番と開発と分けたい
+      const url = new URL(
+        `https://api.survaq.com/products/${productId}/delivery`,
       );
+      url.searchParams.append("filter", String(delayedOnly));
 
-      const response = await client[":id"].delivery.$get({
-        param: {
-          id: productId,
-        },
-        query: {
-          filter: String(delayedOnly),
-        },
-      });
+      const response = await fetch(url, { signal });
 
       if (response.status === 404) {
         throw new Error("商品が存在しません。");
@@ -42,7 +31,7 @@ class SurvaqDeliverySchedule extends BaseLitElement {
           `想定しないエラーが発生しました。status: ${response.status}`,
         );
       }
-      return response.json();
+      return response.json() as Promise<DeliveryRouteResponse>;
     },
     args: () => [this.productId, this.delayedOnly] as const,
   });
