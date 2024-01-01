@@ -25,6 +25,7 @@ const factory = createFactory<{ Bindings: Bindings; Variables: Variables }>();
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 app.use("*", async (c, next) => {
+  console.log(c.req.url);
   const client = getClient(
     // Hyperdriveはデプロイしないと使えなくなったので、開発中はc.env.DATABASE_URLを利用する
     // c.env.HYPERDRIVE?.connectionString ??
@@ -50,10 +51,23 @@ const makeSWRHandler = <
   R extends HandlerResponse<any> = any,
 >(
   handler: Handler<{ Bindings: Bindings; Variables: Variables }, P, I, R>,
-  ttl = 60000,
+  ttl = 10000,
 ) => {
   return factory.createHandlers(async (c, next) => {
     const cacheKey = c.req.url + c.get("locale");
+
+    const updateCache = async (_res: Response | Promise<Response>) => {
+      const res = await _res;
+      if (!(res.status >= 200 && res.status < 300)) return;
+      if (!res.headers.get("content-type")?.includes("application/json"))
+        return;
+      if (res.headers.has("set-cookie")) return;
+
+      console.log("update cache", "key: ", cacheKey);
+      await c.env.CACHE.put(cacheKey, await res.arrayBuffer(), {
+        metadata: { staleAt: Date.now() + ttl },
+      });
+    };
 
     const { value, metadata } = await c.env.CACHE.getWithMetadata<{
       staleAt: number;
@@ -62,28 +76,15 @@ const makeSWRHandler = <
     if (value) {
       if ((metadata?.staleAt ?? 0) < Date.now())
         c.executionCtx.waitUntil(
-          (async () => {
-            const res = (await handler(c, next)) as Response;
-            console.log("update cache", "key: ", cacheKey);
-            await c.env.CACHE.put(cacheKey, await res.arrayBuffer(), {
-              metadata: { staleAt: Date.now() + ttl },
-            });
-          })(),
+          updateCache(handler(c, next) as Promise<Response>),
         );
+
       return c.newResponse(value);
     }
 
     const res = (await handler(c, next)) as Response;
-    if (res.status === 200) {
-      const cloned = res.clone();
-      c.executionCtx.waitUntil(
-        (async () => {
-          await c.env.CACHE.put(cacheKey, await cloned.arrayBuffer(), {
-            metadata: { staleAt: Date.now() + ttl },
-          });
-        })(),
-      );
-    }
+
+    if (res.status === 200) c.executionCtx.waitUntil(updateCache(res.clone()));
 
     return res;
   });
