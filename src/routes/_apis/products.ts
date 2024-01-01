@@ -13,7 +13,7 @@ import {
 import { Client, getClient } from "../../libs/db";
 import { Bindings } from "../../../bindings";
 import { createFactory } from "hono/factory";
-import { HandlerResponse, TypedResponse } from "hono/dist/types/types";
+import { HandlerResponse } from "hono/dist/types/types";
 
 type Variables = {
   locale: Locale;
