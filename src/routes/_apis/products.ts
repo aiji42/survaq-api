@@ -25,7 +25,6 @@ const factory = createFactory<{ Bindings: Bindings; Variables: Variables }>();
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 app.use("*", async (c, next) => {
-  console.log(c.req.url);
   const client = getClient(
     // Hyperdriveはデプロイしないと使えなくなったので、開発中はc.env.DATABASE_URLを利用する
     // c.env.HYPERDRIVE?.connectionString ??
