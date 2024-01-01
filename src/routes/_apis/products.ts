@@ -63,13 +63,18 @@ const makeSWRHandler = <
       if (res.headers.has("set-cookie")) return;
 
       console.log("update cache", "key: ", cacheKey);
+
+      // @ts-ignore
+      const headers = Object.fromEntries(res.headers);
+
       await c.env.CACHE.put(cacheKey, await res.arrayBuffer(), {
-        metadata: { staleAt: Date.now() + ttl },
+        metadata: { staleAt: Date.now() + ttl, headers },
       });
     };
 
     const { value, metadata } = await c.env.CACHE.getWithMetadata<{
       staleAt: number;
+      headers: Record<string, string>;
     }>(cacheKey, "arrayBuffer");
 
     if (value) {
@@ -78,7 +83,10 @@ const makeSWRHandler = <
           updateCache(handler(c, next) as Promise<Response>),
         );
 
-      return c.newResponse(value);
+      return c.newResponse(
+        value,
+        metadata ? { headers: metadata.headers } : undefined,
+      );
     }
 
     const res = (await handler(c, next)) as Response;
