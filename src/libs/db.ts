@@ -11,7 +11,10 @@ const schema = {
 };
 
 export const getClient = (url: string) => {
-  const pool = new Pool({ connectionString: url });
+  const pool = new Pool({
+    connectionString: url,
+    connectionTimeoutMillis: 5000,
+  });
   const client = drizzle(pool, { schema });
 
   return {
