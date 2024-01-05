@@ -109,13 +109,19 @@ export const getClient = (url: string) => {
         .returning();
     },
 
-    getVariants: (productId: number) => {
+    getVariants: (productRecordId: number) => {
       return client.query.shopifyVariants.findMany({
         columns: {
           variantId: true,
           variantName: true,
         },
-        where: eq(schema.shopifyVariants.product, productId),
+        where: eq(schema.shopifyVariants.product, productRecordId),
+      });
+    },
+
+    getVariant: (variantId: number | string) => {
+      return client.query.shopifyVariants.findFirst({
+        where: eq(schema.shopifyVariants.variantId, String(variantId)),
       });
     },
 

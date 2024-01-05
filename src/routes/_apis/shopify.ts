@@ -1,6 +1,28 @@
 import { Hono } from "hono";
-import { getClient } from "../../libs/db";
+import { Client, getClient } from "../../libs/db";
 import { Bindings } from "../../../bindings";
+import { getShopifyClient } from "../../libs/shopify";
+
+type Variables = {
+  client: Client;
+};
+
+const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+
+app.use("*", async (c, next) => {
+  const client = getClient(
+    // Hyperdriveはデプロイしないと使えなくなったので、開発中はc.env.DATABASE_URLを利用する
+    // c.env.HYPERDRIVE?.connectionString ??
+    c.env.DATABASE_URL,
+  );
+  c.set("client", client);
+
+  await next();
+
+  // Hyperdrive を利用していなければ(dev環境) コネクションを切る
+  // !c.env.HYPERDRIVE?.connectionString &&
+  // c.executionCtx.waitUntil(client.cleanUp());
+});
 
 type ShopifyProduct = {
   id: number;
@@ -14,18 +36,7 @@ type ShopifyProduct = {
   }>;
 };
 
-const app = new Hono<{ Bindings: Bindings }>();
-
 app.post("/product", async (c) => {
-  const client = getClient(
-    // Hyperdriveはデプロイしないと使えなくなったので、開発中はc.env.DATABASE_URLを利用する
-    // c.env.HYPERDRIVE?.connectionString ??
-    c.env.DATABASE_URL,
-  );
-
-  const data = await c.req.json<ShopifyProduct>();
-  console.log("Webhook:", data.id, data.handle, data.title, data.status);
-
   const {
     getProduct,
     insertProduct,
@@ -34,7 +45,10 @@ app.post("/product", async (c) => {
     deleteVariantMany,
     deleteVariantManyByProductId,
     updateVariant,
-  } = client;
+  } = c.get("client");
+
+  const data = await c.req.json<ShopifyProduct>();
+  console.log("Webhook:", data.id, data.handle, data.title, data.status);
 
   c.executionCtx.waitUntil(
     (async () => {
@@ -133,6 +147,61 @@ app.post("/product", async (c) => {
             await deleteVariantManyByProductId(productRecordId);
           console.log("deleted variant", deletedVariants.rowCount, "record(s)");
         }
+      } catch (e) {
+        console.error(e);
+      }
+    })(),
+  );
+
+  return c.json({ message: "synced" });
+});
+
+type ShopifyOrder = {
+  id: number;
+  note_attributes: Array<{ name: string; value: string }>;
+  line_items: {
+    id: number;
+    variant_id: number;
+    name: string;
+    properties: Array<{ name: string; value: string }>;
+  }[];
+};
+
+app.post("/order", async (c) => {
+  const { getVariant } = c.get("client");
+  const { updateOrderNoteAttributes } = getShopifyClient(
+    c.env.SHOPIFY_ACCESS_TOKEN,
+  );
+
+  const data = await c.req.json<ShopifyOrder>();
+  console.log("Webhook created order:", data.id);
+
+  c.executionCtx.waitUntil(
+    (async () => {
+      try {
+        const customAttributes = await Promise.all(
+          data.line_items.map(async (li) => {
+            const _skus =
+              li.properties.find(({ name }) => name === "_skus")?.value ??
+              (await getVariant(li.variant_id))?.skusJson ??
+              "[]";
+            return {
+              lineItemId: li.id,
+              name: li.name,
+              _skus: JSON.parse(_skus),
+            };
+          }),
+        );
+
+        await updateOrderNoteAttributes(data.id, [
+          ...data.note_attributes,
+          {
+            name: "__line_items_and_skus",
+            value: JSON.stringify(customAttributes),
+          },
+        ]);
+
+        console.log("updated note attributes");
       } catch (e) {
         console.error(e);
       }
