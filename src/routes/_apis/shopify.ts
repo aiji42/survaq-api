@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { Client, getClient } from "../../libs/db";
 import { Bindings } from "../../../bindings";
 import { getShopifyClient } from "../../libs/shopify";
+import { SlackApp, MessageAttachment } from "slack-cloudflare-workers";
 
 type Variables = {
   client: Client;
@@ -172,14 +173,22 @@ app.post("/order", async (c) => {
   const { updateOrderNoteAttributes } = getShopifyClient(
     c.env.SHOPIFY_ACCESS_TOKEN,
   );
+  const slack = new SlackApp({ env: c.env });
 
   const data = await c.req.json<ShopifyOrder>();
   console.log("Webhook created order:", data.id);
 
   c.executionCtx.waitUntil(
     (async () => {
+      let customAttributes: Array<{
+        lineItemId: number;
+        name: string;
+        _skus: string[];
+      }> = [];
+      const attachments: MessageAttachment[] = [];
       try {
-        const customAttributes = await Promise.all(
+        // customAttributesを作る処理と、DBからデータ取る処理は分ける
+        customAttributes = await Promise.all(
           data.line_items.map(async (li) => {
             const _skus =
               li.properties.find(({ name }) => name === "_skus")?.value ??
@@ -192,19 +201,73 @@ app.post("/order", async (c) => {
             };
           }),
         );
+      } catch (e) {
+        console.error(e);
+        // 汎用化させる
+        if (e instanceof Error)
+          attachments.push({
+            color: "danger",
+            title: "Error: on updating note attributes",
+            fields: [
+              {
+                title: e.name,
+                value: "```" + e.stack + "```",
+              },
+            ],
+          });
+      }
 
+      try {
+        // TODO: まだProductionにはdeployしていない
+        // デプロイしたらShopify側のWebhookも直さないといけない
+        // ある程度データ溜まったら、jobs側でこのデータを利用するようにする
+        // => noteへのデータ書き込みは止めていいが、しばらくはnoteも同時に見るようにする
+        // あと、異常系を考慮しないといけない
+        // => SKUデータがまだ登録されていない時(ジムショックスはフロントからデータが渡ってきてない時) (こっちはエラーではない)
+        // => statusは見たほうが良さそう
+        // __line_items_overwrite_dataは違うかも。
+        // => このデータをメインで使うようにするので。
         await updateOrderNoteAttributes(data.id, [
           ...data.note_attributes,
           {
-            name: "__line_items_and_skus",
+            name: "__line_items_overwrite_data",
             value: JSON.stringify(customAttributes),
           },
         ]);
 
+        attachments.push({
+          color: "good",
+          title: "updated note attributes",
+          fields: [
+            {
+              title: "__line_items_overwrite_data",
+              value: "```" + JSON.stringify(customAttributes) + "```",
+            },
+          ],
+        });
+
         console.log("updated note attributes");
       } catch (e) {
         console.error(e);
+        if (e instanceof Error)
+          attachments.push({
+            color: "danger",
+            title: "Error: on updating note attributes",
+            fields: [
+              {
+                title: e.name,
+                value: "```" + e.stack + "```",
+              },
+            ],
+          });
       }
+
+      // await slack.client.chat.postMessage({
+      //   channel: "notify-test",
+      //   text: `Webhook created order: ${data.id}`,
+      //   mrkdwn: true,
+      //   attachments,
+      // });
     })(),
   );
 

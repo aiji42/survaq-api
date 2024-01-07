@@ -3374,6 +3374,25 @@ sisteransi@^1.0.5:
   resolved "https://registry.yarnpkg.com/sisteransi/-/sisteransi-1.0.5.tgz#134d681297756437cc05ca01370d3a7a571075ed"
   integrity sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==
 
+slack-cloudflare-workers@^0.8.2:
+  version "0.8.2"
+  resolved "https://registry.yarnpkg.com/slack-cloudflare-workers/-/slack-cloudflare-workers-0.8.2.tgz#537856de8a22a94617c20a656e9fbcc2fabd288c"
+  integrity sha512-KFgXoYF1tjSo1mzANr8W0H7bKJhN2po4CAsyU+RbPzjlpsSEkuOnV3lX+GjYoYl6ZL0QFGDrFIU39yHyCQfNXA==
+  dependencies:
+    slack-edge "^0.8.5"
+
+slack-edge@^0.8.5:
+  version "0.8.5"
+  resolved "https://registry.yarnpkg.com/slack-edge/-/slack-edge-0.8.5.tgz#af8c9bfcb08e17cf6120d4049d1a2fcb13419f14"
+  integrity sha512-dUj3iRc0TdLjXVHK4RZFbkgG0M3P+ZI1oEluYV1zuKVBAMidYJ758rbtA8gZKJRAAJ1j/9Jhwk4Ad3dTvUcwzQ==
+  dependencies:
+    slack-web-api-client "^0.7.4"
+
+slack-web-api-client@^0.7.4:
+  version "0.7.5"
+  resolved "https://registry.yarnpkg.com/slack-web-api-client/-/slack-web-api-client-0.7.5.tgz#104f1496c847f2fda125aca36a6e6e4f960c290d"
+  integrity sha512-vD9nLrvp78RS31YRB76AKxzOsQJM8qLhYqCqpx8X2/ZgXTZqhb8ONPntd1iX5dBi648HRuTIA8MBEoN/TxDDLQ==
+
 source-map-js@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/source-map-js/-/source-map-js-1.0.2.tgz#adbc361d9c62df380125e7f161f71c826f1e490c"
@@ -3455,6 +3474,7 @@ stoppable@^1.1.0:
   integrity sha512-KXDYZ9dszj6bzvnEMRYvxgeTHU74QBFL54XKtP3nyMuJ81CFYtABZ3bAzL2EdFUaEwJOBOgENyFj3R7oTzDyyw==
 
 "string-width-cjs@npm:string-width@^4.2.0", string-width@^4.1.0:
+  name string-width-cjs
   version "4.2.3"
   resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
   integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
@@ -3521,6 +3541,7 @@ stringify-object@3.3.0:
     is-regexp "^1.0.0"
 
 "strip-ansi-cjs@npm:strip-ansi@^6.0.1", strip-ansi@^6.0.0, strip-ansi@^6.0.1:
+  name strip-ansi-cjs
   version "6.0.1"
   resolved "https://registry.yarnpkg.com/strip-ansi/-/strip-ansi-6.0.1.tgz#9e26c63d30f53443e9489495b2105d37b67a85d9"
   integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
