@@ -2,11 +2,11 @@ import { Handler, Hono, Input } from "hono";
 import { getClient } from "../../libs/db";
 import { Bindings } from "../../../bindings";
 import { getShopifyClient } from "../../libs/shopify";
-import { makeNotifier } from "../../libs/slack";
+import { Notifier } from "../../libs/slack";
 import { ShopifyOrder, ShopifyProduct } from "../../types/shopify";
 import { createFactory } from "hono/factory";
 
-type Variables = { label: string };
+type Variables = { label: string; notifier: Notifier };
 
 type Env = { Bindings: Bindings; Variables: Variables };
 
@@ -17,14 +17,19 @@ const factory = createFactory<Env>();
 const errorBoundary = (handler: Handler<Env, string, Input, any>) => {
   return factory.createHandlers(async (c, next) => {
     c.set("label", `${c.req.method}: ${c.req.url}`);
+    const notifier = new Notifier(c.env);
+    c.set("notifier", notifier);
 
+    let res: null | Response = null;
     try {
-      return await handler(c, next);
+      res = await handler(c, next);
     } catch (e) {
-      const { notifyError } = makeNotifier(c.env, c.get("label"));
-      notifyError(e);
+      notifier.appendErrorMessage(e);
     }
-    return c.text("webhook received");
+
+    c.executionCtx.waitUntil(notifier.notify(c.get("label")));
+
+    return res ?? c.text("webhook received");
   });
 };
 
@@ -43,6 +48,7 @@ app.post(
 
     const data = await c.req.json<ShopifyProduct>();
     c.set("label", `Webhook: ${data.id}, ${data.handle}, ${data.status}`);
+    console.log(c.get("label"));
 
     const product = await getProduct(String(data.id));
     let productRecordId: number | undefined = product?.id;
@@ -148,11 +154,11 @@ app.post(
   ...errorBoundary(async (c) => {
     const { getVariant } = getClient(c.env);
     const { updateOrderNoteAttributes } = getShopifyClient(c.env);
+    const notifier = c.get("notifier");
 
     const data = await c.req.json<ShopifyOrder>();
     c.set("label", `Webhook created order: ${data.id}`);
-    const { notifyError, notifyNotConnectedSkuOrder, notifyErrorResponse } =
-      makeNotifier(c.env, c.get("label"));
+    console.log(c.get("label"));
 
     const liCustomAttributes = await Promise.all<LineItemCustomAttr>(
       data.line_items.map(async ({ id, name, properties, variant_id }) => {
@@ -160,10 +166,10 @@ app.post(
         if (!_skus)
           try {
             const skusJson = (await getVariant(variant_id))?.skusJson;
-            if (!skusJson) await notifyNotConnectedSkuOrder(data);
+            if (!skusJson) notifier.appendNotConnectedSkuOrder(data);
             else _skus = skusJson;
           } catch (e) {
-            await notifyError(e);
+            notifier.appendErrorMessage(e);
           }
 
         return { id, name, _skus: JSON.parse(_skus ?? "[]") };
@@ -180,9 +186,7 @@ app.post(
         value: JSON.stringify(liCustomAttributes),
       },
     ]);
-    await notifyErrorResponse(res);
-
-    console.log("updated note attributes");
+    await notifier.appendErrorResponse(res);
 
     return c.json({ message: "update order" });
   }),
