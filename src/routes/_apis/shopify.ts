@@ -23,7 +23,9 @@ app.post("/product", async (c) => {
   } = getClient(c.env);
 
   const data = await c.req.json<ShopifyProduct>();
-  console.log("Webhook:", data.id, data.handle, data.title, data.status);
+  const jobTitle = `Webhook: ${data.id}, ${data.handle}, ${data.status}`;
+  console.log(jobTitle);
+  const { notifyError } = makeNotifier(c.env, jobTitle);
 
   try {
     const product = await getProduct(String(data.id));
@@ -115,7 +117,7 @@ app.post("/product", async (c) => {
       console.log("deleted variant", deletedVariants.rowCount, "record(s)");
     }
   } catch (e) {
-    console.error(e);
+    notifyError(e);
   }
 
   return c.json({ message: "synced" });
