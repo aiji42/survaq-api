@@ -2,7 +2,8 @@ import { Hono } from "hono";
 import { Client, getClient } from "../../libs/db";
 import { Bindings } from "../../../bindings";
 import { getShopifyClient } from "../../libs/shopify";
-import { SlackApp, MessageAttachment } from "slack-cloudflare-workers";
+import { makeNotifier } from "../../libs/slack";
+import { ShopifyOrder, ShopifyProduct } from "../../types/shopify";
 
 type Variables = {
   client: Client;
@@ -24,18 +25,6 @@ app.use("*", async (c, next) => {
   // !c.env.HYPERDRIVE?.connectionString &&
   // c.executionCtx.waitUntil(client.cleanUp());
 });
-
-type ShopifyProduct = {
-  id: number;
-  body_html?: string;
-  handle?: string;
-  title: string;
-  status: "active" | "draft" | "archived";
-  variants?: Array<{
-    id: number;
-    title: string;
-  }>;
-};
 
 app.post("/product", async (c) => {
   const {
@@ -157,15 +146,10 @@ app.post("/product", async (c) => {
   return c.json({ message: "synced" });
 });
 
-type ShopifyOrder = {
+type LineItemCustomAttr = {
   id: number;
-  note_attributes: Array<{ name: string; value: string }>;
-  line_items: {
-    id: number;
-    variant_id: number;
-    name: string;
-    properties: Array<{ name: string; value: string }>;
-  }[];
+  name: string;
+  _skus: string[];
 };
 
 app.post("/order", async (c) => {
@@ -173,101 +157,48 @@ app.post("/order", async (c) => {
   const { updateOrderNoteAttributes } = getShopifyClient(
     c.env.SHOPIFY_ACCESS_TOKEN,
   );
-  const slack = new SlackApp({ env: c.env });
 
   const data = await c.req.json<ShopifyOrder>();
-  console.log("Webhook created order:", data.id);
+  const jobTitle = `Webhook created order: ${data.id}`;
+  console.log(jobTitle);
+  const { notifyError, notifyNotConnectedSkuOrder, notifyErrorResponse } =
+    makeNotifier(c.env, jobTitle);
 
   c.executionCtx.waitUntil(
     (async () => {
-      let customAttributes: Array<{
-        lineItemId: number;
-        name: string;
-        _skus: string[];
-      }> = [];
-      const attachments: MessageAttachment[] = [];
       try {
-        // customAttributesを作る処理と、DBからデータ取る処理は分ける
-        customAttributes = await Promise.all(
-          data.line_items.map(async (li) => {
-            const _skus =
-              li.properties.find(({ name }) => name === "_skus")?.value ??
-              (await getVariant(li.variant_id))?.skusJson ??
-              "[]";
-            return {
-              lineItemId: li.id,
-              name: li.name,
-              _skus: JSON.parse(_skus),
-            };
+        const liCustomAttributes = await Promise.all<LineItemCustomAttr>(
+          data.line_items.map(async ({ id, name, properties, variant_id }) => {
+            let _skus = properties.find((p) => p.name === "_skus")?.value;
+            if (!_skus)
+              try {
+                const skusJson = (await getVariant(variant_id))?.skusJson;
+                if (!skusJson) await notifyNotConnectedSkuOrder(data);
+                else _skus = skusJson;
+              } catch (e) {
+                await notifyError(e);
+              }
+
+            return { id, name, _skus: JSON.parse(_skus ?? "[]") };
           }),
         );
-      } catch (e) {
-        console.error(e);
-        // 汎用化させる
-        if (e instanceof Error)
-          attachments.push({
-            color: "danger",
-            title: "Error: on updating note attributes",
-            fields: [
-              {
-                title: e.name,
-                value: "```" + e.stack + "```",
-              },
-            ],
-          });
-      }
 
-      try {
         // TODO: まだProductionにはdeployしていない
         // デプロイしたらShopify側のWebhookも直さないといけない
         // ある程度データ溜まったら、jobs側でこのデータを利用するようにする
         // => noteへのデータ書き込みは止めていいが、しばらくはnoteも同時に見るようにする
-        // あと、異常系を考慮しないといけない
-        // => SKUデータがまだ登録されていない時(ジムショックスはフロントからデータが渡ってきてない時) (こっちはエラーではない)
-        // => statusは見たほうが良さそう
-        // __line_items_overwrite_dataは違うかも。
-        // => このデータをメインで使うようにするので。
-        await updateOrderNoteAttributes(data.id, [
-          ...data.note_attributes,
+        const res = await updateOrderNoteAttributes(data, [
           {
-            name: "__line_items_overwrite_data",
-            value: JSON.stringify(customAttributes),
+            name: "__line_items",
+            value: JSON.stringify(liCustomAttributes),
           },
         ]);
-
-        attachments.push({
-          color: "good",
-          title: "updated note attributes",
-          fields: [
-            {
-              title: "__line_items_overwrite_data",
-              value: "```" + JSON.stringify(customAttributes) + "```",
-            },
-          ],
-        });
+        await notifyErrorResponse(res);
 
         console.log("updated note attributes");
       } catch (e) {
-        console.error(e);
-        if (e instanceof Error)
-          attachments.push({
-            color: "danger",
-            title: "Error: on updating note attributes",
-            fields: [
-              {
-                title: e.name,
-                value: "```" + e.stack + "```",
-              },
-            ],
-          });
+        await notifyError(e);
       }
-
-      // await slack.client.chat.postMessage({
-      //   channel: "notify-test",
-      //   text: `Webhook created order: ${data.id}`,
-      //   mrkdwn: true,
-      //   attachments,
-      // });
     })(),
   );
 
