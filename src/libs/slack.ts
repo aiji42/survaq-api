@@ -20,13 +20,16 @@ export class Notifier {
     this.attachments.push(attachments);
   }
 
-  public notify(text: string, option?: Partial<ChatPostMessageRequest>) {
-    return this.slack.client.chat.postMessage({
-      channel: option?.channel ?? CHANNEL,
-      text: option?.text ?? text,
-      mrkdwn: true,
-      attachments: this.attachments,
-    });
+  public async notify(text: string, option?: Partial<ChatPostMessageRequest>) {
+    if (this.attachments.length)
+      await this.slack.client.chat.postMessage({
+        channel: option?.channel ?? CHANNEL,
+        text: option?.text ?? text,
+        mrkdwn: true,
+        attachments: this.attachments,
+      });
+
+    this.attachments = [];
   }
 
   public appendErrorMessage(e: unknown) {
