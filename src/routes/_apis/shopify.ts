@@ -1,33 +1,49 @@
-import { Hono } from "hono";
-import { Client, getClient } from "../../libs/db";
+import { Handler, Hono, Input } from "hono";
+import { getClient } from "../../libs/db";
 import { Bindings } from "../../../bindings";
 import { getShopifyClient } from "../../libs/shopify";
 import { makeNotifier } from "../../libs/slack";
 import { ShopifyOrder, ShopifyProduct } from "../../types/shopify";
+import { createFactory } from "hono/factory";
 
-type Variables = {
-  client: Client;
+type Variables = { label: string };
+
+type Env = { Bindings: Bindings; Variables: Variables };
+
+const app = new Hono<Env>();
+
+const factory = createFactory<Env>();
+
+const errorBoundary = (handler: Handler<Env, string, Input, any>) => {
+  return factory.createHandlers(async (c, next) => {
+    c.set("label", `${c.req.method}: ${c.req.url}`);
+
+    try {
+      return await handler(c, next);
+    } catch (e) {
+      const { notifyError } = makeNotifier(c.env, c.get("label"));
+      notifyError(e);
+    }
+    return c.text("webhook received");
+  });
 };
 
-const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+app.post(
+  "/product",
+  ...errorBoundary(async (c) => {
+    const {
+      getProduct,
+      insertProduct,
+      getVariants,
+      insertVariantMany,
+      deleteVariantMany,
+      deleteVariantManyByProductId,
+      updateVariant,
+    } = getClient(c.env);
 
-app.post("/product", async (c) => {
-  const {
-    getProduct,
-    insertProduct,
-    getVariants,
-    insertVariantMany,
-    deleteVariantMany,
-    deleteVariantManyByProductId,
-    updateVariant,
-  } = getClient(c.env);
+    const data = await c.req.json<ShopifyProduct>();
+    c.set("label", `Webhook: ${data.id}, ${data.handle}, ${data.status}`);
 
-  const data = await c.req.json<ShopifyProduct>();
-  const jobTitle = `Webhook: ${data.id}, ${data.handle}, ${data.status}`;
-  console.log(jobTitle);
-  const { notifyError } = makeNotifier(c.env, jobTitle);
-
-  try {
     const product = await getProduct(String(data.id));
     let productRecordId: number | undefined = product?.id;
 
@@ -116,12 +132,10 @@ app.post("/product", async (c) => {
         await deleteVariantManyByProductId(productRecordId);
       console.log("deleted variant", deletedVariants.rowCount, "record(s)");
     }
-  } catch (e) {
-    notifyError(e);
-  }
 
-  return c.json({ message: "synced" });
-});
+    return c.json({ message: "product synced" });
+  }),
+);
 
 type LineItemCustomAttr = {
   id: number;
@@ -129,17 +143,17 @@ type LineItemCustomAttr = {
   _skus: string[];
 };
 
-app.post("/order", async (c) => {
-  const { getVariant } = getClient(c.env);
-  const { updateOrderNoteAttributes } = getShopifyClient(c.env);
+app.post(
+  "/order",
+  ...errorBoundary(async (c) => {
+    const { getVariant } = getClient(c.env);
+    const { updateOrderNoteAttributes } = getShopifyClient(c.env);
 
-  const data = await c.req.json<ShopifyOrder>();
-  const jobTitle = `Webhook created order: ${data.id}`;
-  console.log(jobTitle);
-  const { notifyError, notifyNotConnectedSkuOrder, notifyErrorResponse } =
-    makeNotifier(c.env, jobTitle);
+    const data = await c.req.json<ShopifyOrder>();
+    c.set("label", `Webhook created order: ${data.id}`);
+    const { notifyError, notifyNotConnectedSkuOrder, notifyErrorResponse } =
+      makeNotifier(c.env, c.get("label"));
 
-  try {
     const liCustomAttributes = await Promise.all<LineItemCustomAttr>(
       data.line_items.map(async ({ id, name, properties, variant_id }) => {
         let _skus = properties.find((p) => p.name === "_skus")?.value;
@@ -169,11 +183,9 @@ app.post("/order", async (c) => {
     await notifyErrorResponse(res);
 
     console.log("updated note attributes");
-  } catch (e) {
-    await notifyError(e);
-  }
 
-  return c.json({ message: "synced" });
-});
+    return c.json({ message: "update order" });
+  }),
+);
 
 export default app;
