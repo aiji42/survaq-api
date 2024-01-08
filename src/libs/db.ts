@@ -10,9 +10,9 @@ const schema = {
   ...relations,
 };
 
-export const getClient = (url: string) => {
+export const getClient = (env: string | { DATABASE_URL: string }) => {
   const pool = new Pool({
-    connectionString: url,
+    connectionString: typeof env === "string" ? env : env.DATABASE_URL,
     connectionTimeoutMillis: 5000,
   });
   const client = drizzle(pool, { schema });

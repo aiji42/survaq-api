@@ -2,9 +2,9 @@ import { ShopifyOrder } from "../types/shopify";
 
 const API_VERSION = "2023-10";
 
-export const getShopifyClient = (accessToken: string) => {
+export const getShopifyClient = (env: { SHOPIFY_ACCESS_TOKEN: string }) => {
   const headers = new Headers({
-    "X-Shopify-Access-Token": accessToken,
+    "X-Shopify-Access-Token": env.SHOPIFY_ACCESS_TOKEN,
     "Content-Type": "application/json",
   });
 
