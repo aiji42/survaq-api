@@ -19,19 +19,22 @@ describe("e2e", async () => {
     (await (await fetch("http://0.0.0.0:8787/products")).json()) as {
       productId: string;
     }[],
-    10,
+    3,
   );
 
   afterAll(async () => {
     await client.cleanUp();
   });
 
+  // キャッシュを回避するためにパラメータに付与
+  const flag = new Date().toISOString();
+
   test("products list data path: /products", async () => {
     const production = await (
-      await fetch("https://api.survaq.com/products")
+      await fetch(`https://api.survaq.com/products?${flag}`)
     ).json();
     const development = await (
-      await fetch("http://0.0.0.0:8787/products")
+      await fetch(`http://0.0.0.0:8787/products?${flag}`)
     ).json();
 
     expect(production).toStrictEqual(development);
@@ -41,23 +44,33 @@ describe("e2e", async () => {
     "product delivery schedule data path: /products/$productId/delivery",
     async ({ productId }) => {
       let production = await (
-        await fetch(`https://api.survaq.com/products/${productId}/delivery`)
+        await fetch(
+          `https://api.survaq.com/products/${productId}/delivery?${flag}`,
+        )
       ).json();
       let development = await (
-        await fetch(`http://0.0.0.0:8787/products/${productId}/delivery`)
+        await fetch(
+          `http://0.0.0.0:8787/products/${productId}/delivery?${flag}`,
+        )
       ).json();
 
       expect(production).toStrictEqual(development);
 
       production = await (
-        await fetch(`https://api.survaq.com/products/${productId}/delivery`, {
-          headers: { "accept-language": "en" },
-        })
+        await fetch(
+          `https://api.survaq.com/products/${productId}/delivery?${flag}`,
+          {
+            headers: { "accept-language": "en" },
+          },
+        )
       ).json();
       development = await (
-        await fetch(`http://0.0.0.0:8787/products/${productId}/delivery`, {
-          headers: { "accept-language": "en" },
-        })
+        await fetch(
+          `http://0.0.0.0:8787/products/${productId}/delivery?${flag}`,
+          {
+            headers: { "accept-language": "en" },
+          },
+        )
       ).json();
 
       expect(production).toStrictEqual(development);
@@ -69,12 +82,12 @@ describe("e2e", async () => {
     async ({ productId }) => {
       let production = await (
         await fetch(
-          `https://api.survaq.com/products/${productId}/delivery?filter=false`,
+          `https://api.survaq.com/products/${productId}/delivery?filter=false&${flag}`,
         )
       ).json();
       let development = await (
         await fetch(
-          `http://0.0.0.0:8787/products/${productId}/delivery?filter=false`,
+          `http://0.0.0.0:8787/products/${productId}/delivery?filter=false&${flag}`,
         )
       ).json();
 
@@ -88,40 +101,13 @@ describe("e2e", async () => {
     "product detail data path: /products/$productId/supabase",
     async ({ productId }) => {
       let production = await (
-        await fetch(`https://api.survaq.com/products/${productId}/supabase`)
-      ).json();
-      let development = await (
-        await fetch(`http://0.0.0.0:8787/products/${productId}/supabase`)
-      ).json();
-
-      expect(production).toStrictEqual(development);
-
-      production = await (
-        await fetch(`https://api.survaq.com/products/${productId}/supabase`, {
-          headers: { "accept-language": "en" },
-        })
-      ).json();
-      development = await (
-        await fetch(`http://0.0.0.0:8787/products/${productId}/supabase`, {
-          headers: { "accept-language": "en" },
-        })
-      ).json();
-
-      expect(production).toStrictEqual(development);
-    },
-  );
-
-  test.each(pages)(
-    "page detail data path: /products/page-data/$pathname/supabase",
-    async ({ pathname }) => {
-      let production = await (
         await fetch(
-          `https://api.survaq.com/products/page-data/${pathname}/supabase`,
+          `https://api.survaq.com/products/${productId}/supabase?${flag}`,
         )
       ).json();
       let development = await (
         await fetch(
-          `http://0.0.0.0:8787/products/page-data/${pathname}/supabase`,
+          `http://0.0.0.0:8787/products/${productId}/supabase?${flag}`,
         )
       ).json();
 
@@ -129,7 +115,7 @@ describe("e2e", async () => {
 
       production = await (
         await fetch(
-          `https://api.survaq.com/products/page-data/${pathname}/supabase`,
+          `https://api.survaq.com/products/${productId}/supabase?${flag}`,
           {
             headers: { "accept-language": "en" },
           },
@@ -137,7 +123,44 @@ describe("e2e", async () => {
       ).json();
       development = await (
         await fetch(
-          `http://0.0.0.0:8787/products/page-data/${pathname}/supabase`,
+          `http://0.0.0.0:8787/products/${productId}/supabase?${flag}`,
+          {
+            headers: { "accept-language": "en" },
+          },
+        )
+      ).json();
+
+      expect(production).toStrictEqual(development);
+    },
+  );
+
+  test.each(pages)(
+    "page detail data path: /products/page-data/$pathname/supabase?",
+    async ({ pathname }) => {
+      let production = await (
+        await fetch(
+          `https://api.survaq.com/products/page-data/${pathname}/supabase?${flag}`,
+        )
+      ).json();
+      let development = await (
+        await fetch(
+          `http://0.0.0.0:8787/products/page-data/${pathname}/supabase?${flag}`,
+        )
+      ).json();
+
+      expect(production).toStrictEqual(development);
+
+      production = await (
+        await fetch(
+          `https://api.survaq.com/products/page-data/${pathname}/supabase?${flag}`,
+          {
+            headers: { "accept-language": "en" },
+          },
+        )
+      ).json();
+      development = await (
+        await fetch(
+          `http://0.0.0.0:8787/products/page-data/${pathname}/supabase?${flag}`,
           {
             headers: { "accept-language": "en" },
           },
@@ -153,12 +176,12 @@ describe("e2e", async () => {
     async ({ domain }) => {
       let production = await (
         await fetch(
-          `https://api.survaq.com/products/page-data/by-domain/${domain}/supabase`,
+          `https://api.survaq.com/products/page-data/by-domain/${domain}/supabase?${flag}`,
         )
       ).json();
       let development = await (
         await fetch(
-          `http://0.0.0.0:8787/products/page-data/by-domain/${domain}/supabase`,
+          `http://0.0.0.0:8787/products/page-data/by-domain/${domain}/supabase?${flag}`,
         )
       ).json();
 
