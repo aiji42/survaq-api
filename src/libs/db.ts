@@ -29,15 +29,6 @@ export const getClient = (env: string | { DATABASE_URL: string }) => {
       });
     },
 
-    getProductWithGroup: (productId: string) => {
-      return client.query.shopifyProducts.findFirst({
-        with: {
-          group: true,
-        },
-        where: eq(schema.shopifyProducts.productId, productId),
-      });
-    },
-
     getProduct: (productId: string) => {
       return client.query.shopifyProducts.findFirst({
         columns: {
@@ -223,7 +214,6 @@ export const getClient = (env: string | { DATABASE_URL: string }) => {
           },
           product: {
             with: {
-              group: true,
               variants: {
                 with: {
                   skus: {

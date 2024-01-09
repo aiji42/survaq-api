@@ -38,20 +38,6 @@ describe("e2e", async () => {
   });
 
   test.each(products)(
-    "product funding data path: /products/$productId/funding",
-    async ({ productId }) => {
-      const production = await (
-        await fetch(`https://api.survaq.com/products/${productId}/funding`)
-      ).json();
-      const development = await (
-        await fetch(`http://0.0.0.0:8787/products/${productId}/funding`)
-      ).json();
-
-      expect(production).toStrictEqual(development);
-    },
-  );
-
-  test.each(products)(
     "product delivery schedule data path: /products/$productId/delivery",
     async ({ productId }) => {
       let production = await (

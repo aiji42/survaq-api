@@ -107,23 +107,6 @@ app.get(
   }),
 );
 
-app.get(
-  "/:id/funding",
-  ...makeSWRHandler<"/:id/funding">(async (c) => {
-    const { getProductWithGroup } = c.get("client");
-    const data = await getProductWithGroup(c.req.param("id"));
-    if (!data) return c.notFound();
-
-    return c.json({
-      totalPrice:
-        (data.group?.totalPrice ?? 0) + (data.group?.realTotalPrice ?? 0),
-      supporters:
-        (data.group?.supporters ?? 0) + (data.group?.realSupporters ?? 0),
-      closeOn: data.group?.closeOn ?? null,
-    });
-  }),
-);
-
 export type DeliveryRouteResponse = {
   current: Schedule<boolean>;
   skus: SKUsForDelivery;
