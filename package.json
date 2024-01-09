@@ -12,7 +12,8 @@
     "tail:prod": "wrangler tail -e production",
     "db:pull": "drizzle-kit introspect:pg",
     "test": "vitest",
-    "build:wc": "vite build"
+    "build:wc": "vite build",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231218.0",

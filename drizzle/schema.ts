@@ -585,11 +585,6 @@ export const shopifyProductGroups = pgTable(
     id: serial("id").primaryKey().notNull(),
     createdAt: timestamp("createdAt", { withTimezone: true, mode: "string" }),
     updatedAt: timestamp("updatedAt", { withTimezone: true, mode: "string" }),
-    totalPrice: integer("totalPrice").default(0),
-    realTotalPrice: integer("realTotalPrice").default(0).notNull(),
-    supporters: integer("supporters").default(0),
-    closeOn: date("closeOn").notNull(),
-    realSupporters: integer("realSupporters").default(0).notNull(),
     title: varchar("title", { length: 255 }).default(
       sql`NULL::character varying`,
     ),
