@@ -176,10 +176,6 @@ app.post(
       }),
     );
 
-    // TODO: まだProductionにはdeployしていない
-    // デプロイしたらShopify側のWebhookも直さないといけない
-    // ある程度データ溜まったら、jobs側でこのデータを利用するようにする
-    // => noteへのデータ書き込みは止めていいが、しばらくはnoteも同時に見るようにする
     const res = await updateOrderNoteAttributes(data, [
       {
         name: "__line_items",
