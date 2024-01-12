@@ -149,6 +149,8 @@ type LineItemCustomAttr = {
   _skus: string[];
 };
 
+const LINE_ITEMS = "__line_items";
+
 app.post(
   "/order",
   ...errorBoundary(async (c) => {
@@ -157,13 +159,23 @@ app.post(
     const notifier = c.get("notifier");
 
     const data = await c.req.json<ShopifyOrder>();
-    c.set("label", `Webhook created order: ${data.id}`);
+    c.set("label", `Webhook order: ${data.id}`);
     console.log(c.get("label"));
+
+    const { value: _liCustomAttributes = "[]" } =
+      data.note_attributes.find(({ name }) => name === LINE_ITEMS) ?? {};
+    const skusByLineItemId = Object.fromEntries(
+      (JSON.parse(_liCustomAttributes) as LineItemCustomAttr[])
+        .filter(({ _skus }) => _skus.length > 0)
+        .map(({ id, _skus }) => [id, JSON.stringify(_skus)]),
+    );
 
     const liCustomAttributes = await Promise.all<LineItemCustomAttr>(
       data.line_items.map(async ({ id, name, properties, variant_id }) => {
-        let _skus = properties.find((p) => p.name === "_skus")?.value;
-        if (!_skus)
+        let _skus =
+          skusByLineItemId[id] ??
+          properties.find((p) => p.name === "_skus")?.value;
+        if (!_skus || _skus === "[]")
           try {
             const skusJson = (await getVariant(variant_id))?.skusJson;
             if (!skusJson) notifier.appendNotConnectedSkuOrder(data);
@@ -176,16 +188,43 @@ app.post(
       }),
     );
 
-    const res = await updateOrderNoteAttributes(data, [
-      {
-        name: "__line_items",
-        value: JSON.stringify(liCustomAttributes),
-      },
-    ]);
-    await notifier.appendErrorResponse(res);
+    if (
+      !isEqualLiCustomAttributes(
+        liCustomAttributes,
+        JSON.parse(_liCustomAttributes),
+      )
+    ) {
+      const res = await updateOrderNoteAttributes(data, [
+        {
+          name: LINE_ITEMS,
+          value: JSON.stringify(liCustomAttributes),
+        },
+      ]);
+      await notifier.appendErrorResponse(res);
+      console.log("updated order's note_attributes");
+    }
 
     return c.json({ message: "update order" });
   }),
 );
+
+const isEqualLiCustomAttributes = (
+  dataA: LineItemCustomAttr[],
+  dataB: LineItemCustomAttr[],
+): boolean => {
+  if (dataA.length !== dataB.length) return false;
+
+  const sortedA = [...dataA].sort((a, b) => a.id - b.id);
+  const sortedB = [...dataB].sort((a, b) => a.id - b.id);
+
+  return sortedA.every((a, index) => {
+    const b = sortedB[index];
+    if (a.id !== b?.id) return false;
+    const [skusA, skusB] = [new Set(a._skus), new Set(b._skus)];
+    return (
+      skusA.size === skusB.size && [...skusA].every((item) => skusB.has(item))
+    );
+  });
+};
 
 export default app;
