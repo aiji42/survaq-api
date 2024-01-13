@@ -150,6 +150,7 @@ type LineItemCustomAttr = {
 };
 
 const LINE_ITEMS = "__line_items";
+const SKUS = "_skus";
 
 app.post(
   "/order",
@@ -159,32 +160,32 @@ app.post(
     const notifier = c.get("notifier");
 
     const data = await c.req.json<ShopifyOrder>();
-    c.set("label", `Webhook order: ${data.id}`);
+    c.set("label", `Webhook order created/updated: ${data.id}`);
     console.log(c.get("label"));
 
     const { value: _liCustomAttributes = "[]" } =
       data.note_attributes.find(({ name }) => name === LINE_ITEMS) ?? {};
     const skusByLineItemId = Object.fromEntries(
       (JSON.parse(_liCustomAttributes) as LineItemCustomAttr[])
-        .filter(({ _skus }) => _skus.length > 0)
-        .map(({ id, _skus }) => [id, JSON.stringify(_skus)]),
+        .filter(({ [SKUS]: skus }) => skus.length > 0)
+        .map(({ id, [SKUS]: skus }) => [id, JSON.stringify(skus)]),
     );
 
     const liCustomAttributes = await Promise.all<LineItemCustomAttr>(
       data.line_items.map(async ({ id, name, properties, variant_id }) => {
-        let _skus =
+        let skus =
           skusByLineItemId[id] ??
-          properties.find((p) => p.name === "_skus")?.value;
-        if (!_skus || _skus === "[]")
+          properties.find((p) => p.name === SKUS)?.value;
+        if (!skus || skus === "[]")
           try {
             const skusJson = (await getVariant(variant_id))?.skusJson;
             if (!skusJson) notifier.appendNotConnectedSkuOrder(data);
-            else _skus = skusJson;
+            else skus = skusJson;
           } catch (e) {
             notifier.appendErrorMessage(e);
           }
 
-        return { id, name, _skus: JSON.parse(_skus ?? "[]") };
+        return { id, name, [SKUS]: JSON.parse(skus ?? "[]") };
       }),
     );
 
