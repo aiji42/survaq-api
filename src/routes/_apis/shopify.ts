@@ -151,6 +151,7 @@ type LineItemCustomAttr = {
 
 const LINE_ITEMS = "__line_items";
 const SKUS = "_skus";
+const EMPTY = "[]";
 
 app.post(
   "/order",
@@ -163,20 +164,21 @@ app.post(
     c.set("label", `Webhook order created/updated: ${data.id}`);
     console.log(c.get("label"));
 
-    const { value: _liCustomAttributes = "[]" } =
+    const { value = EMPTY } =
       data.note_attributes.find(({ name }) => name === LINE_ITEMS) ?? {};
+    const persistedLiCustomAttrs: LineItemCustomAttr[] = JSON.parse(value);
     const skusByLineItemId = Object.fromEntries(
-      (JSON.parse(_liCustomAttributes) as LineItemCustomAttr[])
+      persistedLiCustomAttrs
         .filter(({ [SKUS]: skus }) => skus.length > 0)
         .map(({ id, [SKUS]: skus }) => [id, JSON.stringify(skus)]),
     );
 
-    const liCustomAttributes = await Promise.all<LineItemCustomAttr>(
+    const liCustomAttrs = await Promise.all<LineItemCustomAttr>(
       data.line_items.map(async ({ id, name, properties, variant_id }) => {
         let skus =
           skusByLineItemId[id] ??
           properties.find((p) => p.name === SKUS)?.value;
-        if (!skus || skus === "[]")
+        if (!skus || skus === EMPTY)
           try {
             const skusJson = (await getVariant(variant_id))?.skusJson;
             if (!skusJson) notifier.appendNotConnectedSkuOrder(data);
@@ -185,31 +187,26 @@ app.post(
             notifier.appendErrorMessage(e);
           }
 
-        return { id, name, [SKUS]: JSON.parse(skus ?? "[]") };
+        return { id, name, [SKUS]: JSON.parse(skus ?? EMPTY) };
       }),
     );
 
-    if (
-      !isEqualLiCustomAttributes(
-        liCustomAttributes,
-        JSON.parse(_liCustomAttributes),
-      )
-    ) {
+    if (!isEqualLiCustomAttrs(liCustomAttrs, persistedLiCustomAttrs)) {
+      console.log("try to update order's note_attributes");
       const res = await updateOrderNoteAttributes(data, [
         {
           name: LINE_ITEMS,
-          value: JSON.stringify(liCustomAttributes),
+          value: JSON.stringify(liCustomAttrs),
         },
       ]);
       await notifier.appendErrorResponse(res);
-      console.log("updated order's note_attributes");
     }
 
     return c.json({ message: "update order" });
   }),
 );
 
-const isEqualLiCustomAttributes = (
+const isEqualLiCustomAttrs = (
   dataA: LineItemCustomAttr[],
   dataB: LineItemCustomAttr[],
 ): boolean => {
