@@ -173,7 +173,7 @@ app.post(
         .map(({ id, [SKUS]: skus }) => [id, JSON.stringify(skus)]),
     );
 
-    const liCustomAttrs = await Promise.all<LineItemCustomAttr>(
+    const newLiCustomAttrs = await Promise.all<LineItemCustomAttr>(
       data.line_items.map(async ({ id, name, properties, variant_id }) => {
         let skus =
           skusByLineItemId[id] ??
@@ -191,12 +191,12 @@ app.post(
       }),
     );
 
-    if (!isEqualLiCustomAttrs(liCustomAttrs, persistedLiCustomAttrs)) {
+    if (!isEqualLiCustomAttrs(newLiCustomAttrs, persistedLiCustomAttrs)) {
       console.log("try to update order's note_attributes");
       const res = await updateOrderNoteAttributes(data, [
         {
           name: LINE_ITEMS,
-          value: JSON.stringify(liCustomAttrs),
+          value: JSON.stringify(newLiCustomAttrs),
         },
       ]);
       await notifier.appendErrorResponse(res);
