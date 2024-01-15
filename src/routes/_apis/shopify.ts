@@ -182,7 +182,7 @@ app.post(
           try {
             const skusJson = (await getVariant(variant_id))?.skusJson;
             if (!skusJson)
-              notifier.appendNotConnectedSkuOrder(data, "notify-cms");
+              notifier.appendNotConnectedSkuOrder(data, "notify-order");
             else skus = skusJson;
           } catch (e) {
             notifier.appendErrorMessage(e);
