@@ -6,10 +6,12 @@ import {
   getPersistedListItemCustomAttrs,
   getShopifyClient,
   isEqualLineItemCustomAttrs,
+  LINE_ITEMS,
 } from "../../libs/shopify";
 import { Notifier } from "../../libs/slack";
 import { ShopifyOrder, ShopifyProduct } from "../../types/shopify";
 import { createFactory } from "hono/factory";
+import { latest, makeSchedule } from "../../libs/makeSchedule";
 
 type Variables = { label: string; notifier: Notifier };
 
@@ -141,20 +143,10 @@ app.post(
   }),
 );
 
-type LineItemCustomAttr = {
-  id: number;
-  name: string;
-  _skus: string[];
-};
-
-const LINE_ITEMS = "__line_items";
-const SKUS = "_skus";
-const EMPTY = "[]";
-
 app.post(
   "/order",
   ...errorBoundary(async (c) => {
-    const { getVariant } = getClient(c.env);
+    const { getVariant, getSKUs } = getClient(c.env);
     const { updateOrderNoteAttributes } = getShopifyClient(c.env);
     const notifier = c.get("notifier");
 
@@ -163,15 +155,36 @@ app.post(
     console.log(c.get("label"));
 
     const newLiCustomAttrs = await getNewLineItemCustomAttrs(data, getVariant, notifier);
+
     if (!isEqualLineItemCustomAttrs(newLiCustomAttrs, getPersistedListItemCustomAttrs(data))) {
+      // TODO: すでに'__delivery_schedule'があれば処理しない
+      // TODO: SKUの紐づけがない時にmakeSchedule(null)を優先して大丈夫か？
+      //        └ 処理せずアラートとするのが良さそう
+      // TODO: ロケールの考慮(ここでというよりはSendgrid側で制御か)
+      const skus = await getSKUs([...new Set(newLiCustomAttrs.flatMap(({ _skus }) => _skus))]);
+      const schedule =
+        latest(
+          skus.map(({ crntInvOrderSKU }) =>
+            makeSchedule(crntInvOrderSKU?.invOrder.deliverySchedule ?? null, undefined, false),
+          ),
+        ) ?? makeSchedule(null);
+
       console.log("try to update order's note_attributes");
-      const res = await updateOrderNoteAttributes(data, [
-        {
-          name: LINE_ITEMS,
-          value: JSON.stringify(newLiCustomAttrs),
-        },
-      ]);
-      await notifier.appendErrorResponse(res);
+      // const res = await updateOrderNoteAttributes(data, [
+      //   {
+      //     name: LINE_ITEMS,
+      //     value: JSON.stringify(newLiCustomAttrs),
+      //   },
+      //   {
+      //     name: '__delivery_schedule',
+      //     value: `${schedule.year}-${schedule.month}-${schedule.term}`
+      //   }
+      // ]);
+      // await notifier.appendErrorResponse(res);
+      console.log({
+        name: "__delivery_schedule",
+        value: `${schedule.year}-${schedule.month}-${schedule.term}`,
+      });
     }
 
     return c.json({ message: "update order" });

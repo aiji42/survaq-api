@@ -1,15 +1,7 @@
 import { Handler, Hono, Input } from "hono";
-import {
-  earliest,
-  Locale,
-  makeSchedule,
-  Schedule,
-} from "../../libs/makeSchedule";
+import { earliest, Locale, makeSchedule, Schedule } from "../../libs/makeSchedule";
 import { makeSKUCodes, makeVariants } from "../../libs/makeVariants";
-import {
-  makeSKUsForDelivery,
-  SKUsForDelivery,
-} from "../../libs/makeSKUsForDelivery";
+import { makeSKUsForDelivery, SKUsForDelivery } from "../../libs/makeSKUsForDelivery";
 import { Client, getClient } from "../../libs/db";
 import { Bindings } from "../../../bindings";
 import { createFactory } from "hono/factory";
@@ -32,9 +24,7 @@ app.use("*", async (c, next) => {
   );
   c.set("client", client);
 
-  const locale = c.req.headers.get("accept-language")?.startsWith("en")
-    ? "en"
-    : "ja";
+  const locale = c.req.headers.get("accept-language")?.startsWith("en") ? "en" : "ja";
   c.set("locale", locale);
 
   await next();
@@ -58,8 +48,7 @@ const makeSWRHandler = <
     const updateCache = async (_res: Response | Promise<Response>) => {
       const res = await _res;
       if (!(res.status >= 200 && res.status < 300)) return;
-      if (!res.headers.get("content-type")?.includes("application/json"))
-        return;
+      if (!res.headers.get("content-type")?.includes("application/json")) return;
       if (res.headers.has("set-cookie")) return;
 
       console.log("update cache", "key: ", cacheKey);
@@ -79,14 +68,9 @@ const makeSWRHandler = <
 
     if (value) {
       if ((metadata?.staleAt ?? 0) < Date.now())
-        c.executionCtx.waitUntil(
-          updateCache(handler(c, next) as Promise<Response>),
-        );
+        c.executionCtx.waitUntil(updateCache(handler(c, next) as Promise<Response>));
 
-      return c.newResponse(
-        value,
-        metadata ? { headers: metadata.headers } : undefined,
-      );
+      return c.newResponse(value, metadata ? { headers: metadata.headers } : undefined);
     }
 
     const res = (await handler(c, next)) as Response;
@@ -121,11 +105,10 @@ app.get(
 
     const current = makeSchedule(null);
 
-    if (!data)
-      return c.json({ current, skus: [] } satisfies DeliveryRouteResponse, 404);
+    if (!data) return c.json({ current, skus: [] } satisfies DeliveryRouteResponse, 404);
 
     const codes = makeSKUCodes(data);
-    const skusData = codes.length ? await getSKUs(codes) : [];
+    const skusData = await getSKUs(codes);
 
     const variants = await makeVariants(data, skusData, c.get("locale"));
 
@@ -144,13 +127,11 @@ app.get(
     if (!data) return c.notFound();
 
     const codes = makeSKUCodes(data);
-    const skusData = codes.length ? await getSKUs(codes) : [];
+    const skusData = await getSKUs(codes);
 
     const variants = await makeVariants(data, skusData, c.get("locale"));
 
-    const schedule = earliest(
-      variants.map(({ defaultSchedule }) => defaultSchedule),
-    );
+    const schedule = earliest(variants.map(({ defaultSchedule }) => defaultSchedule));
 
     return c.json({
       variants,
@@ -169,13 +150,11 @@ app.get(
     const { product, faviconFile: favicon, logoFile: logo, ...page } = data;
 
     const codes = makeSKUCodes(product);
-    const skusData = codes.length ? await getSKUs(codes) : [];
+    const skusData = await getSKUs(codes);
 
     const variants = await makeVariants(product, skusData, c.get("locale"));
 
-    const schedule = earliest(
-      variants.map(({ defaultSchedule }) => defaultSchedule),
-    );
+    const schedule = earliest(variants.map(({ defaultSchedule }) => defaultSchedule));
 
     return c.json({
       ...page,

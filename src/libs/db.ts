@@ -77,10 +77,7 @@ export const getClient = (env: string | { DATABASE_URL: string }) => {
                     },
                   },
                 },
-                orderBy: (record, { asc }) => [
-                  asc(record.sort),
-                  asc(record.id),
-                ],
+                orderBy: (record, { asc }) => [asc(record.sort), asc(record.id)],
               },
             },
           },
@@ -116,9 +113,7 @@ export const getClient = (env: string | { DATABASE_URL: string }) => {
       });
     },
 
-    insertVariantMany: (
-      data: PgInsertValue<typeof schema.shopifyVariants>[],
-    ) => {
+    insertVariantMany: (data: PgInsertValue<typeof schema.shopifyVariants>[]) => {
       return client.insert(schema.shopifyVariants).values(
         data.map((item) => ({
           ...item,
@@ -140,10 +135,7 @@ export const getClient = (env: string | { DATABASE_URL: string }) => {
         .where(eq(schema.shopifyVariants.product, productId));
     },
 
-    updateVariant: (
-      variantId: string,
-      data: PgUpdateSetSource<typeof schema.shopifyVariants>,
-    ) => {
+    updateVariant: (variantId: string, data: PgUpdateSetSource<typeof schema.shopifyVariants>) => {
       return client
         .update(schema.shopifyVariants)
         .set({
@@ -154,6 +146,7 @@ export const getClient = (env: string | { DATABASE_URL: string }) => {
     },
 
     getSKUs: (codes: string[]) => {
+      if (codes.length < 1) return [];
       return client.query.shopifyCustomSkUs.findMany({
         columns: {
           id: true,
@@ -228,10 +221,7 @@ export const getClient = (env: string | { DATABASE_URL: string }) => {
                         },
                       },
                     },
-                    orderBy: (record, { asc }) => [
-                      asc(record.sort),
-                      asc(record.id),
-                    ],
+                    orderBy: (record, { asc }) => [asc(record.sort), asc(record.id)],
                   },
                 },
               },
@@ -245,9 +235,6 @@ export const getClient = (env: string | { DATABASE_URL: string }) => {
 
 export type Client = ReturnType<typeof getClient>;
 
-export type Product = Exclude<
-  Awaited<ReturnType<Client["getProduct"]>>,
-  null | undefined
->;
+export type Product = Exclude<Awaited<ReturnType<Client["getProduct"]>>, null | undefined>;
 
 export type SKUs = Awaited<ReturnType<Client["getSKUs"]>>;
