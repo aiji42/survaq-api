@@ -2,16 +2,20 @@ import { Handler, Hono, Input } from "hono";
 import { getClient } from "../../libs/db";
 import { Bindings } from "../../../bindings";
 import {
+  DELIVERY_SCHEDULE,
+  getNewDeliveryScheduleCustomAttrs,
   getNewLineItemCustomAttrs,
   getPersistedListItemCustomAttrs,
   getShopifyClient,
-  isEqualLineItemCustomAttrs,
+  hasNoSkuLineItem,
+  eqLineItemCustomAttrs,
   LINE_ITEMS,
+  NoteAttributes,
+  hasPersistedDeliveryScheduleCustomAttrs,
 } from "../../libs/shopify";
 import { Notifier } from "../../libs/slack";
 import { ShopifyOrder, ShopifyProduct } from "../../types/shopify";
 import { createFactory } from "hono/factory";
-import { latest, makeSchedule } from "../../libs/makeSchedule";
 
 type Variables = { label: string; notifier: Notifier };
 
@@ -149,42 +153,41 @@ app.post(
     const { getVariant, getSKUs } = getClient(c.env);
     const { updateOrderNoteAttributes } = getShopifyClient(c.env);
     const notifier = c.get("notifier");
+    const updatableNoteAttrs: NoteAttributes = [];
 
     const data = await c.req.json<ShopifyOrder>();
     c.set("label", `Webhook order created/updated: ${data.id}`);
     console.log(c.get("label"));
 
-    const newLiCustomAttrs = await getNewLineItemCustomAttrs(data, getVariant, notifier);
+    const [newLiAttrs, errors] = await getNewLineItemCustomAttrs(data, getVariant);
+    errors.forEach((e) => notifier.appendErrorMessage(e));
 
-    if (!isEqualLineItemCustomAttrs(newLiCustomAttrs, getPersistedListItemCustomAttrs(data))) {
-      // TODO: すでに'__delivery_schedule'があれば処理しない
-      // TODO: SKUの紐づけがない時にmakeSchedule(null)を優先して大丈夫か？
-      //        └ 処理せずアラートとするのが良さそう
-      // TODO: ロケールの考慮(ここでというよりはSendgrid側で制御か)
-      const skus = await getSKUs([...new Set(newLiCustomAttrs.flatMap(({ _skus }) => _skus))]);
-      const schedule =
-        latest(
-          skus.map(({ crntInvOrderSKU }) =>
-            makeSchedule(crntInvOrderSKU?.invOrder.deliverySchedule ?? null, undefined, false),
-          ),
-        ) ?? makeSchedule(null);
+    // 配送予定のデータをnote_attributesに追加 (SKU情報が無いLineItemがある場合はスケジュールが正しく算出できないので追加しない)
+    if (!hasNoSkuLineItem(newLiAttrs) && !hasPersistedDeliveryScheduleCustomAttrs(data)) {
+      try {
+        const scheduleData = await getNewDeliveryScheduleCustomAttrs(newLiAttrs, getSKUs);
+        updatableNoteAttrs.push({ name: DELIVERY_SCHEDULE, value: JSON.stringify(scheduleData) });
+      } catch (e) {
+        notifier.appendErrorMessage(e);
+      }
+    }
 
-      console.log("try to update order's note_attributes");
-      // const res = await updateOrderNoteAttributes(data, [
-      //   {
-      //     name: LINE_ITEMS,
-      //     value: JSON.stringify(newLiCustomAttrs),
-      //   },
-      //   {
-      //     name: '__delivery_schedule',
-      //     value: `${schedule.year}-${schedule.month}-${schedule.term}`
-      //   }
-      // ]);
-      // await notifier.appendErrorResponse(res);
-      console.log({
-        name: "__delivery_schedule",
-        value: `${schedule.year}-${schedule.month}-${schedule.term}`,
-      });
+    // LineItem x SKU のデータをnote_attributesに追加 (既存のnote_attributesの情報と差異があれば)
+    if (!eqLineItemCustomAttrs(newLiAttrs, getPersistedListItemCustomAttrs(data))) {
+      // SKU情報が無いLineItemがあればSlackに通知
+      hasNoSkuLineItem(newLiAttrs) && notifier.appendNotConnectedSkuOrder(data, "notify-order");
+
+      updatableNoteAttrs.push({ name: LINE_ITEMS, value: JSON.stringify(newLiAttrs) });
+    }
+
+    if (updatableNoteAttrs.length) {
+      try {
+        console.log("try to update order's note_attributes");
+        const res = await updateOrderNoteAttributes(data, updatableNoteAttrs);
+        await notifier.appendErrorResponse(res);
+      } catch (e) {
+        notifier.appendErrorMessage(e);
+      }
     }
 
     return c.json({ message: "update order" });

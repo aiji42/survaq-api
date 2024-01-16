@@ -1,6 +1,8 @@
 import { ShopifyOrder } from "../types/shopify";
 import { getClient } from "./db";
-import { Notifier } from "./slack";
+import { latest, makeSchedule } from "./makeSchedule";
+
+export type NoteAttributes = ShopifyOrder["note_attributes"];
 
 const API_VERSION = "2023-10";
 
@@ -11,12 +13,9 @@ export const getShopifyClient = (env: { SHOPIFY_ACCESS_TOKEN: string }) => {
   });
 
   return {
-    updateOrderNoteAttributes: (
-      original: ShopifyOrder,
-      newNoteAttribute: ShopifyOrder["note_attributes"],
-    ) => {
+    updateOrderNoteAttributes: (original: ShopifyOrder, updatableNoteAttrs: NoteAttributes) => {
       const merged = new Map(
-        original.note_attributes.concat(newNoteAttribute).map(({ name, value }) => [name, value]),
+        original.note_attributes.concat(updatableNoteAttrs).map(({ name, value }) => [name, value]),
       );
 
       return fetch(
@@ -45,44 +44,47 @@ type LineItemCustomAttr = {
   _skus: string[];
 };
 
-const LINE_ITEMS = "__line_items";
-const EMPTY = "[]";
+export const LINE_ITEMS = "__line_items";
+const EMPTY_ARRAY = "[]";
 const SKUS = "_skus";
 
 export const getPersistedListItemCustomAttrs = (data: ShopifyOrder): LineItemCustomAttr[] => {
-  const { value = EMPTY } = data.note_attributes.find(({ name }) => name === LINE_ITEMS) ?? {};
+  const { value = EMPTY_ARRAY } =
+    data.note_attributes.find(({ name }) => name === LINE_ITEMS) ?? {};
   return JSON.parse(value);
 };
 
 export const getNewLineItemCustomAttrs = async (
   data: ShopifyOrder,
   getVariant: ReturnType<typeof getClient>["getVariant"],
-  notifier: Notifier,
-) => {
+): Promise<[LineItemCustomAttr[], Error[]]> => {
   const skusByLineItemId = Object.fromEntries(
     getPersistedListItemCustomAttrs(data)
       .filter(({ [SKUS]: skus }) => skus.length > 0)
       .map(({ id, [SKUS]: skus }) => [id, JSON.stringify(skus)]),
   );
 
-  return Promise.all<LineItemCustomAttr>(
+  const res = await Promise.allSettled(
     data.line_items.map(async ({ id, name, properties, variant_id }) => {
-      let skus = skusByLineItemId[id] ?? properties.find((p) => p.name === SKUS)?.value;
-      if (!skus || skus === EMPTY)
-        try {
-          const skusJson = (await getVariant(variant_id))?.skusJson;
-          if (!skusJson) notifier.appendNotConnectedSkuOrder(data, "notify-order");
-          else skus = skusJson;
-        } catch (e) {
-          notifier.appendErrorMessage(e);
-        }
+      let skus: string | undefined | null =
+        skusByLineItemId[id] ?? properties.find((p) => p.name === SKUS)?.value;
+      if (!skus || skus === EMPTY_ARRAY) skus = (await getVariant(variant_id))?.skusJson;
 
-      return { id, name, [SKUS]: JSON.parse(skus ?? EMPTY) };
+      return { id, name, [SKUS]: JSON.parse(skus ?? EMPTY_ARRAY) };
     }),
+  );
+
+  return res.reduce<[LineItemCustomAttr[], Error[]]>(
+    ([successes, errs], result) => {
+      if (result.status === "fulfilled") successes.push(result.value);
+      else errs.push(result.reason);
+      return [successes, errs];
+    },
+    [[], []],
   );
 };
 
-export const isEqualLineItemCustomAttrs = (
+export const eqLineItemCustomAttrs = (
   dataA: LineItemCustomAttr[],
   dataB: LineItemCustomAttr[],
 ): boolean => {
@@ -97,4 +99,50 @@ export const isEqualLineItemCustomAttrs = (
     const [skusA, skusB] = [new Set(a._skus), new Set(b._skus)];
     return skusA.size === skusB.size && [...skusA].every((item) => skusB.has(item));
   });
+};
+
+export const hasNoSkuLineItem = (data: LineItemCustomAttr[]) => {
+  return data.some(({ _skus }) => _skus.length < 1);
+};
+
+type DeliveryScheduleCustomAttrs = {
+  estimate: string;
+  notifications: { notifiedAt: string; value: string }[];
+};
+
+export const DELIVERY_SCHEDULE = "__delivery_schedule";
+const EMPTY = "{}";
+
+export const getPersistedDeliveryScheduleCustomAttrs = (
+  data: ShopifyOrder,
+): DeliveryScheduleCustomAttrs | Record<string, never> => {
+  const { value = EMPTY } =
+    data.note_attributes.find(({ name }) => name === DELIVERY_SCHEDULE) ?? {};
+  return JSON.parse(value);
+};
+
+export const hasPersistedDeliveryScheduleCustomAttrs = (data: ShopifyOrder) => {
+  return "estimate" in getPersistedDeliveryScheduleCustomAttrs(data);
+};
+
+export const getNewDeliveryScheduleCustomAttrs = async (
+  data: LineItemCustomAttr[],
+  getSKUs: ReturnType<typeof getClient>["getSKUs"],
+): Promise<DeliveryScheduleCustomAttrs> => {
+  const skus = await getSKUs([...new Set(data.flatMap(({ _skus }) => _skus))]);
+  const schedule =
+    latest(
+      skus.map((sku) => makeSchedule(sku.crntInvOrderSKU?.invOrder.deliverySchedule ?? null)),
+    ) ?? makeSchedule(null);
+
+  return {
+    estimate: `${schedule.year}-${schedule.month}-${schedule.term}`,
+    notifications: [
+      // TODO: 通知機能ができたらここに追加していく
+      // {
+      //   notifiedAt: new Date().toISOString(),
+      //   value: `${schedule.year}-${schedule.month}-${schedule.term}`,
+      // },
+    ],
+  };
 };
