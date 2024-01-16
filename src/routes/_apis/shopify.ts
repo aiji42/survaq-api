@@ -1,7 +1,12 @@
 import { Handler, Hono, Input } from "hono";
 import { getClient } from "../../libs/db";
 import { Bindings } from "../../../bindings";
-import { getShopifyClient } from "../../libs/shopify";
+import {
+  getNewLineItemCustomAttrs,
+  getPersistedListItemCustomAttrs,
+  getShopifyClient,
+  isEqualLineItemCustomAttrs,
+} from "../../libs/shopify";
 import { Notifier } from "../../libs/slack";
 import { ShopifyOrder, ShopifyProduct } from "../../types/shopify";
 import { createFactory } from "hono/factory";
@@ -75,22 +80,16 @@ app.post(
     // CMS上・Shopify両方に存在していればバリエーションをアップデートする
     if (data.status === "active" && productRecordId) {
       const variants = await getVariants(productRecordId);
-      const cmsVariantMap = new Map(
-        variants.map((v) => [v.variantId, v] as const),
-      );
+      const cmsVariantMap = new Map(variants.map((v) => [v.variantId, v] as const));
 
       // FIXME: Object.groupByが来たらリファクタ
-      const shouldInsertVariantIds = shopifyVariantIds.filter(
-        (id) => !cmsVariantMap.has(id),
-      );
+      const shouldInsertVariantIds = shopifyVariantIds.filter((id) => !cmsVariantMap.has(id));
       const shouldDeleteVariantIds = [...cmsVariantMap.keys()].filter(
         (id) => !shopifyVariantIds.includes(id),
       );
       // ものによっては大量にvariantがあるので、タイトルが異なるものだけアップデートの対象とする
       const shouldUpdateVariantIds = shopifyVariantIds.filter(
-        (id) =>
-          cmsVariantMap.has(id) &&
-          cmsVariantMap.get(id)?.variantName !== shopifyVariants[id],
+        (id) => cmsVariantMap.has(id) && cmsVariantMap.get(id)?.variantName !== shopifyVariants[id],
       );
 
       if (shouldInsertVariantIds.length) {
@@ -134,8 +133,7 @@ app.post(
     // バリエーション削除時に、SKU紐付け用の中間テーブルが残らないようにする
     if (data.status !== "active" && productRecordId) {
       console.log("delete variants by product record id", productRecordId);
-      const deletedVariants =
-        await deleteVariantManyByProductId(productRecordId);
+      const deletedVariants = await deleteVariantManyByProductId(productRecordId);
       console.log("deleted variant", deletedVariants.rowCount, "record(s)");
     }
 
@@ -164,35 +162,8 @@ app.post(
     c.set("label", `Webhook order created/updated: ${data.id}`);
     console.log(c.get("label"));
 
-    const { value = EMPTY } =
-      data.note_attributes.find(({ name }) => name === LINE_ITEMS) ?? {};
-    const persistedLiCustomAttrs: LineItemCustomAttr[] = JSON.parse(value);
-    const skusByLineItemId = Object.fromEntries(
-      persistedLiCustomAttrs
-        .filter(({ [SKUS]: skus }) => skus.length > 0)
-        .map(({ id, [SKUS]: skus }) => [id, JSON.stringify(skus)]),
-    );
-
-    const newLiCustomAttrs = await Promise.all<LineItemCustomAttr>(
-      data.line_items.map(async ({ id, name, properties, variant_id }) => {
-        let skus =
-          skusByLineItemId[id] ??
-          properties.find((p) => p.name === SKUS)?.value;
-        if (!skus || skus === EMPTY)
-          try {
-            const skusJson = (await getVariant(variant_id))?.skusJson;
-            if (!skusJson)
-              notifier.appendNotConnectedSkuOrder(data, "notify-order");
-            else skus = skusJson;
-          } catch (e) {
-            notifier.appendErrorMessage(e);
-          }
-
-        return { id, name, [SKUS]: JSON.parse(skus ?? EMPTY) };
-      }),
-    );
-
-    if (!isEqualLiCustomAttrs(newLiCustomAttrs, persistedLiCustomAttrs)) {
+    const newLiCustomAttrs = await getNewLineItemCustomAttrs(data, getVariant, notifier);
+    if (!isEqualLineItemCustomAttrs(newLiCustomAttrs, getPersistedListItemCustomAttrs(data))) {
       console.log("try to update order's note_attributes");
       const res = await updateOrderNoteAttributes(data, [
         {
@@ -206,24 +177,5 @@ app.post(
     return c.json({ message: "update order" });
   }),
 );
-
-const isEqualLiCustomAttrs = (
-  dataA: LineItemCustomAttr[],
-  dataB: LineItemCustomAttr[],
-): boolean => {
-  if (dataA.length !== dataB.length) return false;
-
-  const sortedA = [...dataA].sort((a, b) => a.id - b.id);
-  const sortedB = [...dataB].sort((a, b) => a.id - b.id);
-
-  return sortedA.every((a, index) => {
-    const b = sortedB[index];
-    if (a.id !== b?.id) return false;
-    const [skusA, skusB] = [new Set(a._skus), new Set(b._skus)];
-    return (
-      skusA.size === skusB.size && [...skusA].every((item) => skusB.has(item))
-    );
-  });
-};
 
 export default app;
