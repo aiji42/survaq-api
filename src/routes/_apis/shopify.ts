@@ -162,7 +162,9 @@ app.post(
     const [newLiAttrs, errors] = await getNewLineItemCustomAttrs(data, getVariant);
     errors.forEach((e) => notifier.appendErrorMessage(e));
 
-    // 配送予定のデータをnote_attributesに追加 (SKU情報が無いLineItemがある場合はスケジュールが正しく算出できないので追加しない)
+    // 配送予定のデータをnote_attributesに追加
+    // FIXME: SKUが紐づかないデータの通知がLineItemのデータの制御側にあって、離れているのが少し心配
+    //        └ 何度も通知される(order updatedの時)のを防ぐために意図的にそうしている
     if (!hasNoSkuLineItem(newLiAttrs) && !hasPersistedDeliveryScheduleCustomAttrs(data)) {
       try {
         const scheduleData = await getNewDeliveryScheduleCustomAttrs(newLiAttrs, getSKUs);
