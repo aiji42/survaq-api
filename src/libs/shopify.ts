@@ -49,9 +49,8 @@ const EMPTY_ARRAY = "[]";
 const SKUS = "_skus";
 
 export const getPersistedListItemCustomAttrs = (data: ShopifyOrder): LineItemCustomAttr[] => {
-  const { value = EMPTY_ARRAY } =
-    data.note_attributes.find(({ name }) => name === LINE_ITEMS) ?? {};
-  return JSON.parse(value);
+  const { value } = data.note_attributes.find(({ name }) => name === LINE_ITEMS) ?? {};
+  return JSON.parse(value || EMPTY_ARRAY);
 };
 
 export const getNewLineItemCustomAttrs = async (
@@ -70,7 +69,7 @@ export const getNewLineItemCustomAttrs = async (
         skusByLineItemId[id] ?? properties.find((p) => p.name === SKUS)?.value;
       if (!skus || skus === EMPTY_ARRAY) skus = (await getVariant(variant_id))?.skusJson;
 
-      return { id, name, [SKUS]: JSON.parse(skus ?? EMPTY_ARRAY) };
+      return { id, name, [SKUS]: JSON.parse(skus || EMPTY_ARRAY) };
     }),
   );
 
@@ -120,9 +119,8 @@ const EMPTY = "{}";
 export const getPersistedDeliveryScheduleCustomAttrs = (
   data: ShopifyOrder,
 ): DeliveryScheduleCustomAttrs | Record<string, never> => {
-  const { value = EMPTY } =
-    data.note_attributes.find(({ name }) => name === DELIVERY_SCHEDULE) ?? {};
-  return JSON.parse(value);
+  const { value } = data.note_attributes.find(({ name }) => name === DELIVERY_SCHEDULE) ?? {};
+  return JSON.parse(value || EMPTY);
 };
 
 export const hasPersistedDeliveryScheduleCustomAttrs = (data: ShopifyOrder) => {

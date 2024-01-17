@@ -150,7 +150,7 @@ app.post(
 app.post(
   "/order",
   ...errorBoundary(async (c) => {
-    const { getVariant, getSKUs } = getClient(c.env);
+    const { getVariant, getDeliverySchedulesBySkuCodes } = getClient(c.env);
     const { updateOrderNoteAttributes } = getShopifyClient(c.env);
     const notifier = c.get("notifier");
     const updatableNoteAttrs: NoteAttributes = [];
@@ -165,7 +165,10 @@ app.post(
     // 配送予定のデータをnote_attributesに追加()
     if (!hasNoSkuLineItem(newLiAttrs) && !hasPersistedDeliveryScheduleCustomAttrs(data)) {
       try {
-        const scheduleData = await getNewDeliveryScheduleCustomAttrs(newLiAttrs, getSKUs);
+        const scheduleData = await getNewDeliveryScheduleCustomAttrs(
+          newLiAttrs,
+          getDeliverySchedulesBySkuCodes,
+        );
 
         if (scheduleData)
           updatableNoteAttrs.push(makeUpdatableDeliveryScheduleNoteAttr(scheduleData));
