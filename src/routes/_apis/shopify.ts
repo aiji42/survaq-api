@@ -150,8 +150,8 @@ app.post(
 app.post(
   "/order",
   ...errorBoundary(async (c) => {
-    const { getVariant, getDeliverySchedulesBySkuCodes } = getClient(c.env);
-    const { updateOrderNoteAttributes } = getShopifyClient(c.env);
+    const dbClient = getClient(c.env);
+    const shopify = getShopifyClient(c.env);
     const notifier = c.get("notifier");
     const updatableNoteAttrs: NoteAttributes = [];
 
@@ -159,16 +159,13 @@ app.post(
     c.set("label", `Webhook order created/updated: ${data.id}`);
     console.log(c.get("label"));
 
-    const [newLiAttrs, errors] = await getNewLineItemCustomAttrs(data, getVariant);
+    const [newLiAttrs, errors] = await getNewLineItemCustomAttrs(data, dbClient);
     errors.forEach((e) => notifier.appendErrorMessage(e));
 
     // 配送予定のデータをnote_attributesに追加()
     if (!hasNoSkuLineItem(newLiAttrs) && !hasPersistedDeliveryScheduleCustomAttrs(data)) {
       try {
-        const scheduleData = await getNewDeliveryScheduleCustomAttrs(
-          newLiAttrs,
-          getDeliverySchedulesBySkuCodes,
-        );
+        const scheduleData = await getNewDeliveryScheduleCustomAttrs(newLiAttrs, dbClient);
 
         if (scheduleData)
           updatableNoteAttrs.push(makeUpdatableDeliveryScheduleNoteAttr(scheduleData));
@@ -188,7 +185,7 @@ app.post(
     if (updatableNoteAttrs.length) {
       try {
         console.log("try to update order's note_attributes");
-        const res = await updateOrderNoteAttributes(data, updatableNoteAttrs);
+        const res = await shopify.updateOrderNoteAttributes(data, updatableNoteAttrs);
         await notifier.appendErrorResponse(res);
       } catch (e) {
         notifier.appendErrorMessage(e);

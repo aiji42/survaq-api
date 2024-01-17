@@ -1,5 +1,5 @@
 import { ShopifyOrder } from "../types/shopify";
-import { getClient } from "./db";
+import { Client } from "./db";
 import { latest, makeSchedule } from "./makeSchedule";
 
 export type NoteAttributes = ShopifyOrder["note_attributes"];
@@ -55,7 +55,7 @@ export const getPersistedListItemCustomAttrs = (data: ShopifyOrder): LineItemCus
 
 export const getNewLineItemCustomAttrs = async (
   data: ShopifyOrder,
-  getVariant: ReturnType<typeof getClient>["getVariant"],
+  client: Client,
 ): Promise<[LineItemCustomAttr[], Error[]]> => {
   const skusByLineItemId = Object.fromEntries(
     getPersistedListItemCustomAttrs(data)
@@ -67,7 +67,7 @@ export const getNewLineItemCustomAttrs = async (
     data.line_items.map(async ({ id, name, properties, variant_id }) => {
       let skus: string | undefined | null =
         skusByLineItemId[id] ?? properties.find((p) => p.name === SKUS)?.value;
-      if (!skus || skus === EMPTY_ARRAY) skus = (await getVariant(variant_id))?.skusJson;
+      if (!skus || skus === EMPTY_ARRAY) skus = (await client.getVariant(variant_id))?.skusJson;
 
       return { id, name, [SKUS]: JSON.parse(skus || EMPTY_ARRAY) };
     }),
@@ -129,10 +129,10 @@ export const hasPersistedDeliveryScheduleCustomAttrs = (data: ShopifyOrder) => {
 
 export const getNewDeliveryScheduleCustomAttrs = async (
   data: LineItemCustomAttr[],
-  getDeliverySchedulesBySkuCodes: ReturnType<typeof getClient>["getDeliverySchedulesBySkuCodes"],
+  client: Client,
 ): Promise<DeliveryScheduleCustomAttrs | null> => {
   const codes = [...new Set(data.flatMap(({ _skus }) => _skus))];
-  const skus = await getDeliverySchedulesBySkuCodes(codes);
+  const skus = await client.getDeliverySchedulesBySkuCodes(codes);
   const schedules = skus.map((sku) =>
     makeSchedule(sku.crntInvOrderSKU?.invOrder.deliverySchedule ?? null),
   );
