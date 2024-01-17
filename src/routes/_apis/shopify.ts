@@ -2,16 +2,16 @@ import { Handler, Hono, Input } from "hono";
 import { getClient } from "../../libs/db";
 import { Bindings } from "../../../bindings";
 import {
-  DELIVERY_SCHEDULE,
   getNewDeliveryScheduleCustomAttrs,
   getNewLineItemCustomAttrs,
   getPersistedListItemCustomAttrs,
   getShopifyClient,
   hasNoSkuLineItem,
   eqLineItemCustomAttrs,
-  LINE_ITEMS,
   NoteAttributes,
   hasPersistedDeliveryScheduleCustomAttrs,
+  makeUpdatableDeliveryScheduleNoteAttr,
+  makeUpdatableLineItemNoteAttr,
 } from "../../libs/shopify";
 import { Notifier } from "../../libs/slack";
 import { ShopifyOrder, ShopifyProduct } from "../../types/shopify";
@@ -162,13 +162,13 @@ app.post(
     const [newLiAttrs, errors] = await getNewLineItemCustomAttrs(data, getVariant);
     errors.forEach((e) => notifier.appendErrorMessage(e));
 
-    // 配送予定のデータをnote_attributesに追加
-    // FIXME: SKUが紐づかないデータの通知がLineItemのデータの制御側にあって、離れているのが少し心配
-    //        └ 何度も通知される(order updatedの時)のを防ぐために意図的にそうしている
+    // 配送予定のデータをnote_attributesに追加()
     if (!hasNoSkuLineItem(newLiAttrs) && !hasPersistedDeliveryScheduleCustomAttrs(data)) {
       try {
         const scheduleData = await getNewDeliveryScheduleCustomAttrs(newLiAttrs, getSKUs);
-        updatableNoteAttrs.push({ name: DELIVERY_SCHEDULE, value: JSON.stringify(scheduleData) });
+
+        if (scheduleData)
+          updatableNoteAttrs.push(makeUpdatableDeliveryScheduleNoteAttr(scheduleData));
       } catch (e) {
         notifier.appendErrorMessage(e);
       }
@@ -179,7 +179,7 @@ app.post(
       // SKU情報が無いLineItemがあればSlackに通知
       hasNoSkuLineItem(newLiAttrs) && notifier.appendNotConnectedSkuOrder(data, "notify-order");
 
-      updatableNoteAttrs.push({ name: LINE_ITEMS, value: JSON.stringify(newLiAttrs) });
+      updatableNoteAttrs.push(makeUpdatableLineItemNoteAttr(newLiAttrs));
     }
 
     if (updatableNoteAttrs.length) {

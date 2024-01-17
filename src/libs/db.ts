@@ -2,7 +2,7 @@ import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import * as base from "../../drizzle/schema";
 import * as relations from "../../drizzle/relations";
-import { eq, or, inArray } from "drizzle-orm";
+import { eq, or, inArray, and, not } from "drizzle-orm";
 import { PgInsertValue, PgUpdateSetSource } from "drizzle-orm/pg-core";
 
 const schema = {
@@ -174,6 +174,29 @@ export const getClient = (env: string | { DATABASE_URL: string }) => {
           },
         },
         where: inArray(schema.shopifyCustomSkUs.code, codes),
+      });
+    },
+
+    getDeliverySchedulesBySkuCodes: (codes: string[]) => {
+      if (codes.length < 1) return [];
+      return client.query.shopifyCustomSkUs.findMany({
+        columns: {},
+        with: {
+          crntInvOrderSKU: {
+            columns: {},
+            with: {
+              invOrder: {
+                columns: {
+                  deliverySchedule: true,
+                },
+              },
+            },
+          },
+        },
+        where: and(
+          inArray(schema.shopifyCustomSkUs.code, codes),
+          not(eq(schema.shopifyCustomSkUs.skipDeliveryCalc, true)),
+        ),
       });
     },
 

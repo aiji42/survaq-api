@@ -44,7 +44,7 @@ type LineItemCustomAttr = {
   _skus: string[];
 };
 
-export const LINE_ITEMS = "__line_items";
+const LINE_ITEMS = "__line_items";
 const EMPTY_ARRAY = "[]";
 const SKUS = "_skus";
 
@@ -101,6 +101,10 @@ export const eqLineItemCustomAttrs = (
   });
 };
 
+export const makeUpdatableLineItemNoteAttr = (data: LineItemCustomAttr[]) => {
+  return { name: LINE_ITEMS, value: JSON.stringify(data) };
+};
+
 export const hasNoSkuLineItem = (data: LineItemCustomAttr[]) => {
   return data.some(({ _skus }) => _skus.length < 1);
 };
@@ -110,7 +114,7 @@ type DeliveryScheduleCustomAttrs = {
   notifications: { notifiedAt: string; value: string }[];
 };
 
-export const DELIVERY_SCHEDULE = "__delivery_schedule";
+const DELIVERY_SCHEDULE = "__delivery_schedule";
 const EMPTY = "{}";
 
 export const getPersistedDeliveryScheduleCustomAttrs = (
@@ -127,16 +131,25 @@ export const hasPersistedDeliveryScheduleCustomAttrs = (data: ShopifyOrder) => {
 
 export const getNewDeliveryScheduleCustomAttrs = async (
   data: LineItemCustomAttr[],
-  getSKUs: ReturnType<typeof getClient>["getSKUs"],
-): Promise<DeliveryScheduleCustomAttrs> => {
-  const skus = await getSKUs([...new Set(data.flatMap(({ _skus }) => _skus))]);
-  const schedule =
-    latest(
-      skus.map((sku) => makeSchedule(sku.crntInvOrderSKU?.invOrder.deliverySchedule ?? null)),
-    ) ?? makeSchedule(null);
+  getDeliverySchedulesBySkuCodes: ReturnType<typeof getClient>["getDeliverySchedulesBySkuCodes"],
+): Promise<DeliveryScheduleCustomAttrs | null> => {
+  const codes = [...new Set(data.flatMap(({ _skus }) => _skus))];
+  const skus = await getDeliverySchedulesBySkuCodes(codes);
+  const schedules = skus.map((sku) =>
+    makeSchedule(sku.crntInvOrderSKU?.invOrder.deliverySchedule ?? null),
+  );
+
+  // skusがスケジュール計算対象外ものだけで構成されている場合は、スケジュール未確定とする
+  if (schedules.length < 1) return null;
+
+  // schedulesが過去日だけで構成されていると、latest()が過去日を返してしまうためmakeSchedule(null)を混ぜて抑制
+  const estimate = latest([...schedules, makeSchedule(null)]);
+
+  // latestに1つ以上の要素で構成される配列を渡しているので、estimateがnullになることは無いはずだが、一応ケアしておく
+  if (!estimate) return null;
 
   return {
-    estimate: `${schedule.year}-${schedule.month}-${schedule.term}`,
+    estimate: `${estimate.year}-${estimate.month}-${estimate.term}`,
     notifications: [
       // TODO: 通知機能ができたらここに追加していく
       // {
@@ -145,4 +158,8 @@ export const getNewDeliveryScheduleCustomAttrs = async (
       // },
     ],
   };
+};
+
+export const makeUpdatableDeliveryScheduleNoteAttr = (data: DeliveryScheduleCustomAttrs) => {
+  return { name: DELIVERY_SCHEDULE, value: JSON.stringify(data) };
 };
