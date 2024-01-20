@@ -1,6 +1,6 @@
 import { ShopifyOrder } from "../types/shopify";
 import { Client } from "./db";
-import { latest, makeSchedule } from "./makeSchedule";
+import { latest, Locale, makeSchedule } from "./makeSchedule";
 
 export type NoteAttributes = ShopifyOrder["note_attributes"];
 
@@ -108,7 +108,7 @@ export const hasNoSkuLineItem = (data: LineItemCustomAttr[]) => {
   return data.some(({ _skus }) => _skus.length < 1);
 };
 
-type DeliveryScheduleCustomAttrs = {
+export type DeliveryScheduleCustomAttrs = {
   estimate: string;
   notifications: { notifiedAt: string; value: string }[];
 };
@@ -129,12 +129,13 @@ export const hasPersistedDeliveryScheduleCustomAttrs = (data: ShopifyOrder) => {
 
 export const getNewDeliveryScheduleCustomAttrs = async (
   data: LineItemCustomAttr[],
+  locale: Locale,
   client: Client,
 ): Promise<DeliveryScheduleCustomAttrs | null> => {
   const codes = [...new Set(data.flatMap(({ _skus }) => _skus))];
   const skus = await client.getDeliverySchedulesBySkuCodes(codes);
   const schedules = skus.map((sku) =>
-    makeSchedule(sku.crntInvOrderSKU?.invOrder.deliverySchedule ?? null),
+    makeSchedule(sku.crntInvOrderSKU?.invOrder.deliverySchedule ?? null, locale),
   );
 
   // skusがスケジュール計算対象外ものだけで構成されている場合は、スケジュール未確定とする
@@ -149,11 +150,10 @@ export const getNewDeliveryScheduleCustomAttrs = async (
   return {
     estimate: `${estimate.year}-${estimate.month}-${estimate.term}`,
     notifications: [
-      // TODO: 通知機能ができたらここに追加していく
-      // {
-      //   notifiedAt: new Date().toISOString(),
-      //   value: `${schedule.year}-${schedule.month}-${schedule.term}`,
-      // },
+      {
+        notifiedAt: new Date().toISOString(),
+        value: `${estimate.text}(${estimate.subText})`,
+      },
     ],
   };
 };

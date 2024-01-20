@@ -21,4 +21,12 @@ export type ShopifyOrder = {
     name: string;
     properties: Array<{ name: string; value: string }>;
   }[];
+  customer: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    default_address: {
+      country_code: string;
+    };
+  };
 };

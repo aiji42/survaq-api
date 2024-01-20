@@ -3,6 +3,7 @@ export type Bindings = {
   SHOPIFY_ACCESS_TOKEN: string;
   SLACK_SIGNING_SECRET: string;
   SLACK_BOT_TOKEN: string;
+  SENDGRID_API_KEY: string;
   HYPERDRIVE?: Hyperdrive;
   CACHE: KVNamespace;
 };

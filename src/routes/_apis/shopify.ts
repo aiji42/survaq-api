@@ -16,6 +16,7 @@ import {
 import { Notifier } from "../../libs/slack";
 import { ShopifyOrder, ShopifyProduct } from "../../types/shopify";
 import { createFactory } from "hono/factory";
+import { getMailSender } from "../../libs/sendgrid";
 
 type Variables = { label: string; notifier: Notifier };
 
@@ -152,6 +153,7 @@ app.post(
   ...errorBoundary(async (c) => {
     const dbClient = getClient(c.env);
     const shopify = getShopifyClient(c.env);
+    const mailSender = getMailSender(c.env);
     const notifier = c.get("notifier");
     const updatableNoteAttrs: NoteAttributes = [];
 
@@ -159,16 +161,25 @@ app.post(
     c.set("label", `Webhook order created/updated: ${data.id}`);
     console.log(c.get("label"));
 
+    const locale = data.customer.default_address.country_code === "JP" ? "ja" : "en";
+
     const [newLiAttrs, errors] = await getNewLineItemCustomAttrs(data, dbClient);
     errors.forEach((e) => notifier.appendErrorMessage(e));
 
-    // 配送予定のデータをnote_attributesに追加()
+    // 配送予定のデータをnote_attributesに追加() + メール通知
     if (!hasNoSkuLineItem(newLiAttrs) && !hasPersistedDeliveryScheduleCustomAttrs(data)) {
       try {
-        const scheduleData = await getNewDeliveryScheduleCustomAttrs(newLiAttrs, dbClient);
+        const scheduleData = await getNewDeliveryScheduleCustomAttrs(newLiAttrs, locale, dbClient);
 
-        if (scheduleData)
+        if (scheduleData) {
           updatableNoteAttrs.push(makeUpdatableDeliveryScheduleNoteAttr(scheduleData));
+
+          console.log("send email to a customer for delivery schedule");
+          // FIXME: メールテンプレートの言語の切り替え
+          // FIXME: 過去申し込みに対してメールを送らないようにする
+          const res = await mailSender.notifyDeliverySchedule(data, scheduleData);
+          await notifier.appendErrorResponse(res);
+        }
       } catch (e) {
         notifier.appendErrorMessage(e);
       }
