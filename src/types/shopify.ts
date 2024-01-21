@@ -22,11 +22,10 @@ export type ShopifyOrder = {
     properties: Array<{ name: string; value: string }>;
   }[];
   customer: {
-    first_name: string | null;
-    last_name: string | null;
     email: string;
-    default_address: {
-      country_code: string;
-    };
   };
+  default_address: {
+    name: string;
+  };
+  customer_locale: string;
 };

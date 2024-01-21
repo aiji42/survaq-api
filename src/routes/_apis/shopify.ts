@@ -12,9 +12,6 @@ import {
   hasPersistedDeliveryScheduleCustomAttrs,
   makeUpdatableDeliveryScheduleNoteAttr,
   makeUpdatableLineItemNoteAttr,
-  makeUpdatableNotificationsNoteAttr,
-  getPersistedNotificationsCustomAttrs,
-  newDeliveryScheduleNotificationData,
 } from "../../libs/shopify";
 import { Notifier } from "../../libs/slack";
 import { ShopifyOrder, ShopifyProduct } from "../../types/shopify";
@@ -164,30 +161,11 @@ app.post(
     c.set("label", `Webhook order created/updated: ${data.id}`);
     console.log(c.get("label"));
 
-    const locale = data.customer.default_address.country_code === "JP" ? "ja" : "en";
+    console.log("data.customer_locale", data.customer_locale);
+    const locale = data.customer_locale.startsWith("ja-") ? "ja" : "en";
 
     const [newLiAttrs, errors] = await getNewLineItemCustomAttrs(data, dbClient);
     errors.forEach((e) => notifier.appendErrorMessage(e));
-
-    // メールでの通知
-    const notifies = getPersistedNotificationsCustomAttrs(data);
-    let shouldNotifiesUpdate = false;
-    for (const notify of notifies) {
-      if (notify.type === "deliverySchedule" && notify.status === "waiting") {
-        try {
-          console.log("send email to a customer for delivery schedule");
-          const res = await mailSender.notifyDeliverySchedule(data, notify.value.schedule, locale);
-          await notifier.appendErrorResponse(res);
-          notify.status = "succeed";
-        } catch (e) {
-          notify.status = "failed";
-          notifier.appendErrorMessage(e);
-        }
-        notify.notifiedAt = new Date().toISOString();
-        shouldNotifiesUpdate = true;
-      }
-    }
-    if (shouldNotifiesUpdate) updatableNoteAttrs.push(makeUpdatableNotificationsNoteAttr(notifies));
 
     // 配送予定のデータをnote_attributesに追加()
     if (!hasNoSkuLineItem(newLiAttrs) && !hasPersistedDeliveryScheduleCustomAttrs(data)) {
@@ -197,13 +175,11 @@ app.post(
         if (scheduleData) {
           updatableNoteAttrs.push(makeUpdatableDeliveryScheduleNoteAttr(scheduleData));
 
+          // メールでの通知
           // FIXME: 過去申し込みに対してメールを送らないようにする
-          updatableNoteAttrs.push(
-            makeUpdatableNotificationsNoteAttr([
-              ...notifies,
-              newDeliveryScheduleNotificationData(scheduleData.estimate),
-            ]),
-          );
+          console.log("📧 send email to a customer for delivery schedule");
+          const res = await mailSender.notifyDeliverySchedule(data, scheduleData.estimate, locale);
+          await notifier.appendErrorResponse(res);
         }
       } catch (e) {
         notifier.appendErrorMessage(e);
