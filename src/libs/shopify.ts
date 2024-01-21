@@ -128,13 +128,12 @@ export const hasPersistedDeliveryScheduleCustomAttrs = (data: ShopifyOrder) => {
 
 export const getNewDeliveryScheduleCustomAttrs = async (
   data: LineItemCustomAttr[],
-  locale: Locale,
   client: Client,
 ): Promise<DeliveryScheduleCustomAttrs | null> => {
   const codes = [...new Set(data.flatMap(({ _skus }) => _skus))];
   const skus = await client.getDeliverySchedulesBySkuCodes(codes);
   const schedules = skus.map((sku) =>
-    makeSchedule(sku.crntInvOrderSKU?.invOrder.deliverySchedule ?? null, locale),
+    makeSchedule(sku.crntInvOrderSKU?.invOrder.deliverySchedule ?? null),
   );
 
   // skusがスケジュール計算対象外ものだけで構成されている場合は、スケジュール未確定とする

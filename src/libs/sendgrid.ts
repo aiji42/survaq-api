@@ -18,14 +18,15 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
   const support = { email: "support@survaq.com", name: "サバキューストアサポート" };
 
   return {
-    notifyDeliverySchedule: (data: ShopifyOrder, _schedule: string, locale: Locale) => {
+    notifyDeliverySchedule: (data: ShopifyOrder, _schedule: string) => {
+      const locale = data.customer_locale.startsWith("ja") ? "ja" : "en";
       const schedule = makeSchedule(_schedule, locale);
 
       const body = {
         personalizations: [
           {
             // FIXME
-            to: [{ email: "aiji42@gmail.com" }],
+            to: [{ email: "system@gmail.com" }],
             bcc: [system],
             dynamic_template_data: {
               customerName: data.customer.default_address.name,

@@ -161,31 +161,23 @@ app.post(
     c.set("label", `${c.get("topic")}: ${data.id}`);
     console.log(c.get("label"));
 
-    const isUpdated = c.get("topic") === "orders/updated";
-
-    console.log("customer locale", data.customer_locale);
-    const locale = data.customer_locale.startsWith("ja") ? "ja" : "en";
-
     const [newLiAttrs, errors] = await getNewLineItemCustomAttrs(data, dbClient);
     errors.forEach((e) => notifier.appendErrorMessage(e));
 
     // 配送予定のデータをnote_attributesに追加 + メール送信
-    if (
-      isUpdated &&
-      !hasNoSkuLineItem(newLiAttrs) &&
-      !hasPersistedDeliveryScheduleCustomAttrs(data)
-    ) {
+    if (!hasNoSkuLineItem(newLiAttrs) && !hasPersistedDeliveryScheduleCustomAttrs(data)) {
       try {
-        const scheduleData = await getNewDeliveryScheduleCustomAttrs(newLiAttrs, locale, dbClient);
+        const scheduleData = await getNewDeliveryScheduleCustomAttrs(newLiAttrs, dbClient);
 
         if (scheduleData) {
           updatableNoteAttrs.push(makeUpdatableDeliveryScheduleNoteAttr(scheduleData));
 
           // メールでの通知
           // FIXME: 過去申し込みに対してメールを送らないようにする
-          console.log("📧 send email to a customer for delivery schedule");
-          const res = await mailSender.notifyDeliverySchedule(data, scheduleData.estimate, locale);
-          await notifier.appendErrorResponse(res);
+          await blockReRun(`notifyDeliverySchedule-${data.id}`, c.env.CACHE, async () => {
+            const res = await mailSender.notifyDeliverySchedule(data, scheduleData.estimate);
+            await notifier.appendErrorResponse(res);
+          });
         }
       } catch (e) {
         notifier.appendErrorMessage(e);
@@ -213,5 +205,15 @@ app.post(
     return c.json({ message: "update order" });
   }),
 );
+
+/**
+ * 60秒間同一キーのコールバックの実行を抑制する(メールが二重に送られないようにするとか)
+ * KVの仕様上expirationTtlを60秒未満にできない
+ */
+const blockReRun = async (key: string, kv: KVNamespace, callback: () => Promise<unknown>) => {
+  if (await kv.get(key)) return;
+  await kv.put(key, "processing", { expirationTtl: 60 });
+  await callback();
+};
 
 export default app;
