@@ -1,8 +1,4 @@
-import {
-  MessageAttachment,
-  SlackApp,
-  SlackEdgeAppEnv,
-} from "slack-cloudflare-workers";
+import { MessageAttachment, SlackApp, SlackEdgeAppEnv } from "slack-cloudflare-workers";
 import { ShopifyOrder } from "../types/shopify";
 import { ChatPostMessageRequest } from "slack-web-api-client/dist/client/request";
 
@@ -10,9 +6,7 @@ const CHANNEL = "notify-test";
 
 export class Notifier {
   private readonly slack: SlackApp<SlackEdgeAppEnv>;
-  private attachments: Map<string, MessageAttachment[]> = new Map([
-    [CHANNEL, []],
-  ]);
+  private attachments: Map<string, MessageAttachment[]> = new Map([[CHANNEL, []]]);
 
   constructor(env: SlackEdgeAppEnv) {
     this.slack = new SlackApp({ env });

@@ -165,7 +165,11 @@ app.post(
     errors.forEach((e) => notifier.appendErrorMessage(e));
 
     // 配送予定のデータをnote_attributesに追加 + メール送信
-    if (!hasNoSkuLineItem(newLiAttrs) && !hasPersistedDeliveryScheduleCustomAttrs(data)) {
+    if (
+      !hasNoSkuLineItem(newLiAttrs) &&
+      !hasPersistedDeliveryScheduleCustomAttrs(data) &&
+      LIMIT_DATE < new Date(data.created_at)
+    ) {
       try {
         const scheduleData = await getNewDeliveryScheduleCustomAttrs(newLiAttrs, dbClient);
 
@@ -173,7 +177,6 @@ app.post(
           updatableNoteAttrs.push(makeUpdatableDeliveryScheduleNoteAttr(scheduleData));
 
           // メールでの通知
-          // FIXME: 過去申し込みに対してメールを送らないようにする
           await blockReRun(`notifyDeliverySchedule-${data.id}`, c.env.CACHE, async () => {
             const res = await mailSender.notifyDeliverySchedule(data, scheduleData.estimate);
             await notifier.appendErrorResponse(res);
@@ -215,5 +218,8 @@ const blockReRun = async (key: string, kv: KVNamespace, callback: () => Promise<
   await kv.put(key, "processing", { expirationTtl: 60 });
   await callback();
 };
+
+// この日時以前の申し込みデータに対して配送予定のデータを作ったりメールを送ったり
+const LIMIT_DATE = new Date("2024-01-21T07:48:00");
 
 export default app;

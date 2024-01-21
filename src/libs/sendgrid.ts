@@ -1,5 +1,5 @@
 import { ShopifyOrder } from "../types/shopify";
-import { Locale, makeSchedule } from "./makeSchedule";
+import { makeSchedule } from "./makeSchedule";
 
 type NotifyDeliveryScheduleDynamicData = {
   customerName: string;
@@ -26,7 +26,7 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
         personalizations: [
           {
             // FIXME
-            to: [{ email: "system@gmail.com" }],
+            to: [system],
             bcc: [system],
             dynamic_template_data: {
               customerName: data.customer.default_address.name,
