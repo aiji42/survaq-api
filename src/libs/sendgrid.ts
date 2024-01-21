@@ -9,18 +9,25 @@ type NotifyDeliveryScheduleDynamicData = {
 };
 
 export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }) => {
-  // FIXME: メールテンプレートの言語の切り替え
   const headers: Headers = new Headers({
     Authorization: `Bearer ${SENDGRID_API_KEY}`,
     "Content-Type": "application/json",
   });
   const system = { email: "system@survaq.com" };
-  const support = { email: "support@survaq.com", name: "サバキューストアサポート" };
 
   return {
     notifyDeliverySchedule: (data: ShopifyOrder, _schedule: string) => {
       const locale = data.customer_locale.startsWith("ja") ? "ja" : "en";
+      const support = {
+        email: "support@survaq.com",
+        name: locale === "ja" ? "サバキューストアサポート" : "SurvaQ Store Support",
+      };
       const schedule = makeSchedule(_schedule, locale);
+      // サバキューストア: 配送予定日通知メール(日本語|English)
+      const templates = {
+        ja: "d-431a80069cc74042bf9423f6ca0a8f8a",
+        en: "d-f0189b1f76824e8db999d79a2dc40a61",
+      };
 
       const body = {
         personalizations: [
@@ -37,8 +44,7 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
           },
         ],
         from: support,
-        // サバキューストア: 配送予定日通知メール
-        template_id: "d-431a80069cc74042bf9423f6ca0a8f8a",
+        template_id: templates[locale],
       };
 
       return fetch("https://api.sendgrid.com/v3/mail/send", {
