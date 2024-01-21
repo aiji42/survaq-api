@@ -27,7 +27,7 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
           {
             // FIXME
             to: [system],
-            bcc: [system],
+            // bcc: [system],
             dynamic_template_data: {
               customerName: data.customer.default_address.name,
               deliverySchedule: `${schedule.text}(${schedule.subText})`,
