@@ -23,9 +23,9 @@ export type ShopifyOrder = {
   }[];
   customer: {
     email: string;
-  };
-  default_address: {
-    name: string;
+    default_address: {
+      name: string;
+    };
   };
   customer_locale: string;
 };

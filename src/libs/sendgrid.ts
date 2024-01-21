@@ -28,7 +28,7 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
             to: [{ email: "aiji42@gmail.com" }],
             bcc: [system],
             dynamic_template_data: {
-              customerName: data.default_address.name,
+              customerName: data.customer.default_address.name,
               deliverySchedule: `${schedule.text}(${schedule.subText})`,
               orderId: data.name,
               lineItems: data.line_items.map(({ name }) => ({ title: name })),

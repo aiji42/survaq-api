@@ -161,8 +161,8 @@ app.post(
     c.set("label", `Webhook order created/updated: ${data.id}`);
     console.log(c.get("label"));
 
-    console.log("data.customer_locale", data.customer_locale);
-    const locale = data.customer_locale.startsWith("ja-") ? "ja" : "en";
+    console.log("customer locale", data.customer_locale);
+    const locale = data.customer_locale.startsWith("ja") ? "ja" : "en";
 
     const [newLiAttrs, errors] = await getNewLineItemCustomAttrs(data, dbClient);
     errors.forEach((e) => notifier.appendErrorMessage(e));
