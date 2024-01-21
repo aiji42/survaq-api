@@ -18,7 +18,7 @@ import { ShopifyOrder, ShopifyProduct } from "../../types/shopify";
 import { createFactory } from "hono/factory";
 import { getMailSender } from "../../libs/sendgrid";
 
-type Variables = { label: string; notifier: Notifier };
+type Variables = { label: string; topic: string; notifier: Notifier };
 
 type Env = { Bindings: Bindings; Variables: Variables };
 
@@ -28,7 +28,7 @@ const factory = createFactory<Env>();
 
 const errorBoundary = (handler: Handler<Env, string, Input, any>) => {
   return factory.createHandlers(async (c, next) => {
-    c.set("label", `${c.req.method}: ${c.req.url}`);
+    c.set("topic", c.req.header("x-shopify-topic") ?? "unknown");
     const notifier = new Notifier(c.env);
     c.set("notifier", notifier);
 
@@ -39,7 +39,7 @@ const errorBoundary = (handler: Handler<Env, string, Input, any>) => {
       notifier.appendErrorMessage(e);
     }
 
-    c.executionCtx.waitUntil(notifier.notify(c.get("label")));
+    c.executionCtx.waitUntil(notifier.notify(c.get("label") ?? c.get("topic")));
 
     return res ?? c.text("webhook received");
   });
@@ -59,7 +59,7 @@ app.post(
     } = getClient(c.env);
 
     const data = await c.req.json<ShopifyProduct>();
-    c.set("label", `Webhook: ${data.id}, ${data.handle}, ${data.status}`);
+    c.set("label", `${c.get("topic")}: ${data.id}, ${data.handle}, ${data.status}`);
     console.log(c.get("label"));
 
     const product = await getProduct(String(data.id));
@@ -158,8 +158,10 @@ app.post(
     const updatableNoteAttrs: NoteAttributes = [];
 
     const data = await c.req.json<ShopifyOrder>();
-    c.set("label", `Webhook order created/updated: ${data.id}`);
+    c.set("label", `${c.get("topic")}: ${data.id}`);
     console.log(c.get("label"));
+
+    const isUpdated = c.get("topic") === "orders/updated";
 
     console.log("customer locale", data.customer_locale);
     const locale = data.customer_locale.startsWith("ja") ? "ja" : "en";
@@ -167,8 +169,12 @@ app.post(
     const [newLiAttrs, errors] = await getNewLineItemCustomAttrs(data, dbClient);
     errors.forEach((e) => notifier.appendErrorMessage(e));
 
-    // 配送予定のデータをnote_attributesに追加()
-    if (!hasNoSkuLineItem(newLiAttrs) && !hasPersistedDeliveryScheduleCustomAttrs(data)) {
+    // 配送予定のデータをnote_attributesに追加 + メール送信
+    if (
+      isUpdated &&
+      !hasNoSkuLineItem(newLiAttrs) &&
+      !hasPersistedDeliveryScheduleCustomAttrs(data)
+    ) {
       try {
         const scheduleData = await getNewDeliveryScheduleCustomAttrs(newLiAttrs, locale, dbClient);
 
