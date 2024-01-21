@@ -110,7 +110,6 @@ export const hasNoSkuLineItem = (data: LineItemCustomAttr[]) => {
 
 export type DeliveryScheduleCustomAttrs = {
   estimate: string;
-  notifications: { notifiedAt: string; value: string }[];
 };
 
 const DELIVERY_SCHEDULE = "__delivery_schedule";
@@ -149,15 +148,40 @@ export const getNewDeliveryScheduleCustomAttrs = async (
 
   return {
     estimate: `${estimate.year}-${estimate.month}-${estimate.term}`,
-    notifications: [
-      {
-        notifiedAt: new Date().toISOString(),
-        value: `${estimate.text}(${estimate.subText})`,
-      },
-    ],
   };
 };
 
 export const makeUpdatableDeliveryScheduleNoteAttr = (data: DeliveryScheduleCustomAttrs) => {
   return { name: DELIVERY_SCHEDULE, value: JSON.stringify(data) };
+};
+
+const NOTIFICATIONS = "__notifications";
+
+type Notification = {
+  type: "deliverySchedule";
+  status: "waiting" | "failed" | "succeed";
+  value: { schedule: string };
+  notifiedAt: null | string;
+};
+
+export const getPersistedNotificationsCustomAttrs = (data: ShopifyOrder): Notification[] => {
+  const { value } = data.note_attributes.find(({ name }) => name === NOTIFICATIONS) ?? {};
+  return JSON.parse(value || EMPTY_ARRAY);
+};
+
+export const getWaitingNotificationsCustomAttrs = (data: ShopifyOrder) => {
+  return getPersistedNotificationsCustomAttrs(data).filter(({ status }) => status === "waiting");
+};
+
+export const makeUpdatableNotificationsNoteAttr = (data: Notification[]) => {
+  return { name: NOTIFICATIONS, value: JSON.stringify(data) };
+};
+
+export const newDeliveryScheduleNotificationData = (schedule: string): Notification => {
+  return {
+    type: "deliverySchedule",
+    status: "waiting",
+    value: { schedule },
+    notifiedAt: null,
+  };
 };

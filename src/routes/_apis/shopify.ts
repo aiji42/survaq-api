@@ -12,6 +12,9 @@ import {
   hasPersistedDeliveryScheduleCustomAttrs,
   makeUpdatableDeliveryScheduleNoteAttr,
   makeUpdatableLineItemNoteAttr,
+  makeUpdatableNotificationsNoteAttr,
+  getPersistedNotificationsCustomAttrs,
+  newDeliveryScheduleNotificationData,
 } from "../../libs/shopify";
 import { Notifier } from "../../libs/slack";
 import { ShopifyOrder, ShopifyProduct } from "../../types/shopify";
@@ -166,7 +169,27 @@ app.post(
     const [newLiAttrs, errors] = await getNewLineItemCustomAttrs(data, dbClient);
     errors.forEach((e) => notifier.appendErrorMessage(e));
 
-    // 配送予定のデータをnote_attributesに追加() + メール通知
+    // メールでの通知
+    const notifies = getPersistedNotificationsCustomAttrs(data);
+    let shouldNotifiesUpdate = false;
+    for (const notify of notifies) {
+      if (notify.type === "deliverySchedule" && notify.status === "waiting") {
+        try {
+          console.log("send email to a customer for delivery schedule");
+          const res = await mailSender.notifyDeliverySchedule(data, notify.value.schedule, locale);
+          await notifier.appendErrorResponse(res);
+          notify.status = "succeed";
+        } catch (e) {
+          notify.status = "failed";
+          notifier.appendErrorMessage(e);
+        }
+        notify.notifiedAt = new Date().toISOString();
+        shouldNotifiesUpdate = true;
+      }
+    }
+    if (shouldNotifiesUpdate) updatableNoteAttrs.push(makeUpdatableNotificationsNoteAttr(notifies));
+
+    // 配送予定のデータをnote_attributesに追加()
     if (!hasNoSkuLineItem(newLiAttrs) && !hasPersistedDeliveryScheduleCustomAttrs(data)) {
       try {
         const scheduleData = await getNewDeliveryScheduleCustomAttrs(newLiAttrs, locale, dbClient);
@@ -174,11 +197,13 @@ app.post(
         if (scheduleData) {
           updatableNoteAttrs.push(makeUpdatableDeliveryScheduleNoteAttr(scheduleData));
 
-          console.log("send email to a customer for delivery schedule");
-          // FIXME: メールテンプレートの言語の切り替え
           // FIXME: 過去申し込みに対してメールを送らないようにする
-          const res = await mailSender.notifyDeliverySchedule(data, scheduleData);
-          await notifier.appendErrorResponse(res);
+          updatableNoteAttrs.push(
+            makeUpdatableNotificationsNoteAttr([
+              ...notifies,
+              newDeliveryScheduleNotificationData(scheduleData.estimate),
+            ]),
+          );
         }
       } catch (e) {
         notifier.appendErrorMessage(e);

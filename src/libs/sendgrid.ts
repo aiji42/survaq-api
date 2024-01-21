@@ -1,5 +1,5 @@
 import { ShopifyOrder } from "../types/shopify";
-import { DeliveryScheduleCustomAttrs } from "./shopify";
+import { Locale, makeSchedule } from "./makeSchedule";
 
 type NotifyDeliveryScheduleDynamicData = {
   customerName: string;
@@ -17,25 +17,25 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
   const support = { email: "support@survaq.com" };
 
   return {
-    notifyDeliverySchedule: (data: ShopifyOrder, schedule: DeliveryScheduleCustomAttrs) => {
-      const deliverySchedule = schedule.notifications[0]?.value;
-      if (!deliverySchedule) throw Error();
+    notifyDeliverySchedule: (data: ShopifyOrder, _schedule: string, locale: Locale) => {
+      const schedule = makeSchedule(_schedule, locale);
 
       const body = {
         personalizations: [
           {
             // FIXME
-            to: [{ email: "uejima.aiji@survaq.com" }],
+            to: [{ email: "aiji42@gmail.com" }],
             bcc: [system],
             dynamic_template_data: {
               customerName: `${data.customer.first_name} ${data.customer.last_name}`,
-              deliverySchedule,
+              deliverySchedule: `${schedule.text}(${schedule.subText})`,
               orderId: data.name,
               lineItems: data.line_items.map(({ name }) => ({ title: name })),
             } satisfies NotifyDeliveryScheduleDynamicData,
           },
         ],
         from: support,
+        // FIXME: メールテンプレートの言語の切り替え
         // サバキューストア: 配送予定日通知メール
         template_id: "d-431a80069cc74042bf9423f6ca0a8f8a",
       };
