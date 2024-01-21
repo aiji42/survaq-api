@@ -9,12 +9,13 @@ type NotifyDeliveryScheduleDynamicData = {
 };
 
 export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }) => {
+  // FIXME: メールテンプレートの言語の切り替え
   const headers: Headers = new Headers({
     Authorization: `Bearer ${SENDGRID_API_KEY}`,
     "Content-Type": "application/json",
   });
   const system = { email: "system@survaq.com" };
-  const support = { email: "support@survaq.com" };
+  const support = { email: "support@survaq.com", name: "サバキューストアサポート" };
 
   return {
     notifyDeliverySchedule: (data: ShopifyOrder, _schedule: string, locale: Locale) => {
@@ -38,7 +39,6 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
           },
         ],
         from: support,
-        // FIXME: メールテンプレートの言語の切り替え
         // サバキューストア: 配送予定日通知メール
         template_id: "d-431a80069cc74042bf9423f6ca0a8f8a",
       };
