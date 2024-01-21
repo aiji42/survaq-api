@@ -169,10 +169,6 @@ export const getPersistedNotificationsCustomAttrs = (data: ShopifyOrder): Notifi
   return JSON.parse(value || EMPTY_ARRAY);
 };
 
-export const getWaitingNotificationsCustomAttrs = (data: ShopifyOrder) => {
-  return getPersistedNotificationsCustomAttrs(data).filter(({ status }) => status === "waiting");
-};
-
 export const makeUpdatableNotificationsNoteAttr = (data: Notification[]) => {
   return { name: NOTIFICATIONS, value: JSON.stringify(data) };
 };

@@ -19,6 +19,9 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
   return {
     notifyDeliverySchedule: (data: ShopifyOrder, _schedule: string, locale: Locale) => {
       const schedule = makeSchedule(_schedule, locale);
+      const customerName = [data.customer.first_name, data.customer.last_name]
+        .filter(Boolean)
+        .join(" ");
 
       const body = {
         personalizations: [
@@ -27,7 +30,7 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
             to: [{ email: "aiji42@gmail.com" }],
             bcc: [system],
             dynamic_template_data: {
-              customerName: `${data.customer.first_name} ${data.customer.last_name}`,
+              customerName: customerName,
               deliverySchedule: `${schedule.text}(${schedule.subText})`,
               orderId: data.name,
               lineItems: data.line_items.map(({ name }) => ({ title: name })),
