@@ -13,7 +13,6 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
     Authorization: `Bearer ${SENDGRID_API_KEY}`,
     "Content-Type": "application/json",
   });
-  const system = { email: "system@survaq.com" };
 
   return {
     notifyDeliverySchedule: (data: ShopifyOrder, _schedule: string) => {
@@ -32,9 +31,8 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
       const body = {
         personalizations: [
           {
-            // FIXME
-            to: [system],
-            // bcc: [system],
+            to: [{ email: data.customer.email }],
+            bcc: [{ email: "shipping@survaq.com" }],
             dynamic_template_data: {
               customerName: data.customer.default_address.name,
               deliverySchedule: `${schedule.text}(${schedule.subText})`,
