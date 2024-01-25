@@ -18,6 +18,16 @@ app.use("*", async (c, next) => {
   await next();
 });
 
+app.get("*", async (c, next) => {
+  const url = new URL(c.req.url);
+  if (url.pathname.endsWith("/supabase")) {
+    url.pathname = url.pathname.replace(/\/supabase$/, "");
+    return c.redirect(url.toString(), 301);
+  }
+
+  await next();
+});
+
 app.get("/", async (c) => {
   const { getAllProducts } = getClient(c.env);
   const data = await getAllProducts();
@@ -47,7 +57,7 @@ app.get("/:id/delivery", async (c) => {
   return c.json({ current, skus } satisfies DeliveryRouteResponse);
 });
 
-app.get("/:id/supabase", async (c) => {
+app.get("/:id", async (c) => {
   const { getProductWithSKUs } = getClient(c.env);
   const { product: data, skus: skusData } = await getProductWithSKUs(c.req.param("id"));
   if (!data) return c.notFound();
@@ -62,7 +72,7 @@ app.get("/:id/supabase", async (c) => {
   });
 });
 
-app.get("/page-data/:code/supabase", async (c) => {
+app.get("/page-data/:code", async (c) => {
   const { getPageWithSKUs } = getClient(c.env);
   const { page: data, skus } = await getPageWithSKUs(c.req.param("code"));
   if (!data) return c.notFound();
@@ -83,7 +93,7 @@ app.get("/page-data/:code/supabase", async (c) => {
   });
 });
 
-app.get("/page-data/by-domain/:domain/supabase", async (c) => {
+app.get("/page-data/by-domain/:domain", async (c) => {
   const { getPage } = getClient(c.env);
   const data = await getPage(c.req.param("domain"));
   if (!data) return c.notFound();
