@@ -1,25 +1,18 @@
 import { Pool } from "pg";
-import { drizzle } from "drizzle-orm/node-postgres";
+import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as base from "../../drizzle/schema";
 import * as relations from "../../drizzle/relations";
 import { eq, or, inArray, and, not } from "drizzle-orm";
 import { PgInsertValue, PgUpdateSetSource } from "drizzle-orm/pg-core";
+import { sanitizeSkusJSON } from "./makeVariants";
 
 const schema = {
   ...base,
   ...relations,
 };
 
-export const getClient = (env: string | { DATABASE_URL: string }) => {
-  const pool = new Pool({
-    connectionString: typeof env === "string" ? env : env.DATABASE_URL,
-    connectionTimeoutMillis: 5000,
-  });
-  const client = drizzle(pool, { schema });
-
+export const makeQueries = (client: NodePgDatabase<typeof schema>) => {
   return {
-    cleanUp: () => pool.end(),
-
     getAllProducts: () => {
       return client.query.shopifyProducts.findMany({
         columns: {
@@ -251,6 +244,41 @@ export const getClient = (env: string | { DATABASE_URL: string }) => {
             },
           },
         },
+      });
+    },
+  };
+};
+
+export const getClient = (env: string | { DATABASE_URL: string }) => {
+  const pool = new Pool({
+    connectionString: typeof env === "string" ? env : env.DATABASE_URL,
+    connectionTimeoutMillis: 5000,
+    max: 1,
+  });
+  const client = drizzle(pool, { schema });
+
+  return {
+    cleanUp: () => pool.end(),
+    ...makeQueries(client),
+    getProductWithSKUs: (productId: string) => {
+      return client.transaction(async (c) => {
+        const { getProduct, getSKUs } = makeQueries(c);
+        const product = await getProduct(productId);
+        const skuCodes = product?.variants.flatMap((item) => sanitizeSkusJSON(item.skusJson)) ?? [];
+        const skus = await getSKUs(skuCodes);
+
+        return { product, skus };
+      });
+    },
+    getPageWithSKUs: (code: string) => {
+      return client.transaction(async (c) => {
+        const { getPage, getSKUs } = makeQueries(c);
+        const page = await getPage(code);
+        const skuCodes =
+          page?.product.variants.flatMap((item) => sanitizeSkusJSON(item.skusJson)) ?? [];
+        const skus = await getSKUs(skuCodes);
+
+        return { page, skus };
       });
     },
   };

@@ -19,24 +19,16 @@ type MadeVariants = {
   defaultSchedule: Schedule<false> | null;
 }[];
 
-export const makeSKUCodes = (product: Product) => {
-  return product.variants.flatMap((item) => sanitizeSkusJSON(item.skusJson));
-};
-
 export const makeVariants = async (
   product: Product,
   skus: SKUs,
   locale: Locale,
 ): Promise<MadeVariants> => {
-  const skuMap = new Map<string, SKUs[number]>(
-    skus.map((sku) => [sku.code, sku]),
-  );
+  const skuMap = new Map<string, SKUs[number]>(skus.map((sku) => [sku.code, sku]));
 
   return product.variants.map(
     ({ variantId, variantName, customSelects, skuLabel, skus, skusJson }) => {
-      const selectableSKUs = skus.flatMap(({ sku }) =>
-        sku ? makeSKU(sku, locale) : [],
-      );
+      const selectableSKUs = skus.flatMap(({ sku }) => (sku ? makeSKU(sku, locale) : []));
       const baseSKUs = sanitizeSkusJSON(skusJson).flatMap((code) => {
         const row = skuMap.get(code);
         return row ? makeSKU(row, locale) : [];
@@ -109,7 +101,7 @@ export const makeSKU = (
   };
 };
 
-const sanitizeSkusJSON = (json: string | null) => {
+export const sanitizeSkusJSON = (json: string | null) => {
   if (typeof json !== "string") return [];
   try {
     const parsed = JSON.parse(json);
