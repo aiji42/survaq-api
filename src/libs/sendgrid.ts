@@ -8,6 +8,7 @@ type NotifyDeliveryScheduleDynamicData = {
   lineItems: Array<{ title: string }>;
 };
 
+// FIXME: unsubscribeに関係なくメールを送信できるようにする
 export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }) => {
   const headers: Headers = new Headers({
     Authorization: `Bearer ${SENDGRID_API_KEY}`,
@@ -28,7 +29,7 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
         en: "d-f0189b1f76824e8db999d79a2dc40a61",
       };
 
-      const body = {
+      const payload = {
         personalizations: [
           {
             to: [{ email: data.customer.email }],
@@ -48,7 +49,36 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
       return fetch("https://api.sendgrid.com/v3/mail/send", {
         method: "POST",
         headers,
-        body: JSON.stringify(body),
+        body: JSON.stringify(payload),
+      });
+    },
+
+    sendTransactionMail: (
+      data: { from: string; fromName: string; subject: string; body: string },
+      receivers: Array<{ email: string; [key: string]: string }>,
+    ) => {
+      const payload = {
+        personalizations: receivers.map(({ email, ...substitutions }) => ({
+          to: [{ email }],
+          substitutions,
+        })),
+        from: {
+          email: data.from,
+          name: data.fromName,
+        },
+        subject: data.subject,
+        content: [
+          {
+            type: "text/plain",
+            value: data.body,
+          },
+        ],
+      };
+
+      return fetch("https://api.sendgrid.com/v3/mail/send", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
       });
     },
   };

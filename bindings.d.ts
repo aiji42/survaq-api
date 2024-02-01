@@ -6,4 +6,5 @@ export type Bindings = {
   SENDGRID_API_KEY: string;
   HYPERDRIVE?: Hyperdrive;
   CACHE: KVNamespace;
+  CMS_BUCKETS: R2Bucket;
 };

@@ -14,35 +14,28 @@ import {
   bigint,
   date,
   type AnyPgColumn,
+  real,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
-export const keyStatus = pgEnum("key_status", [
-  "expired",
-  "invalid",
-  "valid",
-  "default",
-]);
+export const keyStatus = pgEnum("key_status", ["default", "valid", "invalid", "expired"]);
 export const keyType = pgEnum("key_type", [
-  "stream_xchacha20",
-  "secretstream",
-  "secretbox",
-  "kdf",
-  "generichash",
-  "shorthash",
-  "auth",
-  "hmacsha256",
-  "hmacsha512",
-  "aead-det",
   "aead-ietf",
+  "aead-det",
+  "hmacsha512",
+  "hmacsha256",
+  "auth",
+  "shorthash",
+  "generichash",
+  "kdf",
+  "secretbox",
+  "secretstream",
+  "stream_xchacha20",
 ]);
-export const codeChallengeMethod = pgEnum("code_challenge_method", [
-  "plain",
-  "s256",
-]);
-export const factorType = pgEnum("factor_type", ["webauthn", "totp"]);
-export const factorStatus = pgEnum("factor_status", ["verified", "unverified"]);
-export const aalLevel = pgEnum("aal_level", ["aal3", "aal2", "aal1"]);
+export const factorType = pgEnum("factor_type", ["totp", "webauthn"]);
+export const factorStatus = pgEnum("factor_status", ["unverified", "verified"]);
+export const aalLevel = pgEnum("aal_level", ["aal1", "aal2", "aal3"]);
+export const codeChallengeMethod = pgEnum("code_challenge_method", ["s256", "plain"]);
 
 export const directusCollections = pgTable(
   "directus_collections",
@@ -107,24 +100,15 @@ export const directusUsers = pgTable(
     description: text("description"),
     tags: json("tags"),
     avatar: uuid("avatar"),
-    language: varchar("language", { length: 255 }).default(
-      sql`NULL::character varying`,
-    ),
-    theme: varchar("theme", { length: 20 }).default(
-      sql`'auto'::character varying`,
-    ),
+    language: varchar("language", { length: 255 }).default(sql`NULL::character varying`),
+    theme: varchar("theme", { length: 20 }).default(sql`'auto'::character varying`),
     tfaSecret: varchar("tfa_secret", { length: 255 }),
     status: varchar("status", { length: 16 })
       .default(sql`'active'::character varying`)
       .notNull(),
-    role: uuid("role").references(() => directusRoles.id, {
-      onDelete: "set null",
-    }),
+    role: uuid("role").references(() => directusRoles.id, { onDelete: "set null" }),
     token: varchar("token", { length: 255 }),
-    lastAccess: timestamp("last_access", {
-      withTimezone: true,
-      mode: "string",
-    }),
+    lastAccess: timestamp("last_access", { withTimezone: true, mode: "string" }),
     lastPage: varchar("last_page", { length: 255 }),
     provider: varchar("provider", { length: 128 })
       .default(sql`'default'::character varying`)
@@ -135,15 +119,11 @@ export const directusUsers = pgTable(
   },
   (table) => {
     return {
-      directusUsersEmailUnique: unique("directus_users_email_unique").on(
-        table.email,
+      directusUsersEmailUnique: unique("directus_users_email_unique").on(table.email),
+      directusUsersTokenUnique: unique("directus_users_token_unique").on(table.token),
+      directusUsersExternalIdentifierUnique: unique("directus_users_external_identifier_unique").on(
+        table.externalIdentifier,
       ),
-      directusUsersTokenUnique: unique("directus_users_token_unique").on(
-        table.token,
-      ),
-      directusUsersExternalIdentifierUnique: unique(
-        "directus_users_external_identifier_unique",
-      ).on(table.externalIdentifier),
     };
   },
 );
@@ -160,9 +140,7 @@ export const directusFields = pgTable("directus_fields", {
   readonly: boolean("readonly").default(false).notNull(),
   hidden: boolean("hidden").default(false).notNull(),
   sort: integer("sort"),
-  width: varchar("width", { length: 30 }).default(
-    sql`'full'::character varying`,
-  ),
+  width: varchar("width", { length: 30 }).default(sql`'full'::character varying`),
   translations: json("translations"),
   note: text("note"),
   conditions: json("conditions"),
@@ -179,9 +157,7 @@ export const directusFiles = pgTable("directus_files", {
   filenameDownload: varchar("filename_download", { length: 255 }).notNull(),
   title: varchar("title", { length: 255 }),
   type: varchar("type", { length: 255 }),
-  folder: uuid("folder").references(() => directusFolders.id, {
-    onDelete: "set null",
-  }),
+  folder: uuid("folder").references(() => directusFolders.id, { onDelete: "set null" }),
   uploadedBy: uuid("uploaded_by").references(() => directusUsers.id),
   uploadedOn: timestamp("uploaded_on", { withTimezone: true, mode: "string" })
     .defaultNow()
@@ -207,9 +183,7 @@ export const directusActivity = pgTable("directus_activity", {
   id: serial("id").primaryKey().notNull(),
   action: varchar("action", { length: 45 }).notNull(),
   user: uuid("user"),
-  timestamp: timestamp("timestamp", { withTimezone: true, mode: "string" })
-    .defaultNow()
-    .notNull(),
+  timestamp: timestamp("timestamp", { withTimezone: true, mode: "string" }).defaultNow().notNull(),
   ip: varchar("ip", { length: 50 }),
   userAgent: varchar("user_agent", { length: 255 }),
   collection: varchar("collection", { length: 64 }).notNull(),
@@ -238,9 +212,7 @@ export const directusFolders = pgTable(
 
 export const directusPermissions = pgTable("directus_permissions", {
   id: serial("id").primaryKey().notNull(),
-  role: uuid("role").references(() => directusRoles.id, {
-    onDelete: "cascade",
-  }),
+  role: uuid("role").references(() => directusRoles.id, { onDelete: "cascade" }),
   collection: varchar("collection", { length: 64 }).notNull(),
   action: varchar("action", { length: 10 }).notNull(),
   permissions: json("permissions"),
@@ -296,18 +268,11 @@ export const directusRevisions = pgTable(
 
 export const directusSessions = pgTable("directus_sessions", {
   token: varchar("token", { length: 64 }).primaryKey().notNull(),
-  user: uuid("user").references(() => directusUsers.id, {
-    onDelete: "cascade",
-  }),
-  expires: timestamp("expires", {
-    withTimezone: true,
-    mode: "string",
-  }).notNull(),
+  user: uuid("user").references(() => directusUsers.id, { onDelete: "cascade" }),
+  expires: timestamp("expires", { withTimezone: true, mode: "string" }).notNull(),
   ip: varchar("ip", { length: 255 }),
   userAgent: varchar("user_agent", { length: 255 }),
-  share: uuid("share").references(() => directusShares.id, {
-    onDelete: "cascade",
-  }),
+  share: uuid("share").references(() => directusShares.id, { onDelete: "cascade" }),
   origin: varchar("origin", { length: 255 }),
 });
 
@@ -342,13 +307,39 @@ export const directusWebhooks = pgTable("directus_webhooks", {
   headers: json("headers"),
 });
 
+export const transactionMails = pgTable("TransactionMails", {
+  id: serial("id").primaryKey().notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true, mode: "string" }),
+  updatedAt: timestamp("updatedAt", { withTimezone: true, mode: "string" }),
+  receiversResource: uuid("receiversResource").references(() => directusFiles.id, {
+    onDelete: "set null",
+  }),
+  subject: varchar("subject", { length: 255 })
+    .default(sql`NULL::character varying`)
+    .notNull(),
+  body: text("body").notNull(),
+  from: varchar("from", { length: 255 })
+    .default(sql`NULL::character varying`)
+    .notNull(),
+  fromName: varchar("fromName", { length: 255 })
+    .default(sql`NULL::character varying`)
+    .notNull(),
+  replyTo: varchar("replyTo", { length: 255 })
+    .default(sql`NULL::character varying`)
+    .notNull(),
+  log: text("log"),
+  status: varchar("status", { length: 255 })
+    .default(sql`'preparing'::character varying`)
+    .notNull(),
+  testReceiversResource: uuid("testReceiversResource").references(() => directusFiles.id, {
+    onDelete: "set null",
+  }),
+});
+
 export const directusMigrations = pgTable("directus_migrations", {
   version: varchar("version", { length: 255 }).primaryKey().notNull(),
   name: varchar("name", { length: 255 }).notNull(),
-  timestamp: timestamp("timestamp", {
-    withTimezone: true,
-    mode: "string",
-  }).defaultNow(),
+  timestamp: timestamp("timestamp", { withTimezone: true, mode: "string" }).defaultNow(),
 });
 
 export const directusDashboards = pgTable("directus_dashboards", {
@@ -358,13 +349,8 @@ export const directusDashboards = pgTable("directus_dashboards", {
     .default(sql`'dashboard'::character varying`)
     .notNull(),
   note: text("note"),
-  dateCreated: timestamp("date_created", {
-    withTimezone: true,
-    mode: "string",
-  }).defaultNow(),
-  userCreated: uuid("user_created").references(() => directusUsers.id, {
-    onDelete: "set null",
-  }),
+  dateCreated: timestamp("date_created", { withTimezone: true, mode: "string" }).defaultNow(),
+  userCreated: uuid("user_created").references(() => directusUsers.id, { onDelete: "set null" }),
   color: varchar("color", { length: 255 }),
 });
 
@@ -384,13 +370,8 @@ export const directusPanels = pgTable("directus_panels", {
   width: integer("width").notNull(),
   height: integer("height").notNull(),
   options: json("options"),
-  dateCreated: timestamp("date_created", {
-    withTimezone: true,
-    mode: "string",
-  }).defaultNow(),
-  userCreated: uuid("user_created").references(() => directusUsers.id, {
-    onDelete: "set null",
-  }),
+  dateCreated: timestamp("date_created", { withTimezone: true, mode: "string" }).defaultNow(),
+  userCreated: uuid("user_created").references(() => directusUsers.id, { onDelete: "set null" }),
 });
 
 export const directusSettings = pgTable("directus_settings", {
@@ -399,28 +380,21 @@ export const directusSettings = pgTable("directus_settings", {
     .default(sql`'Directus'::character varying`)
     .notNull(),
   projectUrl: varchar("project_url", { length: 255 }),
-  projectColor: varchar("project_color", { length: 50 }).default(
-    sql`NULL::character varying`,
-  ),
+  projectColor: varchar("project_color", { length: 50 }).default(sql`NULL::character varying`),
   projectLogo: uuid("project_logo").references(() => directusFiles.id),
-  publicForeground: uuid("public_foreground").references(
-    () => directusFiles.id,
-  ),
-  publicBackground: uuid("public_background").references(
-    () => directusFiles.id,
-  ),
+  publicForeground: uuid("public_foreground").references(() => directusFiles.id),
+  publicBackground: uuid("public_background").references(() => directusFiles.id),
   publicNote: text("public_note"),
   authLoginAttempts: integer("auth_login_attempts").default(25),
   authPasswordPolicy: varchar("auth_password_policy", { length: 100 }),
-  storageAssetTransform: varchar("storage_asset_transform", {
-    length: 7,
-  }).default(sql`'all'::character varying`),
+  storageAssetTransform: varchar("storage_asset_transform", { length: 7 }).default(
+    sql`'all'::character varying`,
+  ),
   storageAssetPresets: json("storage_asset_presets"),
   customCss: text("custom_css"),
-  storageDefaultFolder: uuid("storage_default_folder").references(
-    () => directusFolders.id,
-    { onDelete: "set null" },
-  ),
+  storageDefaultFolder: uuid("storage_default_folder").references(() => directusFolders.id, {
+    onDelete: "set null",
+  }),
   basemaps: json("basemaps"),
   mapboxKey: varchar("mapbox_key", { length: 255 }),
   moduleBar: json("module_bar"),
@@ -434,13 +408,8 @@ export const directusSettings = pgTable("directus_settings", {
 
 export const directusNotifications = pgTable("directus_notifications", {
   id: serial("id").primaryKey().notNull(),
-  timestamp: timestamp("timestamp", {
-    withTimezone: true,
-    mode: "string",
-  }).defaultNow(),
-  status: varchar("status", { length: 255 }).default(
-    sql`'inbox'::character varying`,
-  ),
+  timestamp: timestamp("timestamp", { withTimezone: true, mode: "string" }).defaultNow(),
+  status: varchar("status", { length: 255 }).default(sql`'inbox'::character varying`),
   recipient: uuid("recipient")
     .notNull()
     .references(() => directusUsers.id, { onDelete: "cascade" }),
@@ -459,17 +428,10 @@ export const directusShares = pgTable("directus_shares", {
     { onDelete: "cascade" },
   ),
   item: varchar("item", { length: 255 }),
-  role: uuid("role").references(() => directusRoles.id, {
-    onDelete: "cascade",
-  }),
+  role: uuid("role").references(() => directusRoles.id, { onDelete: "cascade" }),
   password: varchar("password", { length: 255 }),
-  userCreated: uuid("user_created").references(() => directusUsers.id, {
-    onDelete: "set null",
-  }),
-  dateCreated: timestamp("date_created", {
-    withTimezone: true,
-    mode: "string",
-  }).defaultNow(),
+  userCreated: uuid("user_created").references(() => directusUsers.id, { onDelete: "set null" }),
+  dateCreated: timestamp("date_created", { withTimezone: true, mode: "string" }).defaultNow(),
   dateStart: timestamp("date_start", { withTimezone: true, mode: "string" }),
   dateEnd: timestamp("date_end", { withTimezone: true, mode: "string" }),
   timesUsed: integer("times_used").default(0),
@@ -479,24 +441,16 @@ export const directusShares = pgTable("directus_shares", {
 export const directusPresets = pgTable("directus_presets", {
   id: serial("id").primaryKey().notNull(),
   bookmark: varchar("bookmark", { length: 255 }),
-  user: uuid("user").references(() => directusUsers.id, {
-    onDelete: "cascade",
-  }),
-  role: uuid("role").references(() => directusRoles.id, {
-    onDelete: "cascade",
-  }),
+  user: uuid("user").references(() => directusUsers.id, { onDelete: "cascade" }),
+  role: uuid("role").references(() => directusRoles.id, { onDelete: "cascade" }),
   collection: varchar("collection", { length: 64 }),
   search: varchar("search", { length: 100 }),
-  layout: varchar("layout", { length: 100 }).default(
-    sql`'tabular'::character varying`,
-  ),
+  layout: varchar("layout", { length: 100 }).default(sql`'tabular'::character varying`),
   layoutQuery: json("layout_query"),
   layoutOptions: json("layout_options"),
   refreshInterval: integer("refresh_interval"),
   filter: json("filter"),
-  icon: varchar("icon", { length: 30 }).default(
-    sql`'bookmark'::character varying`,
-  ),
+  icon: varchar("icon", { length: 30 }).default(sql`'bookmark'::character varying`),
   color: varchar("color", { length: 255 }),
 });
 
@@ -517,19 +471,12 @@ export const directusFlows = pgTable(
     ),
     options: json("options"),
     operation: uuid("operation"),
-    dateCreated: timestamp("date_created", {
-      withTimezone: true,
-      mode: "string",
-    }).defaultNow(),
-    userCreated: uuid("user_created").references(() => directusUsers.id, {
-      onDelete: "set null",
-    }),
+    dateCreated: timestamp("date_created", { withTimezone: true, mode: "string" }).defaultNow(),
+    userCreated: uuid("user_created").references(() => directusUsers.id, { onDelete: "set null" }),
   },
   (table) => {
     return {
-      directusFlowsOperationUnique: unique(
-        "directus_flows_operation_unique",
-      ).on(table.operation),
+      directusFlowsOperationUnique: unique("directus_flows_operation_unique").on(table.operation),
     };
   },
 );
@@ -549,13 +496,8 @@ export const directusOperations = pgTable(
     flow: uuid("flow")
       .notNull()
       .references(() => directusFlows.id, { onDelete: "cascade" }),
-    dateCreated: timestamp("date_created", {
-      withTimezone: true,
-      mode: "string",
-    }).defaultNow(),
-    userCreated: uuid("user_created").references(() => directusUsers.id, {
-      onDelete: "set null",
-    }),
+    dateCreated: timestamp("date_created", { withTimezone: true, mode: "string" }).defaultNow(),
+    userCreated: uuid("user_created").references(() => directusUsers.id, { onDelete: "set null" }),
   },
   (table) => {
     return {
@@ -569,12 +511,10 @@ export const directusOperations = pgTable(
         foreignColumns: [table.id],
         name: "directus_operations_resolve_foreign",
       }),
-      directusOperationsResolveUnique: unique(
-        "directus_operations_resolve_unique",
-      ).on(table.resolve),
-      directusOperationsRejectUnique: unique(
-        "directus_operations_reject_unique",
-      ).on(table.reject),
+      directusOperationsResolveUnique: unique("directus_operations_resolve_unique").on(
+        table.resolve,
+      ),
+      directusOperationsRejectUnique: unique("directus_operations_reject_unique").on(table.reject),
     };
   },
 );
@@ -585,15 +525,11 @@ export const shopifyProductGroups = pgTable(
     id: serial("id").primaryKey().notNull(),
     createdAt: timestamp("createdAt", { withTimezone: true, mode: "string" }),
     updatedAt: timestamp("updatedAt", { withTimezone: true, mode: "string" }),
-    title: varchar("title", { length: 255 }).default(
-      sql`NULL::character varying`,
-    ),
+    title: varchar("title", { length: 255 }).default(sql`NULL::character varying`),
   },
   (table) => {
     return {
-      shopifyproductgroupsTitleUnique: unique(
-        "shopifyproductgroups_title_unique",
-      ).on(table.title),
+      shopifyproductgroupsTitleUnique: unique("shopifyproductgroups_title_unique").on(table.title),
     };
   },
 );
@@ -620,22 +556,18 @@ export const shopifyVariants = pgTable(
     id: serial("id").primaryKey().notNull(),
     createdAt: timestamp("createdAt", { withTimezone: true, mode: "string" }),
     updatedAt: timestamp("updatedAt", { withTimezone: true, mode: "string" }),
-    product: integer("product").references(() => shopifyProducts.id, {
-      onDelete: "cascade",
-    }),
+    product: integer("product").references(() => shopifyProducts.id, { onDelete: "cascade" }),
     variantName: varchar("variantName", { length: 255 }).notNull(),
     customSelects: integer("customSelects").default(0),
     variantId: varchar("variantId", { length: 255 }).notNull(),
     skuLabel: varchar("skuLabel", { length: 255 }),
-    skusJson: varchar("skusJSON", { length: 255 }).default(
-      sql`NULL::character varying`,
-    ),
+    skusJson: varchar("skusJSON", { length: 255 }).default(sql`NULL::character varying`),
   },
   (table) => {
     return {
-      shopifyvariantsVariantidUnique: unique(
-        "shopifyvariants_variantid_unique",
-      ).on(table.variantId),
+      shopifyvariantsVariantidUnique: unique("shopifyvariants_variantid_unique").on(
+        table.variantId,
+      ),
     };
   },
 );
@@ -665,9 +597,7 @@ export const shopifyInventoryOrders = pgTable("ShopifyInventoryOrders", {
     sql`NULL::character varying`,
   ),
   note: text("note"),
-  status: varchar("status", { length: 255 }).default(
-    sql`NULL::character varying`,
-  ),
+  status: varchar("status", { length: 255 }).default(sql`NULL::character varying`),
 });
 
 export const shopifyCustomSkUs = pgTable(
@@ -688,17 +618,15 @@ export const shopifyCustomSkUs = pgTable(
     skipDeliveryCalc: boolean("skipDeliveryCalc").default(false),
     displayName: varchar("displayName", { length: 255 }),
     sortNumber: integer("sortNumber").default(0).notNull(),
-    currentInventoryOrderSkuId: integer(
-      "currentInventoryOrderSKUId",
-    ).references((): AnyPgColumn => shopifyInventoryOrderSkUs.id, {
-      onDelete: "set null",
-    }),
+    currentInventoryOrderSkuId: integer("currentInventoryOrderSKUId").references(
+      (): AnyPgColumn => shopifyInventoryOrderSkUs.id,
+      { onDelete: "set null" },
+    ),
+    faultyRate: real("faultyRate").notNull(),
   },
   (table) => {
     return {
-      shopifycustomskusCodeUnique: unique("shopifycustomskus_code_unique").on(
-        table.code,
-      ),
+      shopifycustomskusCodeUnique: unique("shopifycustomskus_code_unique").on(table.code),
     };
   },
 );
@@ -717,20 +645,14 @@ export const shopifyInventoryOrderSkUs = pgTable("ShopifyInventoryOrderSKUs", {
     .references(() => shopifyInventoryOrders.id),
 });
 
-export const shopifyVariantsShopifyCustomSkUs = pgTable(
-  "ShopifyVariants_ShopifyCustomSKUs",
-  {
-    id: serial("id").primaryKey().notNull(),
-    shopifyVariantsId: integer("ShopifyVariants_id").references(
-      () => shopifyVariants.id,
-      { onDelete: "cascade" },
-    ),
-    shopifyCustomSkUsId: integer("ShopifyCustomSKUs_id").references(
-      () => shopifyCustomSkUs.id,
-    ),
-    sort: integer("sort"),
-  },
-);
+export const shopifyVariantsShopifyCustomSkUs = pgTable("ShopifyVariants_ShopifyCustomSKUs", {
+  id: serial("id").primaryKey().notNull(),
+  shopifyVariantsId: integer("ShopifyVariants_id").references(() => shopifyVariants.id, {
+    onDelete: "cascade",
+  }),
+  shopifyCustomSkUsId: integer("ShopifyCustomSKUs_id").references(() => shopifyCustomSkUs.id),
+  sort: integer("sort"),
+});
 
 export const facebookAdAlerts = pgTable("FacebookAdAlerts", {
   id: uuid("id").primaryKey().notNull(),
@@ -754,35 +676,25 @@ export const facebookAdAlerts = pgTable("FacebookAdAlerts", {
     .notNull(),
 });
 
-export const facebookAdAlertsFacebookAdSets = pgTable(
-  "FacebookAdAlerts_FacebookAdSets",
-  {
-    id: serial("id").primaryKey().notNull(),
-    facebookAdAlertsId: uuid("FacebookAdAlerts_id").references(
-      () => facebookAdAlerts.id,
-      { onDelete: "cascade" },
-    ),
-    facebookAdSetsId: uuid("FacebookAdSets_id").references(
-      () => facebookAdSets.id,
-      { onDelete: "cascade" },
-    ),
-  },
-);
+export const facebookAdAlertsFacebookAdSets = pgTable("FacebookAdAlerts_FacebookAdSets", {
+  id: serial("id").primaryKey().notNull(),
+  facebookAdAlertsId: uuid("FacebookAdAlerts_id").references(() => facebookAdAlerts.id, {
+    onDelete: "cascade",
+  }),
+  facebookAdSetsId: uuid("FacebookAdSets_id").references(() => facebookAdSets.id, {
+    onDelete: "cascade",
+  }),
+});
 
-export const facebookAdsBudgetFacebookAdSets = pgTable(
-  "FacebookAdsBudget_FacebookAdSets",
-  {
-    id: serial("id").primaryKey().notNull(),
-    facebookAdsBudgetId: uuid("FacebookAdsBudget_id").references(
-      () => facebookAdsBudget.id,
-      { onDelete: "cascade" },
-    ),
-    facebookAdSetsId: uuid("FacebookAdSets_id").references(
-      () => facebookAdSets.id,
-      { onDelete: "cascade" },
-    ),
-  },
-);
+export const facebookAdsBudgetFacebookAdSets = pgTable("FacebookAdsBudget_FacebookAdSets", {
+  id: serial("id").primaryKey().notNull(),
+  facebookAdsBudgetId: uuid("FacebookAdsBudget_id").references(() => facebookAdsBudget.id, {
+    onDelete: "cascade",
+  }),
+  facebookAdSetsId: uuid("FacebookAdSets_id").references(() => facebookAdSets.id, {
+    onDelete: "cascade",
+  }),
+});
 
 export const shopifyPages = pgTable(
   "ShopifyPages",
@@ -803,18 +715,12 @@ export const shopifyPages = pgTable(
     buyButton: boolean("buyButton").default(true).notNull(),
     pathname: varchar("pathname", { length: 255 }).notNull(),
     body: text("body"),
-    logo: uuid("logo").references(() => directusFiles.id, {
-      onDelete: "set null",
-    }),
-    favicon: uuid("favicon").references(() => directusFiles.id, {
-      onDelete: "set null",
-    }),
+    logo: uuid("logo").references(() => directusFiles.id, { onDelete: "set null" }),
+    favicon: uuid("favicon").references(() => directusFiles.id, { onDelete: "set null" }),
   },
   (table) => {
     return {
-      shopifypagesPathnameUnique: unique("shopifypages_pathname_unique").on(
-        table.pathname,
-      ),
+      shopifypagesPathnameUnique: unique("shopifypages_pathname_unique").on(table.pathname),
     };
   },
 );
@@ -827,15 +733,13 @@ export const shopifyProducts = pgTable(
     updatedAt: timestamp("updatedAt", { withTimezone: true, mode: "string" }),
     productName: varchar("productName", { length: 255 }).notNull(),
     productId: varchar("productId", { length: 255 }).notNull(),
-    productGroupId: integer("productGroupId").references(
-      () => shopifyProductGroups.id,
-    ),
+    productGroupId: integer("productGroupId").references(() => shopifyProductGroups.id),
   },
   (table) => {
     return {
-      shopifyproductsProductidUnique: unique(
-        "shopifyproducts_productid_unique",
-      ).on(table.productId),
+      shopifyproductsProductidUnique: unique("shopifyproducts_productid_unique").on(
+        table.productId,
+      ),
     };
   },
 );

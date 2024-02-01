@@ -68,3 +68,14 @@ export const shopifyPageRelation = relations(schema.shopifyPages, ({ one }) => (
     references: [schema.directusFiles.id],
   }),
 }));
+
+export const transactionMailsRelation = relations(schema.transactionMails, ({ one }) => ({
+  testResource: one(schema.directusFiles, {
+    fields: [schema.transactionMails.testReceiversResource],
+    references: [schema.directusFiles.id],
+  }),
+  resource: one(schema.directusFiles, {
+    fields: [schema.transactionMails.receiversResource],
+    references: [schema.directusFiles.id],
+  }),
+}));

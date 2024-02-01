@@ -11,6 +11,7 @@ node_compat = true
 #id = "b878be59a4024074b80a84e8c88a08cf"
 
 kv_namespaces = [{ binding = "CACHE", id = "8939dd4510e74016be7e184b05da4543", preview_id = "dfab8ef92eae43f5be01b1655a30248b" }]
+r2_buckets = [{ binding = 'CMS_BUCKETS', bucket_name = 'directus' }]
 
 [build]
 command = "npm run build:wc"
@@ -23,8 +24,10 @@ bucket = "./assets"
 name = "survaq-api-production"
 hyperdrive=[{ binding = "HYPERDRIVE", id = "b878be59a4024074b80a84e8c88a08cf" }]
 kv_namespaces = [{ binding = "CACHE", id = "e45d1964fa5549a484bf4b3855a46a90" }]
+r2_buckets = [{ binding = 'CMS_BUCKETS', bucket_name = 'directus' }]
 
 [env.preview]
 name = "survaq-api-preview"
 hyperdrive=[{ binding = "HYPERDRIVE", id = "b878be59a4024074b80a84e8c88a08cf" }]
 kv_namespaces = [{ binding = "CACHE", id = "b16c7009e14e430fb4f3c06b257bd1e0" }]
+r2_buckets = [{ binding = 'CMS_BUCKETS', bucket_name = 'directus' }]

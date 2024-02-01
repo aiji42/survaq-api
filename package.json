@@ -20,7 +20,7 @@
     "@types/node": "^20.11.5",
     "@types/pg": "^8.10.9",
     "autoprefixer": "^10.4.17",
-    "drizzle-kit": "^0.20.13",
+    "drizzle-kit": "^0.20.14",
     "postcss": "^8.4.33",
     "prettier": "^3.2.4",
     "tailwind": "^4.0.0",
@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "@lit/task": "^1.0.0",
+    "csv-parse": "^5.5.3",
     "dayjs": "^1.11.10",
     "drizzle-orm": "^0.29.3",
     "hono": "^3.12.6",

@@ -246,6 +246,23 @@ export const makeQueries = (client: NodePgDatabase<typeof schema>) => {
         },
       });
     },
+
+    getTransactionMail: (id: number) => {
+      return client.query.transactionMails.findFirst({
+        where: eq(schema.transactionMails.id, id),
+        with: {
+          testResource: true,
+          resource: true,
+        },
+      });
+    },
+
+    updateTransactionMail: (id: number, data: PgUpdateSetSource<typeof base.transactionMails>) => {
+      return client
+        .update(schema.transactionMails)
+        .set(data)
+        .where(eq(schema.transactionMails.id, id));
+    },
   };
 };
 
@@ -259,6 +276,7 @@ export const getClient = (env: string | { DATABASE_URL: string }) => {
 
   return {
     cleanUp: () => pool.end(),
+    client,
     ...makeQueries(client),
     getProductWithSKUs: (productId: string) => {
       return client.transaction(async (c) => {
