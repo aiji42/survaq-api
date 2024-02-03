@@ -263,6 +263,10 @@ export const makeQueries = (client: NodePgDatabase<typeof schema>) => {
         .set(data)
         .where(eq(schema.transactionMails.id, id));
     },
+
+    removeDirectusFiles: (id: string) => {
+      return client.delete(schema.directusFiles).where(eq(schema.directusFiles.id, id));
+    },
   };
 };
 
