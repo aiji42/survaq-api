@@ -48,6 +48,7 @@ app.post("transaction-mail", async (c) => {
       if (!csvData) throw new Error("csv file not found");
 
       const records = csvParse(removeBOM(await csvData.text()), { columns: true });
+      // TODO: テストなら件名に[test]をつける
       const result = await sendTransactionMail(data, records);
       if (result.status !== 202) throw new Error(await result.text());
 

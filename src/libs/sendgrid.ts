@@ -8,7 +8,6 @@ type NotifyDeliveryScheduleDynamicData = {
   lineItems: Array<{ title: string }>;
 };
 
-// FIXME: unsubscribeに関係なくメールを送信できるようにする
 export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }) => {
   const headers: Headers = new Headers({
     Authorization: `Bearer ${SENDGRID_API_KEY}`,
@@ -44,6 +43,11 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
         ],
         from: support,
         template_id: templates[locale],
+        mail_settings: {
+          bypass_list_management: {
+            enable: true,
+          },
+        },
       };
 
       return fetch("https://api.sendgrid.com/v3/mail/send", {
@@ -70,9 +74,15 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
         content: [
           {
             type: "text/plain",
+            // TODO: このメールはメールマガジンの受信可否に関わらず送っている旨の記載を追加する
             value: data.body,
           },
         ],
+        mail_settings: {
+          bypass_list_management: {
+            enable: true,
+          },
+        },
       };
 
       return fetch("https://api.sendgrid.com/v3/mail/send", {
