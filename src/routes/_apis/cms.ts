@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { Bindings } from "../../../bindings";
 import { getClient, makeQueries } from "../../libs/db";
-import { parse as csvParse } from "csv-parse/browser/esm/sync";
 import { getMailSender } from "../../libs/sendgrid";
+import { getBucket } from "../../libs/bucket";
 
 type Env = { Bindings: Bindings };
 
@@ -20,11 +20,10 @@ type WebhookBody =
       keys: string[];
     };
 
-// TODO: リファクタリング
 app.post("transaction-mail", async (c) => {
   const { client } = getClient(c.env);
   const { sendTransactionMail } = getMailSender(c.env);
-  const env = c.env;
+  const { getTransactionMailReceivers, removeTransactionMailReceivers } = getBucket(c.env);
 
   const body = await c.req.json<WebhookBody>();
   const key = "key" in body ? body.key : Number(body.keys[0]);
@@ -43,42 +42,36 @@ app.post("transaction-mail", async (c) => {
           : null;
     if (!resource) return;
 
+    let log = data.log;
+    let status: "sent" | "preparing" | "failed" = isProd ? "sent" : "preparing";
+
     try {
-      const csvData = await env.CMS_BUCKETS.get(resource.filename_disk!);
-      if (!csvData) throw new Error("csv file not found");
-
-      const records = csvParse(removeBOM(await csvData.text()), { columns: true });
-      // TODO: テストなら件名に[test]をつける
-      const result = await sendTransactionMail(data, records);
+      const records = await getTransactionMailReceivers(resource.filename_disk!);
+      // TODO: recordsが1000件を超える場合のケア
+      const result = await sendTransactionMail({ ...data, isTest: !isProd }, records);
+      // TODO: リファクタ
       if (result.status !== 202) throw new Error(await result.text());
+      log = appendLog(log, `mail sent to ${records.length} addresses`, !isProd);
 
-      const status = isProd ? "sent" : "preparing";
-      const log = `${isProd ? "" : "test "}mail sent to ${records.length} addresses`;
-      await updateTransactionMail(key, { status, log: appendLog(data.log, log) });
-
-      if (!isProd) return;
-
-      // 本番ならファイルを削除
-      await removeDirectusFiles(resource.id);
-      await env.CMS_BUCKETS.delete(resource.filename_disk!);
+      if (isProd) {
+        await removeDirectusFiles(resource.id);
+        await removeTransactionMailReceivers(resource.filename_disk!);
+      }
     } catch (e) {
-      const log = `${isProd ? "" : "test "}mail sending failed: ${e instanceof Error ? e.message : String(e)}`;
-      await updateTransactionMail(key, { status: "failed", log: appendLog(data.log, log) });
+      status = "failed";
+      const message = e instanceof Error ? e.message : String(e);
+      log = appendLog(log, `mail sending failed: ${message}`, !isProd);
     }
+
+    await updateTransactionMail(key, { status, log });
   });
 
   return c.text("webhook received");
 });
 
-const removeBOM = (text: string) => {
-  const bom = "\uFEFF";
-  if (text.startsWith(bom)) return text.slice(bom.length);
-  return text;
-};
-
-const appendLog = (orgLog: string | null, newLog: string) => {
+const appendLog = (orgLog: string | null, newLog: string, isTest: boolean) => {
   const split = (orgLog ?? "").split("\n");
-  split.unshift(`[${new Date().toISOString()}] ${newLog}`);
+  split.unshift(`[${new Date().toISOString()}]${isTest ? "[TEST]" : ""} ${newLog}`);
   return split.join("\n");
 };
 

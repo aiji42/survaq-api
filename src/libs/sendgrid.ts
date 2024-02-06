@@ -58,7 +58,13 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
     },
 
     sendTransactionMail: (
-      data: { from: string; fromName: string; subject: string; body: string },
+      {
+        fromName,
+        from,
+        subject,
+        body,
+        isTest,
+      }: { from: string; fromName: string; subject: string; body: string; isTest: boolean },
       receivers: Array<{ email: string; [key: string]: string }>,
     ) => {
       const payload = {
@@ -67,15 +73,14 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
           substitutions,
         })),
         from: {
-          email: data.from,
-          name: data.fromName,
+          email: from,
+          name: fromName,
         },
-        subject: data.subject,
+        subject: isTest ? `[TEST] ${subject}` : subject,
         content: [
           {
             type: "text/plain",
-            // TODO: このメールはメールマガジンの受信可否に関わらず送っている旨の記載を追加する
-            value: data.body,
+            value: body,
           },
         ],
         mail_settings: {
