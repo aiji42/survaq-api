@@ -48,9 +48,7 @@ app.post("transaction-mail", async (c) => {
     try {
       const records = await getTransactionMailReceivers(resource.filename_disk!);
       // TODO: recordsが1000件を超える場合のケア
-      const result = await sendTransactionMail({ ...data, isTest: !isProd }, records);
-      // TODO: リファクタ
-      if (result.status !== 202) throw new Error(await result.text());
+      await sendTransactionMail({ ...data, isTest: !isProd }, records);
       log = appendLog(log, `mail sent to ${records.length} addresses`, !isProd);
 
       if (isProd) {

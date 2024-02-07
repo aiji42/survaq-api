@@ -166,10 +166,9 @@ app.post("/order", async (c) => {
         updatableNoteAttrs.push(makeUpdatableDeliveryScheduleNoteAttr(scheduleData));
 
         // メールでの通知
-        await blockReRun(`notifyDeliverySchedule-${data.id}`, c.env.CACHE, async () => {
-          const res = await mailSender.notifyDeliverySchedule(data, scheduleData.estimate);
-          await notifier.appendErrorResponse(res);
-        });
+        await blockReRun(`notifyDeliverySchedule-${data.id}`, c.env.CACHE, () =>
+          mailSender.notifyDeliverySchedule(data, scheduleData.estimate),
+        );
       }
     } catch (e) {
       notifier.appendErrorMessage(e);

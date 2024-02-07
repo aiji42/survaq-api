@@ -15,7 +15,7 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
   });
 
   return {
-    notifyDeliverySchedule: (data: ShopifyOrder, _schedule: string) => {
+    notifyDeliverySchedule: async (data: ShopifyOrder, _schedule: string) => {
       const locale = data.customer_locale.startsWith("ja") ? "ja" : "en";
       const support = {
         email: "support@survaq.com",
@@ -50,14 +50,16 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
         },
       };
 
-      return fetch("https://api.sendgrid.com/v3/mail/send", {
+      const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
         method: "POST",
         headers,
         body: JSON.stringify(payload),
       });
+      if (!res.ok) throw new Error(await res.text());
+      return res;
     },
 
-    sendTransactionMail: (
+    sendTransactionMail: async (
       {
         fromName,
         from,
@@ -90,11 +92,13 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
         },
       };
 
-      return fetch("https://api.sendgrid.com/v3/mail/send", {
+      const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
         method: "POST",
         headers,
         body: JSON.stringify(payload),
       });
+      if (!res.ok) throw new Error(await res.text());
+      return res;
     },
   };
 };
