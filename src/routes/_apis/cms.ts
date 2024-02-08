@@ -46,10 +46,14 @@ app.post("transaction-mail", async (c) => {
     let status: "sent" | "preparing" | "failed" = isProd ? "sent" : "preparing";
 
     try {
+      // TODO: recordsのバリデーションを行わくていいか？
       const records = await getTransactionMailReceivers(resource.filename_disk!);
-      // TODO: recordsが1000件を超える場合のケア
-      await sendTransactionMail({ ...data, isTest: !isProd }, records);
-      log = appendLog(log, `mail sent to ${records.length} addresses`, !isProd);
+      let sentCount = 0;
+      for (const record of chunks(records, 1000)) {
+        await sendTransactionMail({ ...data, isTest: !isProd }, record);
+        sentCount += record.length;
+        log = appendLog(log, `mail sent to ${sentCount}/${records.length} addresses`, !isProd);
+      }
 
       if (isProd) {
         await removeDirectusFiles(resource.id);
@@ -72,5 +76,8 @@ const appendLog = (orgLog: string | null, newLog: string, isTest: boolean) => {
   split.unshift(`[${new Date().toISOString()}]${isTest ? "[TEST]" : ""} ${newLog}`);
   return split.join("\n");
 };
+
+const chunks = <T>(a: T[], size: number): T[][] =>
+  Array.from({ length: Math.ceil(a.length / size) }, (_, i) => a.slice(i * size, i * size + size));
 
 export default app;
