@@ -46,7 +46,6 @@ app.post("transaction-mail", async (c) => {
     let status: "sent" | "preparing" | "failed" = isProd ? "sent" : "preparing";
 
     try {
-      // TODO: recordsのバリデーションを行わくていいか？
       const records = await getTransactionMailReceivers(resource.filename_disk!);
       let sentCount = 0;
       for (const record of chunks(records, 1000)) {

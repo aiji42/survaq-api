@@ -7,8 +7,14 @@ export const getBucket = ({ CMS_BUCKETS }: { CMS_BUCKETS: R2Bucket }) => {
     ): Promise<{ email: string; [k: string]: string }[]> => {
       const csvData = await CMS_BUCKETS.get(key);
       if (!csvData) throw new Error("csv file not found");
-      return parse(removeBOM(await csvData.text()), { columns: true });
+      const parsed = parse(removeBOM(await csvData.text()), { columns: true });
+
+      if (!Array.isArray(parsed)) throw new Error("csv parse error");
+      if (!parsed.every((item) => !item.email)) throw new Error("email not found in csv");
+
+      return parsed;
     },
+
     removeTransactionMailReceivers: (key: string) => {
       return CMS_BUCKETS.delete(key);
     },
