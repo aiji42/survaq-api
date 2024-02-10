@@ -33,6 +33,7 @@ app.post("transaction-mail", async (c) => {
     const data = await getTransactionMail(key);
     if (!data) return;
 
+    // NOTE: ここまだリファクタの余地あり
     const isProd = data.status === "sendPending";
     const resource =
       data.status === "testPending"

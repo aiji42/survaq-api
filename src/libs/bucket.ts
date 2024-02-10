@@ -10,7 +10,7 @@ export const getBucket = ({ CMS_BUCKETS }: { CMS_BUCKETS: R2Bucket }) => {
       const parsed = parse(removeBOM(await csvData.text()), { columns: true });
 
       if (!Array.isArray(parsed)) throw new Error("csv parse error");
-      if (!parsed.every((item) => !item.email)) throw new Error("email not found in csv");
+      if (!parsed.every((item) => !!item.email)) throw new Error("email not found in csv");
 
       return parsed;
     },
