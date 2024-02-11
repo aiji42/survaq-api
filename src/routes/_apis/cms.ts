@@ -1,8 +1,9 @@
 import { Hono } from "hono";
 import { Bindings } from "../../../bindings";
-import { getClient, makeQueries } from "../../libs/db";
+import { Client, getClient, makeQueries } from "../../libs/db";
 import { getMailSender } from "../../libs/sendgrid";
 import { getBucket } from "../../libs/bucket";
+import { chunks } from "../../libs/utils";
 
 type Env = { Bindings: Bindings };
 
@@ -31,28 +32,21 @@ app.post("transaction-mail", async (c) => {
   await client.transaction(async (c) => {
     const { getTransactionMail, updateTransactionMail, removeDirectusFiles } = makeQueries(c);
     const data = await getTransactionMail(key);
-    if (!data) return;
+    if (!data || !["sendPending", "testPending"].includes(data.status)) return;
 
-    // NOTE: ここまだリファクタの余地あり
     const isProd = data.status === "sendPending";
-    const resource =
-      data.status === "testPending"
-        ? data.testResource
-        : data.status === "sendPending"
-          ? data.resource
-          : null;
-    if (!resource) return;
-
-    let log = data.log;
-    let status: "sent" | "preparing" | "failed" = isProd ? "sent" : "preparing";
+    let nextLog = data.log;
+    let nextStatus: "sent" | "preparing" | "failed" = isProd ? "sent" : "preparing";
 
     try {
+      const resource = getResource(data);
       const records = await getTransactionMailReceivers(resource.filename_disk!);
-      let sentCount = 0;
+
+      let count = 0;
       for (const record of chunks(records, 1000)) {
         await sendTransactionMail({ ...data, isTest: !isProd }, record);
-        sentCount += record.length;
-        log = appendLog(log, `mail sent to ${sentCount}/${records.length} addresses`, !isProd);
+        count += record.length;
+        nextLog = appendLog(nextLog, `mail sent to ${count}/${records.length} addresses`, !isProd);
       }
 
       if (isProd) {
@@ -60,24 +54,33 @@ app.post("transaction-mail", async (c) => {
         await removeTransactionMailReceivers(resource.filename_disk!);
       }
     } catch (e) {
-      status = "failed";
+      nextStatus = "failed";
       const message = e instanceof Error ? e.message : String(e);
-      log = appendLog(log, `mail sending failed: ${message}`, !isProd);
+      nextLog = appendLog(nextLog, `mail sending failed: ${message}`, !isProd);
     }
 
-    await updateTransactionMail(key, { status, log });
+    await updateTransactionMail(key, { status: nextStatus, log: nextLog });
   });
 
   return c.text("webhook received");
 });
+
+const getResource = (
+  data: Exclude<Awaited<ReturnType<Client["getTransactionMail"]>>, undefined>,
+): Exclude<
+  | Exclude<Awaited<ReturnType<Client["getTransactionMail"]>>, undefined>["testResource"]
+  | Exclude<Awaited<ReturnType<Client["getTransactionMail"]>>, undefined>["resource"],
+  null
+> => {
+  if (data.status === "testPending" && data.testResource) return data.testResource;
+  if (data.status === "sendPending" && data.resource) return data.resource;
+  throw new Error("csv is not set on the record");
+};
 
 const appendLog = (orgLog: string | null, newLog: string, isTest: boolean) => {
   const split = (orgLog ?? "").split("\n");
   split.unshift(`[${new Date().toISOString()}]${isTest ? "[TEST]" : ""} ${newLog}`);
   return split.join("\n");
 };
-
-const chunks = <T>(a: T[], size: number): T[][] =>
-  Array.from({ length: Math.ceil(a.length / size) }, (_, i) => a.slice(i * size, i * size + size));
 
 export default app;
