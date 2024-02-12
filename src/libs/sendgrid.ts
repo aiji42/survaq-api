@@ -69,6 +69,9 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
       }: { from: string; fromName: string; subject: string; body: string; isTest: boolean },
       receivers: Array<{ email: string; [key: string]: string }>,
     ) => {
+      // フェイルセーフで、テストを誤って実ユーザに送信しないよう送信上限を設ける
+      if (isTest && receivers.length > 5) throw new Error("too many test receivers. limit is 5.");
+
       const payload = {
         personalizations: receivers.map(({ email, ...substitutions }) => ({
           to: [{ email }],
