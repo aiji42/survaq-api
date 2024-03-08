@@ -157,7 +157,7 @@ app.post("/order", async (c) => {
   if (
     !hasNoSkuLineItem(newLiAttrs) &&
     !hasPersistedDeliveryScheduleCustomAttrs(data) &&
-    LIMIT_DATE < new Date(data.created_at)
+    new Date(data.created_at) > LIMIT_DATE
   ) {
     try {
       const scheduleData = await getNewDeliveryScheduleCustomAttrs(newLiAttrs, dbClient);
@@ -177,8 +177,10 @@ app.post("/order", async (c) => {
 
   // LineItem x SKU のデータをnote_attributesに追加 (既存のnote_attributesの情報と差異があれば)
   if (!eqLineItemCustomAttrs(newLiAttrs, getPersistedListItemCustomAttrs(data))) {
-    // SKU情報が無いLineItemがあればSlackに通知
-    hasNoSkuLineItem(newLiAttrs) && notifier.appendNotConnectedSkuOrder(data, "notify-order");
+    // SKU情報が無いLineItemがあればSlackに通知(古いデータに関しては通知しない)
+    new Date(data.created_at) > new Date("2024-01-01T00:00:00") &&
+      hasNoSkuLineItem(newLiAttrs) &&
+      notifier.appendNotConnectedSkuOrder(data, "notify-order");
 
     updatableNoteAttrs.push(makeUpdatableLineItemNoteAttr(newLiAttrs));
   }

@@ -58,7 +58,7 @@ export class Notifier {
         title: `注文番号 ${data.name}`,
         title_link: `https://survaq.myshopify.com/admin/orders/${data.id}`,
         color: "warning",
-        pretext: "SKU情報の無いオープンな注文が処理されています。",
+        pretext: "SKU情報の無い注文が処理されています。",
         fields: [
           {
             title: "購入日時(UTC)",
