@@ -12,7 +12,7 @@ type Variables = {
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 app.use("*", async (c, next) => {
-  const locale = c.req.headers.get("accept-language")?.startsWith("en") ? "en" : "ja";
+  const locale = c.req.header("accept-language")?.startsWith("en") ? "en" : "ja";
   c.set("locale", locale);
 
   await next();
