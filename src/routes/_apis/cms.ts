@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { Bindings } from "../../../bindings";
-import { Client, getClient, makeQueries } from "../../libs/db";
+import { Client, getPrismaClient, makeQueries } from "../../libs/prisma";
 import { getMailSender } from "../../libs/sendgrid";
 import { getBucket } from "../../libs/bucket";
 import { chunks } from "../../libs/utils";
@@ -22,15 +22,15 @@ type WebhookBody =
     };
 
 app.post("transaction-mail", async (c) => {
-  const { client } = getClient(c.env);
+  const { client } = getPrismaClient(c.env);
   const { sendTransactionMail } = getMailSender(c.env);
   const { getTransactionMailReceivers, removeTransactionMailReceivers } = getBucket(c.env);
 
   const body = await c.req.json<WebhookBody>();
   const key = "key" in body ? body.key : Number(body.keys[0]);
 
-  await client.transaction(async (c) => {
-    const { getTransactionMail, updateTransactionMail, removeDirectusFiles } = makeQueries(c);
+  await client.$transaction(async (prisma) => {
+    const { getTransactionMail, updateTransactionMail, removeDirectusFiles } = makeQueries(prisma);
     const data = await getTransactionMail(key);
     if (!data || !["sendPending", "testPending"].includes(data.status)) return;
 
@@ -66,10 +66,10 @@ app.post("transaction-mail", async (c) => {
 });
 
 const getResource = (
-  data: Exclude<Awaited<ReturnType<Client["getTransactionMail"]>>, undefined>,
+  data: Exclude<Awaited<ReturnType<Client["getTransactionMail"]>>, undefined | null>,
 ): Exclude<
-  | Exclude<Awaited<ReturnType<Client["getTransactionMail"]>>, undefined>["testResource"]
-  | Exclude<Awaited<ReturnType<Client["getTransactionMail"]>>, undefined>["resource"],
+  | Exclude<Awaited<ReturnType<Client["getTransactionMail"]>>, undefined | null>["testResource"]
+  | Exclude<Awaited<ReturnType<Client["getTransactionMail"]>>, undefined | null>["resource"],
   null
 > => {
   if (data.status === "testPending" && data.testResource) return data.testResource;

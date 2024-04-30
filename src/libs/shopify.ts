@@ -1,6 +1,6 @@
 import { ShopifyOrder } from "../types/shopify";
-import { Client } from "./db";
-import { latest, Locale, makeSchedule } from "./makeSchedule";
+import { Client } from "./prisma";
+import { latest, makeSchedule } from "./makeSchedule";
 
 export type NoteAttributes = ShopifyOrder["note_attributes"];
 
@@ -67,7 +67,7 @@ export const getNewLineItemCustomAttrs = async (
     data.line_items.map(async ({ id, name, properties, variant_id }) => {
       let skus: string | undefined | null =
         skusByLineItemId[id] ?? properties.find((p) => p.name === SKUS)?.value;
-      if (!skus || skus === EMPTY_ARRAY) skus = (await client.getVariant(variant_id))?.skusJson;
+      if (!skus || skus === EMPTY_ARRAY) skus = (await client.getVariant(variant_id))?.skusJSON;
 
       return { id, name, [SKUS]: JSON.parse(skus || EMPTY_ARRAY) };
     }),
@@ -133,7 +133,7 @@ export const getNewDeliveryScheduleCustomAttrs = async (
   const codes = [...new Set(data.flatMap(({ _skus }) => _skus))];
   const skus = await client.getDeliverySchedulesBySkuCodes(codes);
   const schedules = skus.map((sku) =>
-    makeSchedule(sku.crntInvOrderSKU?.invOrder.deliverySchedule ?? null),
+    makeSchedule(sku.currentInventoryOrderSKU?.ShopifyInventoryOrders.deliverySchedule ?? null),
   );
 
   // skusがスケジュール計算対象外ものだけで構成されている場合は、スケジュール未確定とする

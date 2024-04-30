@@ -6,7 +6,7 @@ import {
   makeScheduleFromDeliverySchedule,
   Schedule,
 } from "./makeSchedule";
-import { Product, SKUs } from "./db";
+import { Product, SKUs } from "./prisma";
 
 type MadeVariants = {
   productId: string;
@@ -26,10 +26,10 @@ export const makeVariants = async (
 ): Promise<MadeVariants> => {
   const skuMap = new Map<string, SKUs[number]>(skus.map((sku) => [sku.code, sku]));
 
-  return product.variants.map(
-    ({ variantId, variantName, customSelects, skuLabel, skus, skusJson }) => {
+  return product.ShopifyVariants.map(
+    ({ variantId, variantName, customSelects, skuLabel, skus, skusJSON }) => {
       const selectableSKUs = skus.flatMap(({ sku }) => (sku ? makeSKU(sku, locale) : []));
-      const baseSKUs = sanitizeSkusJSON(skusJson).flatMap((code) => {
+      const baseSKUs = sanitizeSkusJSON(skusJSON).flatMap((code) => {
         const row = skuMap.get(code);
         return row ? makeSKU(row, locale) : [];
       });
@@ -75,14 +75,14 @@ export const makeSKU = (
     subName,
     displayName,
     skipDeliveryCalc,
-    crntInvOrderSKU,
+    currentInventoryOrderSKU,
     sortNumber,
   }: SKUs[number],
   locale: Locale,
 ): MadeSKU => {
   const deliverySchedule = skipDeliveryCalc
     ? null
-    : crntInvOrderSKU?.invOrder.deliverySchedule ?? null;
+    : currentInventoryOrderSKU?.ShopifyInventoryOrders.deliverySchedule ?? null;
 
   return {
     id,
@@ -95,7 +95,7 @@ export const makeSKU = (
       // 本日ベースのスケジュールも入れて、誤って過去日がscheduleにならないようにする
       makeSchedule(null, locale),
     ]),
-    availableStock: crntInvOrderSKU?.invOrder.name ?? "REAL",
+    availableStock: currentInventoryOrderSKU?.ShopifyInventoryOrders.name ?? "REAL",
     sortNumber,
     skipDeliveryCalc: skipDeliveryCalc ?? false,
   };

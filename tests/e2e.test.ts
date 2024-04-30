@@ -1,5 +1,4 @@
-import { afterAll, describe, expect, test } from "vitest";
-import { getClient } from "../src/libs/db";
+import { describe, expect, test } from "vitest";
 
 const getRandomElements = <T>(arr: T[], num: number): T[] => {
   let n = arr.length;
@@ -13,18 +12,19 @@ const getRandomElements = <T>(arr: T[], num: number): T[] => {
 };
 
 describe("e2e", async () => {
-  const client = getClient(import.meta.env.VITE_DATABASE_URL);
-  const pages = await client.getAllPages();
+  const pages = getRandomElements(
+    (await (await fetch("http://0.0.0.0:8787/products/pages")).json()) as {
+      domain: string;
+      pathname: string;
+    }[],
+    10,
+  );
   const products = getRandomElements(
     (await (await fetch("http://0.0.0.0:8787/products")).json()) as {
       productId: string;
     }[],
     3,
   );
-
-  afterAll(async () => {
-    await client.cleanUp();
-  });
 
   test("products list data path: /products", async () => {
     const production = await (await fetch(`https://api.survaq.com/products`)).json();

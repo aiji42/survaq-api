@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { getClient } from "../../libs/db";
 import { Bindings } from "../../../bindings";
 import {
   getNewDeliveryScheduleCustomAttrs,
@@ -16,6 +15,7 @@ import {
 import { Notifier } from "../../libs/slack";
 import { ShopifyOrder, ShopifyProduct } from "../../types/shopify";
 import { getMailSender } from "../../libs/sendgrid";
+import { getPrismaClient } from "../../libs/prisma";
 
 type Variables = { label: string; topic: string; notifier: Notifier };
 
@@ -48,7 +48,7 @@ app.post("/product", async (c) => {
     deleteVariantMany,
     deleteVariantManyByProductId,
     updateVariant,
-  } = getClient(c.env);
+  } = getPrismaClient(c.env);
 
   const data = await c.req.json<ShopifyProduct>();
   c.set("label", `${c.get("topic")}: ${data.id}, ${data.handle}, ${data.status}`);
@@ -60,7 +60,7 @@ app.post("/product", async (c) => {
   // activeかつ、CMS上にまだ商品がないなら商品を追加
   if (!product && data.status === "active") {
     console.log("insert new product", data.id, data.title);
-    const [newProduct] = await insertProduct({
+    const newProduct = await insertProduct({
       productId: String(data.id),
       productName: data.title,
     });
@@ -110,7 +110,7 @@ app.post("/product", async (c) => {
     if (shouldDeleteVariantIds.length) {
       console.log("delete variants", shouldDeleteVariantIds);
       const deletedVariants = await deleteVariantMany(shouldDeleteVariantIds);
-      console.log("deleted variant", deletedVariants.rowCount, "record(s)");
+      console.log("deleted variant", deletedVariants?.count, "record(s)");
     } else console.log("No deletable variants");
 
     if (shouldUpdateVariantIds.length) {
@@ -133,14 +133,14 @@ app.post("/product", async (c) => {
   if (data.status !== "active" && productRecordId) {
     console.log("delete variants by product record id", productRecordId);
     const deletedVariants = await deleteVariantManyByProductId(productRecordId);
-    console.log("deleted variant", deletedVariants.rowCount, "record(s)");
+    console.log("deleted variant", deletedVariants?.count, "record(s)");
   }
 
   return c.json({ message: "product synced" });
 });
 
 app.post("/order", async (c) => {
-  const dbClient = getClient(c.env);
+  const dbClient = getPrismaClient(c.env);
   const shopify = getShopifyClient(c.env);
   const mailSender = getMailSender(c.env);
   const notifier = c.get("notifier");

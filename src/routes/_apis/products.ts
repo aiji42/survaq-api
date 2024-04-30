@@ -2,8 +2,8 @@ import { Hono } from "hono";
 import { earliest, Locale, makeSchedule, Schedule } from "../../libs/makeSchedule";
 import { makeVariants } from "../../libs/makeVariants";
 import { makeSKUsForDelivery, SKUsForDelivery } from "../../libs/makeSKUsForDelivery";
-import { getClient } from "../../libs/db";
 import { Bindings } from "../../../bindings";
+import { getPrismaClient } from "../../libs/prisma";
 
 type Variables = {
   locale: Locale;
@@ -29,8 +29,16 @@ app.get("*", async (c, next) => {
 });
 
 app.get("/", async (c) => {
-  const { getAllProducts } = getClient(c.env);
+  const { getAllProducts } = getPrismaClient(c.env);
   const data = await getAllProducts();
+
+  return c.json(data);
+});
+
+app.get("/pages", async (c) => {
+  const { getAllPages } = getPrismaClient(c.env);
+  const data = await getAllPages();
+  if (!data) return c.notFound();
 
   return c.json(data);
 });
@@ -41,7 +49,7 @@ export type DeliveryRouteResponse = {
 };
 
 app.get("/:id/delivery", async (c) => {
-  const { getProductWithSKUs } = getClient(c.env);
+  const { getProductWithSKUs } = getPrismaClient(c.env);
 
   const { product: data, skus: skusData } = await getProductWithSKUs(c.req.param("id"));
 
@@ -58,7 +66,7 @@ app.get("/:id/delivery", async (c) => {
 });
 
 app.get("/:id", async (c) => {
-  const { getProductWithSKUs } = getClient(c.env);
+  const { getProductWithSKUs } = getPrismaClient(c.env);
   const { product: data, skus: skusData } = await getProductWithSKUs(c.req.param("id"));
   if (!data) return c.notFound();
 
@@ -73,11 +81,11 @@ app.get("/:id", async (c) => {
 });
 
 app.get("/page-data/:code", async (c) => {
-  const { getPageWithSKUs } = getClient(c.env);
+  const { getPageWithSKUs } = getPrismaClient(c.env);
   const { page: data, skus } = await getPageWithSKUs(c.req.param("code"));
   if (!data) return c.notFound();
 
-  const { product, faviconFile: favicon, logoFile: logo, ...page } = data;
+  const { ShopifyProducts: product, faviconFile: favicon, logoFile: logo, ...page } = data;
 
   const variants = await makeVariants(product, skus, c.get("locale"));
 
@@ -94,7 +102,7 @@ app.get("/page-data/:code", async (c) => {
 });
 
 app.get("/page-data/by-domain/:domain", async (c) => {
-  const { getPage } = getClient(c.env);
+  const { getPage } = getPrismaClient(c.env);
   const data = await getPage(c.req.param("domain"));
   if (!data) return c.notFound();
 
