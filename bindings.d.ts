@@ -7,4 +7,7 @@ export type Bindings = {
   HYPERDRIVE?: Hyperdrive;
   CACHE: KVNamespace;
   CMS_BUCKETS: R2Bucket;
+  LOGILESS_CLIENT_ID: string;
+  LOGILESS_CLIENT_SECRET: string;
+  LOGILESS_REDIRECT_URI: string;
 };
