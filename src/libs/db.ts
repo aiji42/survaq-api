@@ -10,12 +10,23 @@ type TransactionalPrismaClient = Omit<
 >;
 
 export class DB {
-  public readonly prisma: PrismaClient;
+  public readonly prisma: PrismaClient | TransactionalPrismaClient;
 
-  constructor(env: { DATABASE_URL: string }) {
-    const pool = new Pool({ connectionString: env.DATABASE_URL });
-    const adapter = new PrismaPg(pool);
-    this.prisma = new PrismaClient({ adapter });
+  constructor(env: { DATABASE_URL: string } | TransactionalPrismaClient) {
+    if ("DATABASE_URL" in env) {
+      const pool = new Pool({ connectionString: env.DATABASE_URL });
+      const adapter = new PrismaPg(pool);
+      this.prisma = new PrismaClient({ adapter });
+    } else {
+      this.prisma = env;
+    }
+  }
+
+  async useTransaction<T>(transactionalProcess: (db: DB) => Promise<T>): Promise<T> {
+    return (this.prisma as PrismaClient).$transaction(async (prisma) => {
+      const db = new DB(prisma);
+      return transactionalProcess(db);
+    });
   }
 
   getAllProducts() {
@@ -27,8 +38,8 @@ export class DB {
     });
   }
 
-  getProduct(productId: string, _prisma?: TransactionalPrismaClient) {
-    return (_prisma ?? this.prisma).shopifyProducts.findFirst({
+  getProduct(productId: string) {
+    return this.prisma.shopifyProducts.findFirst({
       where: { productId },
       select: {
         id: true,
@@ -95,9 +106,9 @@ export class DB {
     });
   }
 
-  getSKUs(codes: string[], _prisma?: TransactionalPrismaClient) {
+  getSKUs(codes: string[]) {
     if (codes.length < 1) return [];
-    return (_prisma ?? this.prisma).shopifyCustomSKUs.findMany({
+    return this.prisma.shopifyCustomSKUs.findMany({
       where: { code: { in: codes } },
       select: {
         id: true,
@@ -132,8 +143,8 @@ export class DB {
     });
   }
 
-  getPage(pathnameOrDomain: string, _prisma?: TransactionalPrismaClient) {
-    return (_prisma ?? this.prisma).shopifyPages.findFirst({
+  getPage(pathnameOrDomain: string) {
+    return this.prisma.shopifyPages.findFirst({
       where: {
         OR: [{ pathname: pathnameOrDomain }, { domain: pathnameOrDomain }],
       },
@@ -233,8 +244,8 @@ export class DB {
     });
   }
 
-  getTransactionMail(id: number, _prisma?: TransactionalPrismaClient) {
-    return (_prisma ?? this.prisma).transactionMails.findFirst({
+  getTransactionMail(id: number) {
+    return this.prisma.transactionMails.findFirst({
       where: { id },
       select: {
         from: true,
@@ -245,6 +256,18 @@ export class DB {
         log: true,
         testResource: true,
         resource: true,
+      },
+    });
+  }
+
+  getCancelRequest(orderCode: string) {
+    return this.prisma.cancelRequests.findFirst({
+      where: { orderCode },
+      select: {
+        id: true,
+        orderCode: true,
+        status: true,
+        reason: true,
       },
     });
   }
@@ -292,12 +315,8 @@ export class DB {
     });
   }
 
-  updateTransactionMail(
-    id: number,
-    data: Prisma.TransactionMailsUpdateInput,
-    _prisma?: TransactionalPrismaClient,
-  ) {
-    return (_prisma ?? this.prisma).transactionMails.update({
+  updateTransactionMail(id: number, data: Prisma.TransactionMailsUpdateInput) {
+    return this.prisma.transactionMails.update({
       where: { id },
       data: {
         ...data,
@@ -306,30 +325,56 @@ export class DB {
     });
   }
 
-  removeDirectusFiles(id: string, _prisma?: TransactionalPrismaClient) {
-    return (_prisma ?? this.prisma).directus_files.delete({
+  removeDirectusFiles(id: string) {
+    return this.prisma.directus_files.delete({
+      where: { id },
+    });
+  }
+
+  createCancelRequest(data: Prisma.CancelRequestsCreateInput) {
+    return this.prisma.cancelRequests.create({
+      data: {
+        ...data,
+        updatedAt: new Date(),
+        createdAt: new Date(),
+      },
+    });
+  }
+
+  updateCancelRequest(orderCode: string, data: Prisma.CancelRequestsUpdateInput) {
+    return this.prisma.cancelRequests.update({
+      where: { orderCode },
+      data: {
+        ...data,
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  deleteCancelRequest(id: number) {
+    return this.prisma.cancelRequests.delete({
       where: { id },
     });
   }
 
   getProductWithSKUs(productId: string) {
-    return this.prisma.$transaction(async (prisma) => {
-      const product = await this.getProduct(productId, prisma);
+    return this.useTransaction(async (db) => {
+      const product = await db.getProduct(productId);
       const skuCodes =
         product?.ShopifyVariants.flatMap((item) => sanitizeSkusJSON(item.skusJSON)) ?? [];
-      const skus = await this.getSKUs(skuCodes, prisma);
+      const skus = await db.getSKUs(skuCodes);
 
       return { product, skus };
     });
   }
 
   getPageWithSKUs(code: string) {
-    return this.prisma.$transaction(async (prisma) => {
-      const page = await this.getPage(code, prisma);
+    return this.useTransaction(async (db) => {
+      const page = await db.getPage(code);
       const skuCodes =
         page?.ShopifyProducts.ShopifyVariants.flatMap((item) => sanitizeSkusJSON(item.skusJSON)) ??
         [];
-      const skus = await this.getSKUs(skuCodes, prisma);
+      const skus = await db.getSKUs(skuCodes);
 
       return { page, skus };
     });

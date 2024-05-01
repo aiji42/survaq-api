@@ -29,8 +29,8 @@ app.post("transaction-mail", async (c) => {
   const body = await c.req.json<WebhookBody>();
   const key = "key" in body ? body.key : Number(body.keys[0]);
 
-  await db.prisma.$transaction(async (prisma) => {
-    const data = await db.getTransactionMail(key, prisma);
+  await db.useTransaction(async (tdb) => {
+    const data = await tdb.getTransactionMail(key);
     if (!data || !["sendPending", "testPending"].includes(data.status)) return;
 
     const isProd = data.status === "sendPending";
@@ -49,7 +49,7 @@ app.post("transaction-mail", async (c) => {
       }
 
       if (isProd) {
-        await db.removeDirectusFiles(resource.id, prisma);
+        await tdb.removeDirectusFiles(resource.id);
         await removeTransactionMailReceivers(resource.filename_disk!);
       }
     } catch (e) {
@@ -58,7 +58,7 @@ app.post("transaction-mail", async (c) => {
       nextLog = appendLog(nextLog, `mail sending failed: ${message}`, !isProd);
     }
 
-    await db.updateTransactionMail(key, { status: nextStatus, log: nextLog }, prisma);
+    await tdb.updateTransactionMail(key, { status: nextStatus, log: nextLog });
   });
 
   return c.text("webhook received");
