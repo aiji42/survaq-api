@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { Bindings } from "../../../bindings";
-import { Client, getPrismaClient, makeQueries } from "../../libs/prisma";
+import { DB } from "../../libs/db";
 import { getMailSender } from "../../libs/sendgrid";
 import { getBucket } from "../../libs/bucket";
 import { chunks } from "../../libs/utils";
@@ -22,16 +22,15 @@ type WebhookBody =
     };
 
 app.post("transaction-mail", async (c) => {
-  const { client } = getPrismaClient(c.env);
+  const db = new DB(c.env);
   const { sendTransactionMail } = getMailSender(c.env);
   const { getTransactionMailReceivers, removeTransactionMailReceivers } = getBucket(c.env);
 
   const body = await c.req.json<WebhookBody>();
   const key = "key" in body ? body.key : Number(body.keys[0]);
 
-  await client.$transaction(async (prisma) => {
-    const { getTransactionMail, updateTransactionMail, removeDirectusFiles } = makeQueries(prisma);
-    const data = await getTransactionMail(key);
+  await db.prisma.$transaction(async (prisma) => {
+    const data = await db.getTransactionMail(key, prisma);
     if (!data || !["sendPending", "testPending"].includes(data.status)) return;
 
     const isProd = data.status === "sendPending";
@@ -50,7 +49,7 @@ app.post("transaction-mail", async (c) => {
       }
 
       if (isProd) {
-        await removeDirectusFiles(resource.id);
+        await db.removeDirectusFiles(resource.id, prisma);
         await removeTransactionMailReceivers(resource.filename_disk!);
       }
     } catch (e) {
@@ -59,17 +58,17 @@ app.post("transaction-mail", async (c) => {
       nextLog = appendLog(nextLog, `mail sending failed: ${message}`, !isProd);
     }
 
-    await updateTransactionMail(key, { status: nextStatus, log: nextLog });
+    await db.updateTransactionMail(key, { status: nextStatus, log: nextLog }, prisma);
   });
 
   return c.text("webhook received");
 });
 
 const getResource = (
-  data: Exclude<Awaited<ReturnType<Client["getTransactionMail"]>>, undefined | null>,
+  data: Exclude<Awaited<ReturnType<DB["getTransactionMail"]>>, undefined | null>,
 ): Exclude<
-  | Exclude<Awaited<ReturnType<Client["getTransactionMail"]>>, undefined | null>["testResource"]
-  | Exclude<Awaited<ReturnType<Client["getTransactionMail"]>>, undefined | null>["resource"],
+  | Exclude<Awaited<ReturnType<DB["getTransactionMail"]>>, undefined | null>["testResource"]
+  | Exclude<Awaited<ReturnType<DB["getTransactionMail"]>>, undefined | null>["resource"],
   null
 > => {
   if (data.status === "testPending" && data.testResource) return data.testResource;

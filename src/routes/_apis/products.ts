@@ -3,7 +3,7 @@ import { earliest, Locale, makeSchedule, Schedule } from "../../libs/makeSchedul
 import { makeVariants } from "../../libs/makeVariants";
 import { makeSKUsForDelivery, SKUsForDelivery } from "../../libs/makeSKUsForDelivery";
 import { Bindings } from "../../../bindings";
-import { getPrismaClient } from "../../libs/prisma";
+import { DB } from "../../libs/db";
 
 type Variables = {
   locale: Locale;
@@ -29,15 +29,15 @@ app.get("*", async (c, next) => {
 });
 
 app.get("/", async (c) => {
-  const { getAllProducts } = getPrismaClient(c.env);
-  const data = await getAllProducts();
+  const db = new DB(c.env);
+  const data = await db.getAllProducts();
 
   return c.json(data);
 });
 
 app.get("/pages", async (c) => {
-  const { getAllPages } = getPrismaClient(c.env);
-  const data = await getAllPages();
+  const db = new DB(c.env);
+  const data = await db.getAllPages();
   if (!data) return c.notFound();
 
   return c.json(data);
@@ -49,9 +49,9 @@ export type DeliveryRouteResponse = {
 };
 
 app.get("/:id/delivery", async (c) => {
-  const { getProductWithSKUs } = getPrismaClient(c.env);
+  const db = new DB(c.env);
 
-  const { product: data, skus: skusData } = await getProductWithSKUs(c.req.param("id"));
+  const { product: data, skus: skusData } = await db.getProductWithSKUs(c.req.param("id"));
 
   const current = makeSchedule(null);
 
@@ -66,8 +66,8 @@ app.get("/:id/delivery", async (c) => {
 });
 
 app.get("/:id", async (c) => {
-  const { getProductWithSKUs } = getPrismaClient(c.env);
-  const { product: data, skus: skusData } = await getProductWithSKUs(c.req.param("id"));
+  const db = new DB(c.env);
+  const { product: data, skus: skusData } = await db.getProductWithSKUs(c.req.param("id"));
   if (!data) return c.notFound();
 
   const variants = await makeVariants(data, skusData, c.get("locale"));
@@ -81,8 +81,8 @@ app.get("/:id", async (c) => {
 });
 
 app.get("/page-data/:code", async (c) => {
-  const { getPageWithSKUs } = getPrismaClient(c.env);
-  const { page: data, skus } = await getPageWithSKUs(c.req.param("code"));
+  const db = new DB(c.env);
+  const { page: data, skus } = await db.getPageWithSKUs(c.req.param("code"));
   if (!data) return c.notFound();
 
   const { ShopifyProducts: product, faviconFile: favicon, logoFile: logo, ...page } = data;
@@ -102,8 +102,8 @@ app.get("/page-data/:code", async (c) => {
 });
 
 app.get("/page-data/by-domain/:domain", async (c) => {
-  const { getPage } = getPrismaClient(c.env);
-  const data = await getPage(c.req.param("domain"));
+  const db = new DB(c.env);
+  const data = await db.getPage(c.req.param("domain"));
   if (!data) return c.notFound();
 
   return c.json({ pathname: data.pathname });

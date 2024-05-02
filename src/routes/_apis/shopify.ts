@@ -15,7 +15,7 @@ import {
 import { Notifier } from "../../libs/slack";
 import { ShopifyOrder, ShopifyProduct } from "../../types/shopify";
 import { getMailSender } from "../../libs/sendgrid";
-import { getPrismaClient } from "../../libs/prisma";
+import { DB } from "../../libs/db";
 
 type Variables = { label: string; topic: string; notifier: Notifier };
 
@@ -40,27 +40,18 @@ app.onError(async (err, c) => {
 });
 
 app.post("/product", async (c) => {
-  const {
-    getProduct,
-    insertProduct,
-    getVariants,
-    insertVariantMany,
-    deleteVariantMany,
-    deleteVariantManyByProductId,
-    updateVariant,
-  } = getPrismaClient(c.env);
-
+  const db = new DB(c.env);
   const data = await c.req.json<ShopifyProduct>();
   c.set("label", `${c.get("topic")}: ${data.id}, ${data.handle}, ${data.status}`);
   console.log(c.get("label"));
 
-  const product = await getProduct(String(data.id));
+  const product = await db.getProduct(String(data.id));
   let productRecordId: number | undefined = product?.id;
 
   // activeかつ、CMS上にまだ商品がないなら商品を追加
   if (!product && data.status === "active") {
     console.log("insert new product", data.id, data.title);
-    const newProduct = await insertProduct({
+    const newProduct = await db.insertProduct({
       productId: String(data.id),
       productName: data.title,
     });
@@ -78,7 +69,7 @@ app.post("/product", async (c) => {
   // CMS上にしか存在しないIDがあるのであれば、そのバリエーションは削除する
   // CMS上・Shopify両方に存在していればバリエーションをアップデートする
   if (data.status === "active" && productRecordId) {
-    const variants = await getVariants(productRecordId);
+    const variants = await db.getVariants(productRecordId);
     const cmsVariantMap = new Map(variants.map((v) => [v.variantId, v] as const));
 
     // FIXME: Object.groupByが来たらリファクタ
@@ -97,7 +88,7 @@ app.post("/product", async (c) => {
         variantName: shopifyVariants[variantId]!,
       }));
       console.log("insert new variants", insertData);
-      const insertedVariants = await insertVariantMany(
+      const insertedVariants = await db.insertVariantMany(
         insertData.map(({ variantId, variantName }) => ({
           variantId,
           variantName,
@@ -109,7 +100,7 @@ app.post("/product", async (c) => {
 
     if (shouldDeleteVariantIds.length) {
       console.log("delete variants", shouldDeleteVariantIds);
-      const deletedVariants = await deleteVariantMany(shouldDeleteVariantIds);
+      const deletedVariants = await db.deleteVariantMany(shouldDeleteVariantIds);
       console.log("deleted variant", deletedVariants?.count, "record(s)");
     } else console.log("No deletable variants");
 
@@ -121,7 +112,7 @@ app.post("/product", async (c) => {
       console.log("update variants", updateData);
       const updatedVariants = await Promise.all(
         updateData.map(async ({ variantId, variantName }) =>
-          updateVariant(variantId, { variantName }),
+          db.updateVariant(variantId, { variantName }),
         ),
       );
       console.log(`updated variant ${updatedVariants.length} record(s)`);
@@ -132,7 +123,7 @@ app.post("/product", async (c) => {
   // バリエーション削除時に、SKU紐付け用の中間テーブルが残らないようにする
   if (data.status !== "active" && productRecordId) {
     console.log("delete variants by product record id", productRecordId);
-    const deletedVariants = await deleteVariantManyByProductId(productRecordId);
+    const deletedVariants = await db.deleteVariantManyByProductId(productRecordId);
     console.log("deleted variant", deletedVariants?.count, "record(s)");
   }
 
@@ -140,7 +131,7 @@ app.post("/product", async (c) => {
 });
 
 app.post("/order", async (c) => {
-  const dbClient = getPrismaClient(c.env);
+  const db = new DB(c.env);
   const shopify = new Shopify(c.env);
   const mailSender = getMailSender(c.env);
   const notifier = c.get("notifier");
@@ -150,7 +141,7 @@ app.post("/order", async (c) => {
   c.set("label", `${c.get("topic")}: ${data.id}`);
   console.log(c.get("label"));
 
-  const [newLiAttrs, errors] = await getNewLineItemCustomAttrs(data, dbClient);
+  const [newLiAttrs, errors] = await getNewLineItemCustomAttrs(data, db);
   errors.forEach((e) => notifier.appendErrorMessage(e));
 
   // 配送予定のデータをnote_attributesに追加 + メール送信
@@ -160,7 +151,7 @@ app.post("/order", async (c) => {
     new Date(data.created_at) > LIMIT_DATE
   ) {
     try {
-      const scheduleData = await getNewDeliveryScheduleCustomAttrs(newLiAttrs, dbClient);
+      const scheduleData = await getNewDeliveryScheduleCustomAttrs(newLiAttrs, db);
 
       if (scheduleData) {
         updatableNoteAttrs.push(makeUpdatableDeliveryScheduleNoteAttr(scheduleData));

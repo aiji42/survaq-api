@@ -1,5 +1,5 @@
 import { ShopifyOrder } from "../types/shopify";
-import { Client } from "./prisma";
+import { DB } from "./db";
 import { latest, makeSchedule } from "./makeSchedule";
 
 export type NoteAttributes = ShopifyOrder["note_attributes"];
@@ -84,7 +84,7 @@ export const getPersistedListItemCustomAttrs = (data: ShopifyOrder): LineItemCus
 
 export const getNewLineItemCustomAttrs = async (
   data: ShopifyOrder,
-  client: Client,
+  client: DB,
 ): Promise<[LineItemCustomAttr[], Error[]]> => {
   const skusByLineItemId = Object.fromEntries(
     getPersistedListItemCustomAttrs(data)
@@ -157,7 +157,7 @@ export const hasPersistedDeliveryScheduleCustomAttrs = (data: ShopifyOrder) => {
 
 export const getNewDeliveryScheduleCustomAttrs = async (
   data: LineItemCustomAttr[],
-  client: Client,
+  client: DB,
 ): Promise<DeliveryScheduleCustomAttrs | null> => {
   const codes = [...new Set(data.flatMap(({ _skus }) => _skus))];
   const skus = await client.getDeliverySchedulesBySkuCodes(codes);
