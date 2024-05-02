@@ -15,6 +15,7 @@ type Tokens = {
 };
 
 export class Logiless {
+  private salesOrderCache: Map<string, SalesOrder> = new Map();
   constructor(private readonly env: Bindings) {}
 
   async loginCallback(code: string) {
@@ -79,6 +80,8 @@ export class Logiless {
   }
 
   async getSalesOrderByCode(code: string) {
+    if (this.salesOrderCache.has(code)) return this.salesOrderCache.get(code)!;
+
     const body = JSON.stringify({
       codes: [code],
     });
@@ -99,8 +102,24 @@ export class Logiless {
     const {
       data: [salesOrder],
     } = (await res.json()) as { data: SalesOrder[] };
+    if (!salesOrder) throw new Error("Sales order not found");
+
+    this.salesOrderCache.set(code, salesOrder);
 
     return salesOrder;
+  }
+
+  async getCancelable(code: string): Promise<{ isCancelable: boolean; reason?: string }> {
+    const data = await this.getSalesOrderByCode(code);
+
+    if (data.delivery_status === "WaitingForShipment") return { isCancelable: true };
+    if (data.delivery_status === "Working") return { isCancelable: false, reason: "Working" };
+    if (data.delivery_status === "PartlyShipped" || data.delivery_status === "Shipped")
+      return { isCancelable: false, reason: "Shipped" };
+    if (data.delivery_status === "Pending") return { isCancelable: false, reason: "Pending" };
+    if (data.delivery_status === "Cancel") return { isCancelable: false, reason: "Canceled" };
+
+    throw new Error("Unexpected delivery status");
   }
 }
 

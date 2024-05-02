@@ -645,3 +645,13 @@ model directus_webhooks {
   migrated_flow                 String?         @db.Uuid
   directus_flows                directus_flows? @relation(fields: [migrated_flow], references: [id], onUpdate: NoAction, map: "directus_webhooks_migrated_flow_foreign")
 }
+
+model CancelRequests {
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime? @db.Timestamptz(6)
+  updatedAt DateTime? @db.Timestamptz(6)
+  orderCode String    @db.VarChar(255)
+  store     String    @db.VarChar(255)
+  status    String    @db.VarChar(255)
+  note      String?
+}

@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/cloudflare-workers";
 import { cors } from "hono/cors";
-import { cms, logiless, products, shopify } from "./routes/_apis";
+import { cms, logiless, products, shopify, cancellation } from "./routes/_apis";
 import { wcPreview } from "./routes/sandobox";
 import manifest from "__STATIC_CONTENT_MANIFEST";
 
@@ -15,6 +15,7 @@ app.route("/products", products);
 app.route("/shopify", shopify);
 app.route("/cms", cms);
 app.route("/logiless", logiless);
+app.route("/cancellation", cancellation);
 
 app.route("/sandbox", wcPreview);
 

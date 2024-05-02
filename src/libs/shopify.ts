@@ -4,39 +4,68 @@ import { latest, makeSchedule } from "./makeSchedule";
 
 export type NoteAttributes = ShopifyOrder["note_attributes"];
 
-const API_VERSION = "2023-10";
+const API_VERSION = "2024-04";
 
-export const getShopifyClient = (env: { SHOPIFY_ACCESS_TOKEN: string }) => {
-  const headers = new Headers({
-    "X-Shopify-Access-Token": env.SHOPIFY_ACCESS_TOKEN,
-    "Content-Type": "application/json",
-  });
+export class Shopify {
+  public orderDataCache: Map<number, ShopifyOrder> = new Map();
 
-  return {
-    updateOrderNoteAttributes: (original: ShopifyOrder, updatableNoteAttrs: NoteAttributes) => {
-      const merged = new Map(
-        original.note_attributes.concat(updatableNoteAttrs).map(({ name, value }) => [name, value]),
-      );
+  constructor(private env: { SHOPIFY_ACCESS_TOKEN: string }) {}
 
-      return fetch(
-        `https://survaq.myshopify.com/admin/api/${API_VERSION}/orders/${original.id}.json`,
-        {
-          method: "PUT",
-          body: JSON.stringify({
-            order: {
-              id: original.id,
-              note_attributes: Array.from(merged, ([name, value]) => ({
-                name,
-                value,
-              })),
-            },
-          }),
-          headers,
-        },
-      );
-    },
-  };
-};
+  get headers() {
+    return new Headers({
+      "X-Shopify-Access-Token": this.env.SHOPIFY_ACCESS_TOKEN,
+      "Content-Type": "application/json",
+    });
+  }
+
+  async updateOrderNoteAttributes(original: ShopifyOrder, updatableNoteAttrs: NoteAttributes) {
+    const merged = new Map(
+      original.note_attributes.concat(updatableNoteAttrs).map(({ name, value }) => [name, value]),
+    );
+
+    return fetch(
+      `https://survaq.myshopify.com/admin/api/${API_VERSION}/orders/${original.id}.json`,
+      {
+        method: "PUT",
+        body: JSON.stringify({
+          order: {
+            id: original.id,
+            note_attributes: Array.from(merged, ([name, value]) => ({
+              name,
+              value,
+            })),
+          },
+        }),
+        headers: this.headers,
+      },
+    );
+  }
+
+  async getOrder(_id: number | string) {
+    const id = Number(_id);
+    if (this.orderDataCache.has(id)) return this.orderDataCache.get(id)!;
+
+    const res = await fetch(
+      `https://survaq.myshopify.com/admin/api/${API_VERSION}/orders/${id}.json`,
+      { headers: this.headers },
+    );
+    if (!res.ok) throw new Error(await res.text());
+    const data = ((await res.json()) as { order: ShopifyOrder }).order;
+
+    this.orderDataCache.set(id, data);
+
+    return data;
+  }
+
+  async getCancelable(id: number | string): Promise<{ isCancelable: boolean; reason?: string }> {
+    const data = await this.getOrder(id);
+
+    if (data.cancelled_at) return { isCancelable: false, reason: "Canceled" };
+    if (data.fulfillment_status) return { isCancelable: false, reason: "Shipped" };
+
+    return { isCancelable: true };
+  }
+}
 
 type LineItemCustomAttr = {
   id: number;

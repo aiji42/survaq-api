@@ -4,13 +4,13 @@ import {
   getNewDeliveryScheduleCustomAttrs,
   getNewLineItemCustomAttrs,
   getPersistedListItemCustomAttrs,
-  getShopifyClient,
   hasNoSkuLineItem,
   eqLineItemCustomAttrs,
   NoteAttributes,
   hasPersistedDeliveryScheduleCustomAttrs,
   makeUpdatableDeliveryScheduleNoteAttr,
   makeUpdatableLineItemNoteAttr,
+  Shopify,
 } from "../../libs/shopify";
 import { Notifier } from "../../libs/slack";
 import { ShopifyOrder, ShopifyProduct } from "../../types/shopify";
@@ -141,7 +141,7 @@ app.post("/product", async (c) => {
 
 app.post("/order", async (c) => {
   const dbClient = getPrismaClient(c.env);
-  const shopify = getShopifyClient(c.env);
+  const shopify = new Shopify(c.env);
   const mailSender = getMailSender(c.env);
   const notifier = c.get("notifier");
   const updatableNoteAttrs: NoteAttributes = [];

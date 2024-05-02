@@ -28,4 +28,9 @@ export type ShopifyOrder = {
     };
   };
   customer_locale: string;
+  cancel_reason: null | string;
+  cancelled_at: null | string;
+  closed_at: null | string;
+  fulfillment_status: null | string;
+  financial_status: null | string;
 };
