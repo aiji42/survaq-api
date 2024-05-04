@@ -13,7 +13,7 @@ bucket_name = 'directus'
 
 [build]
 command = "npm run build:wc"
-watch_dir = "./src"
+watch_dir = "./src/web-components"
 
 [site]
 bucket = "./assets"
