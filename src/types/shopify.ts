@@ -23,7 +23,7 @@ export type ShopifyOrder = {
   }[];
   customer: {
     email: string;
-    default_address: {
+    default_address?: {
       name: string;
     };
   };

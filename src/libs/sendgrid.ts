@@ -27,6 +27,8 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
         ja: "d-431a80069cc74042bf9423f6ca0a8f8a",
         en: "d-f0189b1f76824e8db999d79a2dc40a61",
       };
+      const customerName =
+        data.customer.default_address?.name ?? (locale === "ja" ? "お客" : "Valued Customer");
 
       const payload = {
         personalizations: [
@@ -34,7 +36,7 @@ export const getMailSender = ({ SENDGRID_API_KEY }: { SENDGRID_API_KEY: string }
             to: [{ email: data.customer.email }],
             bcc: [{ email: "shipping@survaq.com" }],
             dynamic_template_data: {
-              customerName: data.customer.default_address.name,
+              customerName,
               deliverySchedule: `${schedule.text}(${schedule.subText})`,
               orderId: data.name,
               lineItems: data.line_items.map(({ name }) => ({ title: name })),
