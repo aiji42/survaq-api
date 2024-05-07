@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { Bindings } from "../../../bindings";
 import { Logiless } from "../../libs/logiless";
 import { Shopify } from "../../libs/shopify";
@@ -25,10 +26,8 @@ app.get("/cancelable", async (c) => {
   }
 
   const logiless = new Logiless(c.env);
-  const code = (await shopify.getOrder(id)).name.replace(/^#/, "");
-
   try {
-    const cancelable = await logiless.getCancelable(code);
+    const cancelable = await logiless.getCancelable((await shopify.getOrder(id)).name);
     return c.json(cancelable);
   } catch (e) {
     return c.text("Not found", 404);
@@ -37,6 +36,7 @@ app.get("/cancelable", async (c) => {
 
 app.post(
   "/cancel",
+  // TODO: reasonの最小文字数を協議
   zValidator("json", z.object({ id: z.string(), reason: z.string().trim().min(1) })),
   async (c) => {
     const { id, reason } = c.req.valid("json");
@@ -50,10 +50,8 @@ app.post(
     }
 
     const logiless = new Logiless(c.env);
-    const code = (await shopify.getOrder(id)).name.replace(/^#/, "");
-
     try {
-      const cancelable = await logiless.getCancelable(code);
+      const cancelable = await logiless.getCancelable((await shopify.getOrder(id)).name);
       if (!cancelable.isCancelable) return c.text(`Not cancelable (${cancelable.reason})`, 400);
     } catch (e) {
       return c.text("Not found", 404);
@@ -61,18 +59,19 @@ app.post(
 
     const db = new DB(c.env);
     const res = await db.useTransaction(async (tdb) => {
-      const existingRequest = await tdb.getCancelRequest(code);
-      if (existingRequest) return false;
+      const existingRequest = await tdb.getCancelRequestByOrderKey(id);
+      if (existingRequest) throw new HTTPException(400, { message: "Already requested" });
 
       return tdb.createCancelRequest({
-        orderCode: code,
+        orderKey: id,
         status: "Pending",
         store: "Shopify",
         reason,
       });
     });
 
-    if (!res) return c.text("Already requested", 400);
+    // MEMO: 失敗しても自動リトライはさせない
+    await c.env.KIRIBI.enqueue("Cancel", { requestId: res.id }, { maxRetries: 1 });
 
     return c.json(res);
   },

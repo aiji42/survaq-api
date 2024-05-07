@@ -31,6 +31,6 @@ export type ShopifyOrder = {
   cancel_reason: null | string;
   cancelled_at: null | string;
   closed_at: null | string;
-  fulfillment_status: null | string;
+  fulfillment_status: null | "fulfilled" | "partial" | "restocked";
   financial_status: null | string;
 };

@@ -32,7 +32,7 @@ app.get("/sales_orders/:code", async (c) => {
   if (url.hostname !== "localhost") return c.text("Not allowed", 403);
 
   const logiless = new Logiless(c.env);
-  const salesOrders = await logiless.getSalesOrderByCode(c.req.param("code"));
+  const salesOrders = await logiless.getSalesOrder(c.req.param("code"));
 
   return c.json(salesOrders);
 });

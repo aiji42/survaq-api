@@ -650,10 +650,10 @@ model CancelRequests {
   id        Int       @id @default(autoincrement())
   createdAt DateTime? @db.Timestamptz(6)
   updatedAt DateTime? @db.Timestamptz(6)
-  orderCode String?   @unique(map: "cancelrequests_ordercode_unique") @db.VarChar(255)
   store     String    @db.VarChar(255)
   status    String    @db.VarChar(255)
   note      String?
   log       String?
   reason    String?
+  orderKey  String    @unique(map: "cancelrequests_orderkey_unique") @db.VarChar(255)
 }

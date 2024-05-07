@@ -79,7 +79,10 @@ export class Logiless {
     await this.env.CACHE.delete("LOGILESS_TOKEN");
   }
 
-  async getSalesOrderByCode(code: string) {
+  async getSalesOrder(_code: string) {
+    // Shopifyのコードは#から始まるため、それを除外
+    const code = _code.replace(/^#/, "");
+
     if (this.salesOrderCache.has(code)) return this.salesOrderCache.get(code)!;
 
     const body = JSON.stringify({
@@ -110,7 +113,7 @@ export class Logiless {
   }
 
   async getCancelable(code: string): Promise<{ isCancelable: boolean; reason?: string }> {
-    const data = await this.getSalesOrderByCode(code);
+    const data = await this.getSalesOrder(code);
 
     if (data.delivery_status === "WaitingForShipment") return { isCancelable: true };
     if (data.delivery_status === "Working") return { isCancelable: false, reason: "Working" };
@@ -120,6 +123,31 @@ export class Logiless {
     if (data.delivery_status === "Cancel") return { isCancelable: false, reason: "Canceled" };
 
     throw new Error("Unexpected delivery status");
+  }
+
+  async cancelSalesOrder(code: string) {
+    const { id } = await this.getSalesOrder(code);
+
+    // 同じ受注コードで新規受注の作成を許可しない(デフォルトの挙動の通り)
+    const body = JSON.stringify({
+      clears_code: false,
+    });
+    const res = await fetch(
+      `https://app2.logiless.com/api/v1/merchant/1394/sales_orders/${id}/reversal`,
+      {
+        headers: {
+          Authorization: `Bearer ${(await this.getTokens()).accessToken}`,
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        body,
+      },
+    );
+
+    if (!res.ok) {
+      console.log(await res.json());
+      throw new Error("Failed to cancel sales order");
+    }
   }
 }
 

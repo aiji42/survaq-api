@@ -65,6 +65,36 @@ export class Shopify {
 
     return { isCancelable: true };
   }
+
+  async cancelOrder(id: number | string, reason: string) {
+    const res = await fetch(`https://survaq.myshopify.com/admin/api/${API_VERSION}/graphql.json`, {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify({
+        // SEE: https://shopify.dev/docs/api/admin-graphql/2024-04/mutations/orderCancel?language=cURL
+        query: `mutation OrderCancel($orderId: ID!, $notifyCustomer: Boolean, $refund: Boolean!, $restock: Boolean!, $reason: OrderCancelReason!, $staffNote: String) { orderCancel(orderId: $orderId, notifyCustomer: $notifyCustomer, refund: $refund, restock: $restock, reason: $reason, staffNote: $staffNote) { job { id done } jobResult { id done } orderCancelUserErrors { field message code } } }`,
+        variables: {
+          orderId:
+            typeof id === "number" || !id.startsWith("gid:") ? `gid://shopify/Order/${id}` : id,
+          notifyCustomer: true,
+          refund: true,
+          restock: true,
+          reason: "CUSTOMER",
+          staffNote: reason,
+        },
+      }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+
+    const {
+      orderCancel: { orderCancelUserErrors },
+    } = (await res.json()) as {
+      orderCancel: { orderCancelUserErrors: { field: string[]; message: string; code: string }[] };
+    };
+    if (orderCancelUserErrors.length) {
+      throw new Error(orderCancelUserErrors.map(({ message }) => message).join("\n"));
+    }
+  }
 }
 
 type LineItemCustomAttr = {

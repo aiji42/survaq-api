@@ -260,14 +260,32 @@ export class DB {
     });
   }
 
-  getCancelRequest(orderCode: string) {
-    return this.prisma.cancelRequests.findFirst({
-      where: { orderCode },
+  getCancelRequest(id: number) {
+    return this.prisma.cancelRequests.findFirstOrThrow({
+      where: { id },
       select: {
         id: true,
-        orderCode: true,
+        orderKey: true,
+        store: true,
         status: true,
         reason: true,
+        log: true,
+        note: true,
+      },
+    });
+  }
+
+  getCancelRequestByOrderKey(orderKey: string | number) {
+    return this.prisma.cancelRequests.findFirst({
+      where: { orderKey: String(orderKey) },
+      select: {
+        id: true,
+        orderKey: true,
+        store: true,
+        status: true,
+        reason: true,
+        log: true,
+        note: true,
       },
     });
   }
@@ -341,9 +359,9 @@ export class DB {
     });
   }
 
-  updateCancelRequest(orderCode: string, data: Prisma.CancelRequestsUpdateInput) {
+  updateCancelRequestByOrderKey(orderKey: string, data: Prisma.CancelRequestsUpdateInput) {
     return this.prisma.cancelRequests.update({
-      where: { orderCode },
+      where: { orderKey },
       data: {
         ...data,
         updatedAt: new Date(),
