@@ -17,3 +17,7 @@ watch_dir = "./src/web-components"
 
 [site]
 bucket = "./assets"
+
+[[services]]
+binding = "KIRIBI"
+service = "kiribi-survaq-api"

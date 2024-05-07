@@ -29,3 +29,6 @@ service = "kiribi-survaq-api"
 binding = "Cancel"
 service = "kiribi-survaq-api"
 entrypoint = "Cancel"
+
+[site]
+bucket = "./node_modules/kiribi/client"

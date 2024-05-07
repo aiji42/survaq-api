@@ -54,7 +54,7 @@ export class Cancel extends KiribiPerformer<{ requestId: number }, void, Binding
       log: request.log ? `${log.toString()}\n${request.log}` : log.toString(),
     });
 
-    if (success) throw new Error(`Failed to cancel. See: CancelRequest#${requestId}`);
+    if (!success) throw new Error(`Failed to cancel. See: CancelRequest#${requestId}`);
   }
 }
 

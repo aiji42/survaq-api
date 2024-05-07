@@ -1,8 +1,7 @@
 import { Pool } from "@prisma/pg-worker";
 import { PrismaPg } from "@prisma/adapter-pg-worker";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "../prisma";
 import { sanitizeSkusJSON } from "./makeVariants";
-import { Prisma } from ".prisma/client";
 
 type TransactionalPrismaClient = Omit<
   PrismaClient,

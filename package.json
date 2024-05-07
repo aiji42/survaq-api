@@ -15,7 +15,7 @@
     "test": "vitest",
     "build:wc": "vite build",
     "typecheck": "tsc --noEmit",
-    "postinstall": "prisma generate"
+    "postinstall": "yarn prisma generate && yarn prisma generate --schema=./node_modules/kiribi/schema.prisma"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240423.0",
@@ -41,7 +41,7 @@
     "@prisma/pg-worker": "^5.13.0",
     "csv-parse": "^5.5.5",
     "dayjs": "^1.11.11",
-    "hono": "^4.2.9",
+    "hono": "^4.3.2",
     "kiribi": "^0.0.13",
     "lit": "^3.1.3",
     "slack-cloudflare-workers": "^0.12.0"

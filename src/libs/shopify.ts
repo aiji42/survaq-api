@@ -72,7 +72,7 @@ export class Shopify {
       headers: this.headers,
       body: JSON.stringify({
         // SEE: https://shopify.dev/docs/api/admin-graphql/2024-04/mutations/orderCancel?language=cURL
-        query: `mutation OrderCancel($orderId: ID!, $notifyCustomer: Boolean, $refund: Boolean!, $restock: Boolean!, $reason: OrderCancelReason!, $staffNote: String) { orderCancel(orderId: $orderId, notifyCustomer: $notifyCustomer, refund: $refund, restock: $restock, reason: $reason, staffNote: $staffNote) { job { id done } jobResult { id done } orderCancelUserErrors { field message code } } }`,
+        query: `mutation OrderCancel($orderId: ID!, $notifyCustomer: Boolean, $refund: Boolean!, $restock: Boolean!, $reason: OrderCancelReason!, $staffNote: String) { orderCancel(orderId: $orderId, notifyCustomer: $notifyCustomer, refund: $refund, restock: $restock, reason: $reason, staffNote: $staffNote) { job { id done } orderCancelUserErrors { field message code } } }`,
         variables: {
           orderId:
             typeof id === "number" || !id.startsWith("gid:") ? `gid://shopify/Order/${id}` : id,
@@ -86,14 +86,25 @@ export class Shopify {
     });
     if (!res.ok) throw new Error(await res.text());
 
-    const {
-      orderCancel: { orderCancelUserErrors },
-    } = (await res.json()) as {
-      orderCancel: { orderCancelUserErrors: { field: string[]; message: string; code: string }[] };
-    };
-    if (orderCancelUserErrors.length) {
-      throw new Error(orderCancelUserErrors.map(({ message }) => message).join("\n"));
-    }
+    const result = (await res.json()) as
+      | {
+          data: {
+            orderCancel: {
+              orderCancelUserErrors: { field: string[]; message: string; code: string }[];
+            };
+          };
+        }
+      | {
+          errors: { message: string }[];
+        };
+
+    if ("errors" in result) throw new Error(result.errors.map(({ message }) => message).join("\n"));
+    else if (result.data.orderCancel.orderCancelUserErrors.length)
+      throw new Error(
+        result.data.orderCancel.orderCancelUserErrors
+          .map(({ field, message, code }) => `${field.join(".")}: ${message} (${code})`)
+          .join("\n"),
+      );
   }
 }
 
