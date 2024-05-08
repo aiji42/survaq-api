@@ -37,6 +37,7 @@ export class Cancel extends KiribiPerformer<{ requestId: number }, void, Binding
       log.push(`Cancelled Shopify: ${order.id} (${order.name})`);
 
       // TODO: 支払済みでコンビニ払いor銀行振込なら、返金用口座を聞くためのメールを送信(BCCでCSにも送信)
+      // 将来的にはorderのwebhookによる処理に分けて、キャンセルリクエストによらない共通処理にしても良いかもしれない
       success = true;
     } catch (e) {
       if (e instanceof Error) {

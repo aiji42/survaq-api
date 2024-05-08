@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { Bindings } from "../../../bindings";
 import { DB } from "../../libs/db";
-import { getMailSender } from "../../libs/sendgrid";
+import { TransactionMailSender } from "../../libs/sendgrid";
 import { getBucket } from "../../libs/bucket";
 import { chunks } from "../../libs/utils";
 
@@ -23,7 +23,7 @@ type WebhookBody =
 
 app.post("transaction-mail", async (c) => {
   const db = new DB(c.env);
-  const { sendTransactionMail } = getMailSender(c.env);
+  const transactionMail = new TransactionMailSender(c.env);
   const { getTransactionMailReceivers, removeTransactionMailReceivers } = getBucket(c.env);
 
   const body = await c.req.json<WebhookBody>();
@@ -43,7 +43,7 @@ app.post("transaction-mail", async (c) => {
 
       let count = 0;
       for (const record of chunks(records, 1000)) {
-        await sendTransactionMail({ ...data, isTest: !isProd }, record);
+        await transactionMail.send({ ...data, isTest: !isProd }, record);
         count += record.length;
         nextLog = appendLog(nextLog, `mail sent to ${count}/${records.length} addresses`, !isProd);
       }

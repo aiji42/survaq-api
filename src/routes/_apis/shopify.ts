@@ -14,7 +14,7 @@ import {
 } from "../../libs/shopify";
 import { Notifier } from "../../libs/slack";
 import { ShopifyOrder, ShopifyProduct } from "../../types/shopify";
-import { getMailSender } from "../../libs/sendgrid";
+import { ShopifyOrderMailSender } from "../../libs/sendgrid";
 import { DB } from "../../libs/db";
 
 type Variables = { label: string; topic: string; notifier: Notifier };
@@ -133,7 +133,6 @@ app.post("/product", async (c) => {
 app.post("/order", async (c) => {
   const db = new DB(c.env);
   const shopify = new Shopify(c.env);
-  const mailSender = getMailSender(c.env);
   const notifier = c.get("notifier");
   const updatableNoteAttrs: NoteAttributes = [];
 
@@ -158,7 +157,7 @@ app.post("/order", async (c) => {
 
         // メールでの通知
         await blockReRun(`notifyDeliverySchedule-${data.id}`, c.env.CACHE, () =>
-          mailSender.notifyDeliverySchedule(data, scheduleData.estimate),
+          new ShopifyOrderMailSender(c.env, data).notifyDeliverySchedule(scheduleData.estimate),
         );
       }
     } catch (e) {

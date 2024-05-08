@@ -6,6 +6,7 @@ import { Shopify } from "../../libs/shopify";
 import { DB } from "../../libs/db";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
+import { ShopifyOrderMailSender } from "../../libs/sendgrid";
 
 type Env = {
   Bindings: Bindings;
@@ -71,7 +72,14 @@ app.post(
     });
 
     // MEMO: 失敗しても自動リトライはさせない
-    await c.env.KIRIBI.enqueue("Cancel", { requestId: res.id }, { maxRetries: 1 });
+    // MEMO: キャンセルリクエスト受付メールの送信完了を考慮するため実行遅延(30s)させる
+    await c.env.KIRIBI.enqueue("Cancel", { requestId: res.id }, { maxRetries: 1, firstDelay: 30 });
+
+    // MEMO: キャンセルリクエスト受付メールを送信(日本語・English)
+    await new ShopifyOrderMailSender(
+      c.env,
+      await shopify.getOrder(id),
+    ).notifyCancelRequestReceived();
 
     return c.json(res);
   },
