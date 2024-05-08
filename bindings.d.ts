@@ -1,5 +1,4 @@
-import { Kiribi } from "kiribi";
-import { Cancel } from "./src/tasks";
+import { default as Kiribi } from "./src/tasks";
 
 export type Bindings = {
   DATABASE_URL: string;
@@ -17,5 +16,5 @@ export type Bindings = {
   // Kiribi
   KIRIBI_DB: D1Database;
   KIRIBI_QUEUE: Queue;
-  KIRIBI: Service<Kiribi<{ Cancel: Cancel }>>;
+  KIRIBI: Service<Kiribi>;
 };

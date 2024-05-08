@@ -1,4 +1,4 @@
-import { ShopifyOrder as ShopifyOrderData } from "../types/shopify";
+import { ShopifyOrderData } from "../types/shopify";
 import { DB } from "./db";
 import { latest, makeSchedule } from "./makeSchedule";
 
@@ -78,6 +78,14 @@ export class ShopifyOrder {
     if (data.fulfillment_status) return { isCancelable: false, reason: "Shipped" };
 
     return { isCancelable: true };
+  }
+
+  get isRequiringCashRefunds() {
+    if (!["paid", "partially_paid"].includes(this.order.financial_status)) return false;
+
+    return this.order.payment_gateway_names.some(
+      (name) => name.includes("コンビニ決済") || name.includes("銀行振込"),
+    );
   }
 
   async cancel(reason: string) {

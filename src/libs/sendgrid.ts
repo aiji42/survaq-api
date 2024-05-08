@@ -63,6 +63,49 @@ export class MailSender {
     return this.request(payload);
   }
 
+  async sendMail({
+    to,
+    from,
+    subject,
+    contentBody,
+    bcc,
+    replyTo,
+    bypassListManagement = false,
+  }: {
+    to: EmailJSON;
+    from: Required<EmailJSON>;
+    subject: string;
+    contentBody: string;
+    bcc?: EmailJSON;
+    replyTo?: EmailJSON;
+    bypassListManagement?: boolean;
+  }) {
+    const payload = {
+      personalizations: [
+        {
+          to: [to],
+          bcc: bcc ? [bcc] : undefined,
+        },
+      ],
+      from,
+      reply_to: replyTo,
+      subject,
+      content: [
+        {
+          type: "text/plain",
+          value: contentBody,
+        },
+      ],
+      mail_settings: {
+        bypass_list_management: {
+          enable: bypassListManagement,
+        },
+      },
+    } satisfies ContentMailJSON;
+
+    return this.request(payload);
+  }
+
   protected async sendMailBulk({
     receivers,
     subject,
@@ -114,6 +157,11 @@ type NotifyDeliveryScheduleDynamicData = {
 };
 
 type NotifyCancelRequestReceivedDynamicData = {
+  customerName: string;
+  orderId: string;
+};
+
+type AskBankAccountDynamicData = {
   customerName: string;
   orderId: string;
 };
@@ -187,6 +235,24 @@ export class ShopifyOrderMailSender extends MailSender {
         customerName: this.customerName,
         orderId: this.order.code,
       } satisfies NotifyCancelRequestReceivedDynamicData,
+      bypassListManagement: true,
+    });
+  }
+
+  async sendAskBankAccountMail() {
+    // サバキューストア: キャンセル時の返金先情報を問うメール(日本語のみ)
+    const templateId = "d-c0f1410eee2d4d9ea39a75577e01008a";
+
+    return this.sendMailByTemplate({
+      to: { email: this.customerEmail },
+      // FIXME: BCC確認
+      bcc: { email: "support@survaq.com" },
+      from: this.support,
+      templateId,
+      templateData: {
+        customerName: this.customerName,
+        orderId: this.order.code,
+      } satisfies AskBankAccountDynamicData,
       bypassListManagement: true,
     });
   }

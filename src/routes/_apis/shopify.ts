@@ -11,12 +11,12 @@ import {
   makeUpdatableLineItemNoteAttr,
   ShopifyOrder,
 } from "../../libs/shopify";
-import { Notifier } from "../../libs/slack";
+import { SlackNotifier } from "../../libs/slack";
 import { ShopifyProduct } from "../../types/shopify";
 import { ShopifyOrderMailSender } from "../../libs/sendgrid";
 import { DB } from "../../libs/db";
 
-type Variables = { label: string; topic: string; notifier: Notifier };
+type Variables = { label: string; topic: string; notifier: SlackNotifier };
 
 type Env = { Bindings: Bindings; Variables: Variables };
 
@@ -24,7 +24,7 @@ const app = new Hono<Env>();
 
 app.use("*", async (c, next) => {
   c.set("topic", c.req.header("x-shopify-topic") ?? "unknown");
-  const notifier = new Notifier(c.env);
+  const notifier = new SlackNotifier(c.env);
   c.set("notifier", notifier);
 
   await next();

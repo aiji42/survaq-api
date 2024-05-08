@@ -4,7 +4,7 @@ import { ChatPostMessageRequest } from "slack-web-api-client/dist/client/request
 
 const CHANNEL = "notify-test";
 
-export class Notifier {
+export class SlackNotifier {
   private readonly slack: SlackApp<SlackEdgeAppEnv>;
   private attachments: Map<string, MessageAttachment[]> = new Map([[CHANNEL, []]]);
 

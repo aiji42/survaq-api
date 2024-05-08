@@ -10,7 +10,7 @@ export type ShopifyProduct = {
   }>;
 };
 
-export type ShopifyOrder = {
+export type ShopifyOrderData = {
   id: number;
   created_at: string;
   name: string;
@@ -32,5 +32,13 @@ export type ShopifyOrder = {
   cancelled_at: null | string;
   closed_at: null | string;
   fulfillment_status: null | "fulfilled" | "partial" | "restocked";
-  financial_status: null | string;
+  financial_status:
+    | "pending"
+    | "authorized"
+    | "partially_paid"
+    | "paid"
+    | "partially_refunded"
+    | "refunded"
+    | "voided";
+  payment_gateway_names: string[];
 };
