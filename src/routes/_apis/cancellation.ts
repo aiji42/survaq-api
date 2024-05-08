@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { Bindings } from "../../../bindings";
-import { Logiless } from "../../libs/logiless";
-import { Shopify } from "../../libs/shopify";
+import { LogilessSalesOrder } from "../../libs/logiless";
+import { ShopifyOrder } from "../../libs/shopify";
 import { DB } from "../../libs/db";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
@@ -18,18 +18,18 @@ app.get("/cancelable", async (c) => {
   const id = c.req.query("id");
   if (!id) return c.text("Missing id", 400);
 
-  const shopify = new Shopify(c.env);
+  const shopifyOrder = new ShopifyOrder(c.env);
   try {
-    const cancelable = await shopify.getCancelable(id);
-    if (!cancelable.isCancelable) return c.json(cancelable);
+    await shopifyOrder.setOrderById(id);
+    if (!shopifyOrder.cancelable.isCancelable) return c.json(shopifyOrder.cancelable);
   } catch (e) {
     return c.text("Not found", 404);
   }
 
-  const logiless = new Logiless(c.env);
+  const logiless = new LogilessSalesOrder(c.env);
   try {
-    const cancelable = await logiless.getCancelable((await shopify.getOrder(id)).name);
-    return c.json(cancelable);
+    await logiless.setSalesOrderByShopifyOrder(shopifyOrder);
+    return c.json(logiless.cancelable);
   } catch (e) {
     return c.text("Not found", 404);
   }
@@ -42,18 +42,20 @@ app.post(
   async (c) => {
     const { id, reason } = c.req.valid("json");
 
-    const shopify = new Shopify(c.env);
+    const shopifyOrder = new ShopifyOrder(c.env);
     try {
-      const cancelable = await shopify.getCancelable(id);
-      if (!cancelable.isCancelable) return c.text(`Not cancelable (${cancelable.reason})`, 400);
+      await shopifyOrder.setOrderById(id);
+      if (!shopifyOrder.cancelable.isCancelable)
+        return c.text(`Not cancelable (${shopifyOrder.cancelable.reason})`, 400);
     } catch (e) {
       return c.text("Not found", 404);
     }
 
-    const logiless = new Logiless(c.env);
+    const logiless = new LogilessSalesOrder(c.env);
     try {
-      const cancelable = await logiless.getCancelable((await shopify.getOrder(id)).name);
-      if (!cancelable.isCancelable) return c.text(`Not cancelable (${cancelable.reason})`, 400);
+      await logiless.setSalesOrderByShopifyOrder(shopifyOrder);
+      if (!logiless.cancelable.isCancelable)
+        return c.text(`Not cancelable (${logiless.cancelable.reason})`, 400);
     } catch (e) {
       return c.text("Not found", 404);
     }
@@ -76,10 +78,7 @@ app.post(
     await c.env.KIRIBI.enqueue("Cancel", { requestId: res.id }, { maxRetries: 1, firstDelay: 30 });
 
     // MEMO: キャンセルリクエスト受付メールを送信(日本語・English)
-    await new ShopifyOrderMailSender(
-      c.env,
-      await shopify.getOrder(id),
-    ).notifyCancelRequestReceived();
+    await new ShopifyOrderMailSender(c.env, shopifyOrder).notifyCancelRequestReceived();
 
     return c.json(res);
   },

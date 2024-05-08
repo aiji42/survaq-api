@@ -1,18 +1,18 @@
 import { KiribiPerformer } from "kiribi/performer";
 import { Bindings } from "../../bindings";
 import { DB } from "../libs/db";
-import { Shopify } from "../libs/shopify";
-import { Logiless } from "../libs/logiless";
+import { ShopifyOrder } from "../libs/shopify";
+import { LogilessSalesOrder } from "../libs/logiless";
 
 export class Cancel extends KiribiPerformer<{ requestId: number }, void, Bindings> {
   db: DB;
-  shopify: Shopify;
-  logiless: Logiless;
+  shopifyOrder: ShopifyOrder;
+  logilessOrder: LogilessSalesOrder;
   constructor(ctx: ExecutionContext, env: Bindings) {
     super(ctx, env);
     this.db = new DB(env);
-    this.shopify = new Shopify(env);
-    this.logiless = new Logiless(env);
+    this.shopifyOrder = new ShopifyOrder(env);
+    this.logilessOrder = new LogilessSalesOrder(env);
   }
 
   async perform({ requestId }: { requestId: number }) {
@@ -26,15 +26,16 @@ export class Cancel extends KiribiPerformer<{ requestId: number }, void, Binding
 
     let success = false;
     try {
-      const order = await this.shopify.getOrder(request.orderKey);
+      await this.shopifyOrder.setOrderById(request.orderKey);
+      await this.logilessOrder.setSalesOrderByShopifyOrder(this.shopifyOrder);
 
-      await this.logiless.cancelSalesOrder(order.name);
-      log.push(`Cancelled Logiless: ${(await this.logiless.getSalesOrder(order.name)).id}`);
+      await this.logilessOrder.cancel();
+      log.push(`Cancelled Logiless: ${this.logilessOrder.id} (${this.logilessOrder.code})`);
 
       // MEMO: ↓が完了すると自動的にShopifyからキャンセル完了メールが送られる
       // TODO: 未払だとShopify上はクローズ扱いになって通知メールが送られない(はずな)ので別途キャンセルメール送る(本当に送られないかは要確認)
-      await this.shopify.cancelOrder(order.id, request.reason ?? "");
-      log.push(`Cancelled Shopify: ${order.id} (${order.name})`);
+      await this.shopifyOrder.cancel(request.reason ?? "");
+      log.push(`Cancelled Shopify: ${this.shopifyOrder.numericId} (${this.shopifyOrder.code})`);
 
       // TODO: 支払済みでコンビニ払いor銀行振込なら、返金用口座を聞くためのメールを送信(BCCでCSにも送信)
       // 将来的にはorderのwebhookによる処理に分けて、キャンセルリクエストによらない共通処理にしても良いかもしれない

@@ -1,5 +1,5 @@
 import { MessageAttachment, SlackApp, SlackEdgeAppEnv } from "slack-cloudflare-workers";
-import { ShopifyOrder } from "../types/shopify";
+import { ShopifyOrder } from "./shopify";
 import { ChatPostMessageRequest } from "slack-web-api-client/dist/client/request";
 
 const CHANNEL = "notify-test";
@@ -52,17 +52,17 @@ export class Notifier {
     );
   }
 
-  public appendNotConnectedSkuOrder(data: ShopifyOrder, channel?: string) {
+  public appendNotConnectedSkuOrder(order: ShopifyOrder, channel?: string) {
     this.append(
       {
-        title: `注文番号 ${data.name}`,
-        title_link: `https://survaq.myshopify.com/admin/orders/${data.id}`,
+        title: `注文番号 ${order.code}`,
+        title_link: `https://survaq.myshopify.com/admin/orders/${order.numericId}`,
         color: "warning",
         pretext: "SKU情報の無い注文が処理されています。",
         fields: [
           {
             title: "購入日時(UTC)",
-            value: data.created_at,
+            value: order.createdAt.toISOString(),
           },
         ],
       },

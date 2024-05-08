@@ -1,4 +1,4 @@
-import { ShopifyOrder } from "../types/shopify";
+import { ShopifyOrder } from "./shopify";
 import { makeSchedule } from "./makeSchedule";
 import {
   ContentMailJSON,
@@ -9,11 +9,11 @@ import {
 import { JSONSerializableObject } from "../types/utils";
 
 export class MailSender {
-  constructor(private readonly sendgridToken: string) {}
+  constructor(private readonly env: { SENDGRID_API_KEY: string }) {}
 
   private async request(mailData: ContentMailJSON | TemplateMailJSON) {
     const headers = new Headers({
-      Authorization: `Bearer ${this.sendgridToken}`,
+      Authorization: `Bearer ${this.env.SENDGRID_API_KEY}`,
       "Content-Type": "application/json",
     });
     const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
@@ -123,7 +123,7 @@ export class ShopifyOrderMailSender extends MailSender {
     env: { SENDGRID_API_KEY: string },
     private readonly order: ShopifyOrder,
   ) {
-    super(env.SENDGRID_API_KEY);
+    super(env);
   }
 
   get support() {
@@ -134,7 +134,7 @@ export class ShopifyOrderMailSender extends MailSender {
   }
 
   get locale() {
-    return this.order.customer_locale.startsWith("ja") ? "ja" : "en";
+    return this.order.locale;
   }
 
   get customerName() {
@@ -164,8 +164,8 @@ export class ShopifyOrderMailSender extends MailSender {
       templateData: {
         customerName: this.customerName,
         deliverySchedule: `${schedule.text}(${schedule.subText})`,
-        orderId: this.order.name,
-        lineItems: this.order.line_items.map(({ name }) => ({ title: name })),
+        orderId: this.order.code,
+        lineItems: this.order.lineItems.map(({ name }) => ({ title: name })),
       } satisfies NotifyDeliveryScheduleDynamicData,
       bypassListManagement: true,
     });
@@ -185,7 +185,7 @@ export class ShopifyOrderMailSender extends MailSender {
       templateId: templates[this.locale],
       templateData: {
         customerName: this.customerName,
-        orderId: this.order.name,
+        orderId: this.order.code,
       } satisfies NotifyCancelRequestReceivedDynamicData,
       bypassListManagement: true,
     });
@@ -194,7 +194,7 @@ export class ShopifyOrderMailSender extends MailSender {
 
 export class TransactionMailSender extends MailSender {
   constructor(env: { SENDGRID_API_KEY: string }) {
-    super(env.SENDGRID_API_KEY);
+    super(env);
   }
 
   async send(

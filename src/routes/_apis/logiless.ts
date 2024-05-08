@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { Bindings } from "../../../bindings";
-import { Logiless } from "../../libs/logiless";
+import { LogilessClient } from "../../libs/logiless";
 
 type Env = {
   Bindings: Bindings;
@@ -21,27 +21,17 @@ app.get("/callback", async (c) => {
   const code = c.req.query("code");
   if (!code) return c.text("Missing code", 400);
 
-  const logiless = new Logiless(c.env);
+  const logiless = new LogilessClient(c.env);
   await logiless.loginCallback(code);
 
   return c.text("Logged in");
-});
-
-app.get("/sales_orders/:code", async (c) => {
-  const url = new URL(c.req.url);
-  if (url.hostname !== "localhost") return c.text("Not allowed", 403);
-
-  const logiless = new Logiless(c.env);
-  const salesOrders = await logiless.getSalesOrder(c.req.param("code"));
-
-  return c.json(salesOrders);
 });
 
 app.get("/token/show", async (c) => {
   const url = new URL(c.req.url);
   if (url.hostname !== "localhost") return c.text("Not allowed", 403);
 
-  const logiless = new Logiless(c.env);
+  const logiless = new LogilessClient(c.env);
   const tokens = await logiless.getTokens();
 
   return c.json(tokens);

@@ -1,15 +1,12 @@
-import { ShopifyOrder } from "../types/shopify";
+import { ShopifyOrder as ShopifyOrderData } from "../types/shopify";
 import { DB } from "./db";
 import { latest, makeSchedule } from "./makeSchedule";
 
-export type NoteAttributes = ShopifyOrder["note_attributes"];
-
 const API_VERSION = "2024-04";
 
-export class Shopify {
-  public orderDataCache: Map<number, ShopifyOrder> = new Map();
-
+export class ShopifyOrder {
   constructor(private env: { SHOPIFY_ACCESS_TOKEN: string }) {}
+  private _order: ShopifyOrderData | undefined;
 
   get headers() {
     return new Headers({
@@ -18,47 +15,64 @@ export class Shopify {
     });
   }
 
-  async updateOrderNoteAttributes(original: ShopifyOrder, updatableNoteAttrs: NoteAttributes) {
-    const merged = new Map(
-      original.note_attributes.concat(updatableNoteAttrs).map(({ name, value }) => [name, value]),
-    );
-
-    return fetch(
-      `https://survaq.myshopify.com/admin/api/${API_VERSION}/orders/${original.id}.json`,
-      {
-        method: "PUT",
-        body: JSON.stringify({
-          order: {
-            id: original.id,
-            note_attributes: Array.from(merged, ([name, value]) => ({
-              name,
-              value,
-            })),
-          },
-        }),
-        headers: this.headers,
-      },
-    );
+  setOrder(order: ShopifyOrderData) {
+    this._order = order;
+    return this;
   }
 
-  async getOrder(_id: number | string) {
+  async setOrderById(_id: number | string) {
     const id = Number(_id);
-    if (this.orderDataCache.has(id)) return this.orderDataCache.get(id)!;
 
     const res = await fetch(
       `https://survaq.myshopify.com/admin/api/${API_VERSION}/orders/${id}.json`,
       { headers: this.headers },
     );
     if (!res.ok) throw new Error(await res.text());
-    const data = ((await res.json()) as { order: ShopifyOrder }).order;
+    this._order = ((await res.json()) as { order: ShopifyOrderData }).order;
 
-    this.orderDataCache.set(id, data);
-
-    return data;
+    return this;
   }
 
-  async getCancelable(id: number | string): Promise<{ isCancelable: boolean; reason?: string }> {
-    const data = await this.getOrder(id);
+  get order() {
+    const order = this._order;
+    if (!order) throw new Error("Order is not set");
+    return order;
+  }
+
+  get numericId() {
+    return Number(this.order.id);
+  }
+
+  get gid() {
+    return `gid://shopify/Order/${this.order.id}`;
+  }
+
+  get code() {
+    return this.order.name;
+  }
+
+  get locale(): "ja" | "en" {
+    return this.order.customer_locale.startsWith("ja") ? "ja" : "en";
+  }
+
+  get customer() {
+    return this.order.customer;
+  }
+
+  get lineItems() {
+    return this.order.line_items;
+  }
+
+  get noteAttributes() {
+    return this.order.note_attributes;
+  }
+
+  get createdAt() {
+    return new Date(this.order.created_at);
+  }
+
+  get cancelable() {
+    const data = this.order;
 
     if (data.cancelled_at) return { isCancelable: false, reason: "Canceled" };
     if (data.fulfillment_status) return { isCancelable: false, reason: "Shipped" };
@@ -66,7 +80,7 @@ export class Shopify {
     return { isCancelable: true };
   }
 
-  async cancelOrder(id: number | string, reason: string) {
+  async cancel(reason: string) {
     const res = await fetch(`https://survaq.myshopify.com/admin/api/${API_VERSION}/graphql.json`, {
       method: "POST",
       headers: this.headers,
@@ -74,8 +88,7 @@ export class Shopify {
         // SEE: https://shopify.dev/docs/api/admin-graphql/2024-04/mutations/orderCancel?language=cURL
         query: `mutation OrderCancel($orderId: ID!, $notifyCustomer: Boolean, $refund: Boolean!, $restock: Boolean!, $reason: OrderCancelReason!, $staffNote: String) { orderCancel(orderId: $orderId, notifyCustomer: $notifyCustomer, refund: $refund, restock: $restock, reason: $reason, staffNote: $staffNote) { job { id done } orderCancelUserErrors { field message code } } }`,
         variables: {
-          orderId:
-            typeof id === "number" || !id.startsWith("gid:") ? `gid://shopify/Order/${id}` : id,
+          orderId: this.gid,
           notifyCustomer: true,
           refund: true,
           restock: true,
@@ -106,6 +119,29 @@ export class Shopify {
           .join("\n"),
       );
   }
+
+  async updateNoteAttributes(updatableNoteAttrs: ShopifyOrder["noteAttributes"]) {
+    const merged = new Map(
+      this.noteAttributes.concat(updatableNoteAttrs).map(({ name, value }) => [name, value]),
+    );
+
+    return fetch(
+      `https://survaq.myshopify.com/admin/api/${API_VERSION}/orders/${this.numericId}.json`,
+      {
+        method: "PUT",
+        body: JSON.stringify({
+          order: {
+            id: String(this.numericId),
+            note_attributes: Array.from(merged, ([name, value]) => ({
+              name,
+              value,
+            })),
+          },
+        }),
+        headers: this.headers,
+      },
+    );
+  }
 }
 
 type LineItemCustomAttr = {
@@ -119,7 +155,7 @@ const EMPTY_ARRAY = "[]";
 const SKUS = "_skus";
 
 export const getPersistedListItemCustomAttrs = (data: ShopifyOrder): LineItemCustomAttr[] => {
-  const { value } = data.note_attributes.find(({ name }) => name === LINE_ITEMS) ?? {};
+  const { value } = data.noteAttributes.find(({ name }) => name === LINE_ITEMS) ?? {};
   return JSON.parse(value || EMPTY_ARRAY);
 };
 
@@ -134,7 +170,7 @@ export const getNewLineItemCustomAttrs = async (
   );
 
   const res = await Promise.allSettled(
-    data.line_items.map(async ({ id, name, properties, variant_id }) => {
+    data.lineItems.map(async ({ id, name, properties, variant_id }) => {
       let skus: string | undefined | null =
         skusByLineItemId[id] ?? properties.find((p) => p.name === SKUS)?.value;
       if (!skus || skus === EMPTY_ARRAY) skus = (await client.getVariant(variant_id))?.skusJSON;
@@ -188,7 +224,7 @@ const EMPTY = "{}";
 export const getPersistedDeliveryScheduleCustomAttrs = (
   data: ShopifyOrder,
 ): DeliveryScheduleCustomAttrs | Record<string, never> => {
-  const { value } = data.note_attributes.find(({ name }) => name === DELIVERY_SCHEDULE) ?? {};
+  const { value } = data.noteAttributes.find(({ name }) => name === DELIVERY_SCHEDULE) ?? {};
   return JSON.parse(value || EMPTY);
 };
 

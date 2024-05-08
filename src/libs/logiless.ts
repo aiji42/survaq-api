@@ -1,4 +1,10 @@
 import { Bindings } from "../../bindings";
+import { ShopifyOrder } from "./shopify";
+
+type Env = Pick<
+  Bindings,
+  "LOGILESS_CLIENT_SECRET" | "LOGILESS_CLIENT_ID" | "LOGILESS_REDIRECT_URI" | "CACHE"
+>;
 
 type AuthResult = {
   access_token: string;
@@ -14,9 +20,8 @@ type Tokens = {
   isExpired: boolean;
 };
 
-export class Logiless {
-  private salesOrderCache: Map<string, SalesOrder> = new Map();
-  constructor(private readonly env: Bindings) {}
+export class LogilessClient {
+  constructor(private readonly env: Env) {}
 
   async loginCallback(code: string) {
     const res = await fetch(
@@ -78,12 +83,35 @@ export class Logiless {
   async purgeTokens() {
     await this.env.CACHE.delete("LOGILESS_TOKEN");
   }
+}
 
-  async getSalesOrder(_code: string) {
+export class LogilessSalesOrder extends LogilessClient {
+  private _salesOrder: SalesOrderData | undefined;
+  constructor(env: Env) {
+    super(env);
+  }
+
+  get salesOrder() {
+    const salesOrder = this._salesOrder;
+    if (!salesOrder) throw new Error("Sales order is not set");
+    return salesOrder;
+  }
+
+  get id() {
+    return this.salesOrder.id;
+  }
+
+  get code() {
+    return this.salesOrder.code;
+  }
+
+  get deliveryStatus() {
+    return this.salesOrder.delivery_status;
+  }
+
+  async setSalesOrderByShopifyOrder(shopifyOrder: ShopifyOrder) {
     // Shopifyのコードは#から始まるため、それを除外
-    const code = _code.replace(/^#/, "");
-
-    if (this.salesOrderCache.has(code)) return this.salesOrderCache.get(code)!;
+    const code = shopifyOrder.code.replace(/^#/, "");
 
     const body = JSON.stringify({
       codes: [code],
@@ -104,36 +132,33 @@ export class Logiless {
 
     const {
       data: [salesOrder],
-    } = (await res.json()) as { data: SalesOrder[] };
+    } = (await res.json()) as { data: SalesOrderData[] };
     if (!salesOrder) throw new Error("Sales order not found");
 
-    this.salesOrderCache.set(code, salesOrder);
+    this._salesOrder = salesOrder;
 
-    return salesOrder;
+    return this;
   }
 
-  async getCancelable(code: string): Promise<{ isCancelable: boolean; reason?: string }> {
-    const data = await this.getSalesOrder(code);
+  get cancelable() {
+    if (this.deliveryStatus === "WaitingForShipment") return { isCancelable: true };
 
-    if (data.delivery_status === "WaitingForShipment") return { isCancelable: true };
-    if (data.delivery_status === "Working") return { isCancelable: false, reason: "Working" };
-    if (data.delivery_status === "PartlyShipped" || data.delivery_status === "Shipped")
-      return { isCancelable: false, reason: "Shipped" };
-    if (data.delivery_status === "Pending") return { isCancelable: false, reason: "Pending" };
-    if (data.delivery_status === "Cancel") return { isCancelable: false, reason: "Canceled" };
+    if (this.deliveryStatus === "Working") return { isCancelable: false, reason: "Working" };
+    if (this.deliveryStatus === "Pending") return { isCancelable: false, reason: "Pending" };
+    if (this.deliveryStatus === "Cancel") return { isCancelable: false, reason: "Canceled" };
+    if (this.deliveryStatus === "Shipped") return { isCancelable: false, reason: "Shipped" };
+    if (this.deliveryStatus === "PartlyShipped") return { isCancelable: false, reason: "Shipped" };
 
     throw new Error("Unexpected delivery status");
   }
 
-  async cancelSalesOrder(code: string) {
-    const { id } = await this.getSalesOrder(code);
-
+  async cancel() {
     // 同じ受注コードで新規受注の作成を許可しない(デフォルトの挙動の通り)
     const body = JSON.stringify({
       clears_code: false,
     });
     const res = await fetch(
-      `https://app2.logiless.com/api/v1/merchant/1394/sales_orders/${id}/reversal`,
+      `https://app2.logiless.com/api/v1/merchant/1394/sales_orders/${this.id}/reversal`,
       {
         headers: {
           Authorization: `Bearer ${(await this.getTokens()).accessToken}`,
@@ -189,7 +214,7 @@ type SalesOrderLine = {
   quantity: number;
 };
 
-type SalesOrder = {
+type SalesOrderData = {
   id: number;
   code: string;
   document_status: DocumentStatus;
