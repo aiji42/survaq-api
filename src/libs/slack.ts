@@ -12,7 +12,7 @@ export class SlackNotifier {
     this.slack = new SlackApp({ env });
   }
 
-  private append(attachment: MessageAttachment, channel = CHANNEL) {
+  append(attachment: MessageAttachment, channel = CHANNEL) {
     const attachments = [...(this.attachments.get(channel) ?? []), attachment];
     this.attachments.set(channel, attachments);
   }
@@ -52,6 +52,7 @@ export class SlackNotifier {
     );
   }
 
+  // FIXME: リファクタ(ここだけ抽象度が低い)
   public appendNotConnectedSkuOrder(order: ShopifyOrder, channel?: string) {
     this.append(
       {
@@ -90,5 +91,5 @@ export class SlackNotifier {
   }
 }
 
-const codeBlock = (text: string) => "```" + text + "```";
-const inlineCode = (text: string) => "`" + text + "`";
+export const codeBlock = (text: string) => "```" + text + "```";
+export const inlineCode = (text: string) => "`" + text + "`";

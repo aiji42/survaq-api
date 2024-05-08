@@ -1,7 +1,7 @@
 import { Kiribi } from "kiribi";
 import { client } from "kiribi/client";
 import { rest } from "kiribi/rest";
-import { SlackNotifier } from "../libs/slack";
+import { inlineCode, SlackNotifier } from "../libs/slack";
 import { Bindings } from "../../bindings";
 import { Cancel } from "./cancel";
 export { Cancel } from "./cancel";
@@ -12,8 +12,18 @@ export default class extends Kiribi<{ Cancel: Cancel }, Bindings> {
 
   async onSuccess(binding: string, payload: any) {
     const slack = new SlackNotifier(this.env);
-
-    await slack.notify(`Successfully processed a job: ${binding}(${JSON.stringify(payload)})`);
+    slack.append({
+      color: "good",
+      title: "Job",
+      text: binding,
+      fields: [
+        {
+          title: "payload",
+          value: inlineCode(JSON.stringify(payload)),
+        },
+      ],
+    });
+    await slack.notify(`Successfully`);
   }
 
   async onFailure(binding: string, payload: any, error: Error) {
