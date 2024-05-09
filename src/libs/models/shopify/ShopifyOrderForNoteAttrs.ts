@@ -56,20 +56,26 @@ export class ShopifyOrderForNoteAttrs extends ShopifyOrder {
     // この日以前の古いデータは更新しない
     const THRESHOLD_DATE = new Date("2024-01-01T00:00:00");
     return (
-      THRESHOLD_DATE &&
+      this.createdAt > THRESHOLD_DATE &&
       !eqLineItemCustomAttrs(this.completedLineItemCustomAttrs, this.savedLineItemCustomAttrs)
     );
   }
 
   get shouldSendDeliveryScheduleNotification() {
-    // FIXME: 日時ではなく、fulfillment_statusやcancelled_at、closed_atを見て、有効かつ未発送の注文に送るようにする
-    const LIMIT_DATE = new Date("2024-01-21T07:48:00");
-
-    // まだnote_attributesにはスケージュールが保存されておらず、閾値以降の申し込みで、配送日時がSKUから計算できた場合に通知をして良いものとする
+    // 下記をすべて満たしているときに通知を送る
+    // - まだnote_attributesにはスケージュールが保存されていない(まだ一度も通知が送られていない)
+    // - 補完されたスケージュール情報が存在する(存在しないということはCMSにデータがないか、時期を計算しなくていい商品)
+    // - まだ発送されていない
+    // - キャンセルされていない
+    // - クローズされていない
+    // - 30日以内の注文
     return (
       !this.hasValidSavedDeliverySchedule &&
       !!this.completedDeliveryScheduleCustomAttrs.estimate &&
-      this.createdAt > LIMIT_DATE
+      !this.fulfillmentStatus &&
+      !this.cancelledAt &&
+      !this.closedAt &&
+      this.createdAt > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
     );
   }
 

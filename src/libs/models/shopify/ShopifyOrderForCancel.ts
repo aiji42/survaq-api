@@ -5,10 +5,8 @@ export class ShopifyOrderForCancel extends ShopifyOrder {
 
   // ShopifyのAPIでのキャンセル可不可条件ではなく、あくまでサバキュー独自のキャンセルを許すかどうかの条件
   get cancelable() {
-    const data = this.order;
-
-    if (data.cancelled_at) return { isCancelable: false, reason: "Canceled" };
-    if (data.fulfillment_status) return { isCancelable: false, reason: "Shipped" };
+    if (this.cancelledAt) return { isCancelable: false, reason: "Canceled" };
+    if (this.fulfillmentStatus) return { isCancelable: false, reason: "Shipped" };
 
     return { isCancelable: true };
   }
@@ -16,14 +14,14 @@ export class ShopifyOrderForCancel extends ShopifyOrder {
   // ShopifyのAPIでキャンセル可能かどうか
   get isAvailableCancelOperation() {
     // 未払はキャンセルできない
-    if (this.order.financial_status === "pending") return false;
+    if (this.financialStatus === "pending") return false;
     // 出荷済みはキャンセルできない
-    return !this.order.fulfillment_status;
+    return !this.fulfillmentStatus;
   }
 
   // コンビニ決済・銀行振込の場合、返金用口座を聞かないといけない
   get isRequiringCashRefunds() {
-    if (!["paid", "partially_paid"].includes(this.order.financial_status)) return false;
+    if (!["paid", "partially_paid"].includes(this.financialStatus)) return false;
 
     return this.order.payment_gateway_names.some(
       (name) => name.includes("コンビニ決済") || name.includes("銀行振込"),

@@ -67,4 +67,20 @@ export class ShopifyOrder {
   get createdAt() {
     return new Date(this.order.created_at);
   }
+
+  get fulfillmentStatus() {
+    return this.order.fulfillment_status;
+  }
+
+  get financialStatus() {
+    return this.order.financial_status;
+  }
+
+  get cancelledAt() {
+    return this.order.cancelled_at ? new Date(this.order.cancelled_at) : null;
+  }
+
+  get closedAt() {
+    return this.order.closed_at ? new Date(this.order.closed_at) : null;
+  }
 }
