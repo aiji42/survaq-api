@@ -1,16 +1,6 @@
 import { Hono } from "hono";
 import { Bindings } from "../../../bindings";
-import {
-  getNewDeliveryScheduleCustomAttrs,
-  getNewLineItemCustomAttrs,
-  getPersistedListItemCustomAttrs,
-  hasNoSkuLineItem,
-  eqLineItemCustomAttrs,
-  hasPersistedDeliveryScheduleCustomAttrs,
-  makeUpdatableDeliveryScheduleNoteAttr,
-  makeUpdatableLineItemNoteAttr,
-  ShopifyOrder,
-} from "../../libs/shopify";
+import { ShopifyOrderForNoteAttrs } from "../../libs/models/shopify/ShopifyOrderForNoteAttrs";
 import { SlackNotifier } from "../../libs/slack";
 import { ShopifyProduct } from "../../types/shopify";
 import { ShopifyOrderMailSender } from "../../libs/sendgrid";
@@ -130,59 +120,31 @@ app.post("/product", async (c) => {
 });
 
 app.post("/order", async (c) => {
-  const db = new DB(c.env);
-  const order = new ShopifyOrder(c.env);
+  const order = new ShopifyOrderForNoteAttrs(c.env);
   const notifier = c.get("notifier");
-  const updatableNoteAttrs: ShopifyOrder["noteAttributes"] = [];
+  const mailer = new ShopifyOrderMailSender(c.env, order);
 
-  order.setOrder(await c.req.json<ShopifyOrder["order"]>());
+  order.setOrder(await c.req.json<ShopifyOrderForNoteAttrs["order"]>());
 
   c.set("label", `${c.get("topic")}: ${order.numericId}`);
   console.log(c.get("label"));
 
-  const [newLiAttrs, errors] = await getNewLineItemCustomAttrs(order, db);
-  errors.forEach((e) => notifier.appendErrorMessage(e));
+  // line_items/note_attributes及びDBからSKU情報を補完
+  await order.completeLineItemCustomAttrs();
+  // note_attributes及びSKU情報から配送スケジュール情報を補完
+  await order.completeDeliveryScheduleCustomAttrs();
 
-  // 配送予定のデータをnote_attributesに追加 + メール送信
-  if (
-    !hasNoSkuLineItem(newLiAttrs) &&
-    !hasPersistedDeliveryScheduleCustomAttrs(order) &&
-    order.createdAt > LIMIT_DATE
-  ) {
-    try {
-      const scheduleData = await getNewDeliveryScheduleCustomAttrs(newLiAttrs, db);
+  // 配送スケージュールのメールを送信
+  if (order.shouldSendDeliveryScheduleNotification)
+    await blockReRun(`notifyDeliverySchedule-${order.numericId}`, c.env.CACHE, () =>
+      mailer.notifyDeliverySchedule(order.completedDeliveryScheduleCustomAttrs.estimate),
+    );
 
-      if (scheduleData) {
-        updatableNoteAttrs.push(makeUpdatableDeliveryScheduleNoteAttr(scheduleData));
-
-        // メールでの通知
-        await blockReRun(`notifyDeliverySchedule-${order.numericId}`, c.env.CACHE, () =>
-          new ShopifyOrderMailSender(c.env, order).notifyDeliverySchedule(scheduleData.estimate),
-        );
-      }
-    } catch (e) {
-      notifier.appendErrorMessage(e);
-    }
-  }
-
-  // LineItem x SKU のデータをnote_attributesに追加 (既存のnote_attributesの情報と差異があれば)
-  if (!eqLineItemCustomAttrs(newLiAttrs, getPersistedListItemCustomAttrs(order))) {
-    // SKU情報が無いLineItemがあればSlackに通知(古いデータに関しては通知しない)
-    order.createdAt > new Date("2024-01-01T00:00:00") &&
-      hasNoSkuLineItem(newLiAttrs) &&
-      notifier.appendNotConnectedSkuOrder(order, "notify-order");
-
-    updatableNoteAttrs.push(makeUpdatableLineItemNoteAttr(newLiAttrs));
-  }
-
-  if (updatableNoteAttrs.length) {
-    try {
-      console.log("try to update order's note_attributes");
-      const res = await order.updateNoteAttributes(updatableNoteAttrs);
-      await notifier.appendErrorResponse(res);
-    } catch (e) {
-      notifier.appendErrorMessage(e);
-    }
+  if (order.shouldUpdateNoteAttributes) {
+    // SKU情報が不足している場合にSlack通知
+    if (!order.isCompletedSku) notifier.appendNotConnectedSkuOrder(order, "notify-order");
+    const res = await order.updateNoteAttributes().catch(notifier.appendErrorMessage);
+    if (res) await notifier.appendErrorResponse(res);
   }
 
   return c.json({ message: "update order" });
@@ -197,8 +159,5 @@ const blockReRun = async (key: string, kv: KVNamespace, callback: () => Promise<
   await kv.put(key, "processing", { expirationTtl: 60 });
   await callback();
 };
-
-// この日時以前の申し込みデータに対して配送予定のデータを作ったりメールを送ったり
-const LIMIT_DATE = new Date("2024-01-21T07:48:00");
 
 export default app;

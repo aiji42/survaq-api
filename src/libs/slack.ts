@@ -1,5 +1,5 @@
 import { MessageAttachment, SlackApp, SlackEdgeAppEnv } from "slack-cloudflare-workers";
-import { ShopifyOrder } from "./shopify";
+import { ShopifyOrder } from "./models/shopify/ShopifyOrder";
 import { ChatPostMessageRequest } from "slack-web-api-client/dist/client/request";
 
 const CHANNEL = "notify-test";

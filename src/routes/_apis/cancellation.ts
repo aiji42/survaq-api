@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { Bindings } from "../../../bindings";
 import { LogilessSalesOrder } from "../../libs/logiless";
-import { ShopifyOrder } from "../../libs/shopify";
+import { ShopifyOrderForCancel } from "../../libs/models/shopify/ShopifyOrderForCancel";
 import { DB } from "../../libs/db";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
@@ -18,7 +18,7 @@ app.get("/cancelable", async (c) => {
   const id = c.req.query("id");
   if (!id) return c.text("Missing id", 400);
 
-  const shopifyOrder = new ShopifyOrder(c.env);
+  const shopifyOrder = new ShopifyOrderForCancel(c.env);
   try {
     await shopifyOrder.setOrderById(id);
     if (!shopifyOrder.cancelable.isCancelable) return c.json(shopifyOrder.cancelable);
@@ -42,7 +42,7 @@ app.post(
   async (c) => {
     const { id, reason } = c.req.valid("json");
 
-    const shopifyOrder = new ShopifyOrder(c.env);
+    const shopifyOrder = new ShopifyOrderForCancel(c.env);
     try {
       await shopifyOrder.setOrderById(id);
       if (!shopifyOrder.cancelable.isCancelable)

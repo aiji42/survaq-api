@@ -1,4 +1,4 @@
-import { ShopifyOrder } from "./shopify";
+import { ShopifyOrder } from "./models/shopify/ShopifyOrder";
 import { makeSchedule } from "./makeSchedule";
 import {
   ContentMailJSON,
@@ -239,10 +239,9 @@ export class ShopifyOrderMailSender extends MailSender {
     });
   }
 
-  async sendCancelCompletedMail() {
-    if (!this.order.isCompletedCancelOperation) throw new Error("Order is not cancelled.");
+  async sendCancelCompletedMail(isRequiringCashRefunds: boolean) {
     let templateId: string = "";
-    if (this.order.isRequiringCashRefunds) {
+    if (isRequiringCashRefunds) {
       // サバキューストア: キャンセル完了+返金先を問うメール(日本語のみ)
       templateId = "d-c0f1410eee2d4d9ea39a75577e01008a";
     } else {

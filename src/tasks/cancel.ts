@@ -1,20 +1,20 @@
 import { KiribiPerformer } from "kiribi/performer";
 import { Bindings } from "../../bindings";
 import { DB } from "../libs/db";
-import { ShopifyOrder } from "../libs/shopify";
+import { ShopifyOrderForCancel } from "../libs/models/shopify/ShopifyOrderForCancel";
 import { LogilessSalesOrder } from "../libs/logiless";
 import { MailSender, ShopifyOrderMailSender } from "../libs/sendgrid";
 
 export class Cancel extends KiribiPerformer<{ requestId: number }, void, Bindings> {
   db: DB;
-  shopifyOrder: ShopifyOrder;
+  shopifyOrder: ShopifyOrderForCancel;
   logilessOrder: LogilessSalesOrder;
   mailSender: MailSender;
   shopifyOrderMailSender: ShopifyOrderMailSender;
   constructor(ctx: ExecutionContext, env: Bindings) {
     super(ctx, env);
     this.db = new DB(env);
-    this.shopifyOrder = new ShopifyOrder(env);
+    this.shopifyOrder = new ShopifyOrderForCancel(env);
     this.logilessOrder = new LogilessSalesOrder(env);
     this.mailSender = new MailSender(env);
     this.shopifyOrderMailSender = new ShopifyOrderMailSender(env, this.shopifyOrder);
@@ -54,7 +54,9 @@ export class Cancel extends KiribiPerformer<{ requestId: number }, void, Binding
       }
 
       log.push("Sending cancel completed mail");
-      await this.shopifyOrderMailSender.sendCancelCompletedMail();
+      await this.shopifyOrderMailSender.sendCancelCompletedMail(
+        this.shopifyOrder.isRequiringCashRefunds,
+      );
       log.push("Completed sending cancel completed mail");
 
       success = true;

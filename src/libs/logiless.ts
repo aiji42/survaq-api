@@ -1,5 +1,5 @@
 import { Bindings } from "../../bindings";
-import { ShopifyOrder } from "./shopify";
+import { ShopifyOrder } from "./models/shopify/ShopifyOrder";
 
 type Env = Pick<
   Bindings,
