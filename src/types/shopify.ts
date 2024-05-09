@@ -12,6 +12,7 @@ export type ShopifyProduct = {
 
 export type ShopifyOrderData = {
   id: number;
+  admin_graphql_api_id: string;
   created_at: string;
   name: string;
   note_attributes: Array<{ name: string; value: string }>;

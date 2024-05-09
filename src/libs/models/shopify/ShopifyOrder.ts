@@ -41,7 +41,7 @@ export class ShopifyOrder {
   }
 
   get gid() {
-    return `gid://shopify/Order/${this.order.id}`;
+    return this.order.admin_graphql_api_id;
   }
 
   get code() {

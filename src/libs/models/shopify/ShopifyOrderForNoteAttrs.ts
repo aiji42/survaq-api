@@ -7,8 +7,8 @@ const EMPTY_OBJ = "{}";
 
 export class ShopifyOrderForNoteAttrs extends ShopifyOrder {
   private readonly db: DB;
-  private _completedLineItemCustomAttrs: LineItemCustomAttr[] | undefined;
-  private _completedDeliveryScheduleCustomAttrs: DeliveryScheduleCustomAttrs | undefined;
+  private _completedLineItem: LineItemAttr[] | undefined;
+  private _completedDeliverySchedule: DeliveryScheduleAttrs | undefined;
   private readonly LINE_ITEMS = "__line_items";
   private readonly DELIVERY_SCHEDULE = "__delivery_schedule";
   private readonly SKUS = "_skus";
@@ -18,46 +18,44 @@ export class ShopifyOrderForNoteAttrs extends ShopifyOrder {
     this.db = new DB(env);
   }
 
-  get savedLineItemCustomAttrs(): LineItemCustomAttr[] {
+  get savedLineItemAttrs(): LineItemAttr[] {
     const { value } = this.noteAttributes.find(({ name }) => name === this.LINE_ITEMS) ?? {};
     return JSON.parse(value || EMPTY_ARRAY);
   }
 
-  get savedDeliveryScheduleCustomAttrs() {
+  get savedDeliveryScheduleAttrs() {
     const { value } = this.noteAttributes.find(({ name }) => name === this.DELIVERY_SCHEDULE) ?? {};
     return JSON.parse(value || EMPTY_OBJ);
   }
 
-  get hasValidSavedDeliverySchedule() {
+  get hasValidSavedDeliveryScheduleAttrs() {
     return (
-      "estimate" in this.savedDeliveryScheduleCustomAttrs &&
-      !!this.savedDeliveryScheduleCustomAttrs.estimate
+      "estimate" in this.savedDeliveryScheduleAttrs && !!this.savedDeliveryScheduleAttrs.estimate
     );
   }
 
-  get completedLineItemCustomAttrs() {
-    if (!this._completedLineItemCustomAttrs)
-      throw new Error("Execute completeLineItemCustomAttrs() before");
-    return this._completedLineItemCustomAttrs;
+  get completedLineItem() {
+    if (!this._completedLineItem) throw new Error("Execute completeLineItem() before");
+    return this._completedLineItem;
   }
 
-  get completedDeliveryScheduleCustomAttrs() {
-    if (!this._completedDeliveryScheduleCustomAttrs)
-      throw new Error("Execute completeDeliveryScheduleCustomAttrs() before");
+  get completedDeliverySchedule() {
+    if (!this._completedDeliverySchedule)
+      throw new Error("Execute completeDeliverySchedule() before");
 
-    return this._completedDeliveryScheduleCustomAttrs;
+    return this._completedDeliverySchedule;
   }
 
   get isCompletedSku() {
-    return this.completedLineItemCustomAttrs.every(({ _skus }) => _skus.length > 0);
+    return this.completedLineItem.every(({ _skus }) => _skus.length > 0);
   }
 
-  get shouldUpdateLineItemCustomAttrs() {
+  get shouldUpdateLineItemAttrs() {
     // この日以前の古いデータは更新しない
     const THRESHOLD_DATE = new Date("2024-01-01T00:00:00");
     return (
       this.createdAt > THRESHOLD_DATE &&
-      !eqLineItemCustomAttrs(this.completedLineItemCustomAttrs, this.savedLineItemCustomAttrs)
+      !isEqualLineItemAttrs(this.completedLineItem, this.savedLineItemAttrs)
     );
   }
 
@@ -70,8 +68,8 @@ export class ShopifyOrderForNoteAttrs extends ShopifyOrder {
     // - クローズされていない
     // - 30日以内の注文
     return (
-      !this.hasValidSavedDeliverySchedule &&
-      !!this.completedDeliveryScheduleCustomAttrs.estimate &&
+      !this.hasValidSavedDeliveryScheduleAttrs &&
+      !!this.completedDeliverySchedule.estimate &&
       !this.fulfillmentStatus &&
       !this.cancelledAt &&
       !this.closedAt &&
@@ -80,17 +78,17 @@ export class ShopifyOrderForNoteAttrs extends ShopifyOrder {
   }
 
   get shouldUpdateNoteAttributes() {
-    return this.shouldUpdateLineItemCustomAttrs || this.shouldSendDeliveryScheduleNotification;
+    return this.shouldUpdateLineItemAttrs || this.shouldSendDeliveryScheduleNotification;
   }
 
-  async completeLineItemCustomAttrs() {
+  async completeLineItem() {
     const skusByLineItemId = Object.fromEntries(
-      this.savedLineItemCustomAttrs
+      this.savedLineItemAttrs
         .filter(({ [this.SKUS]: skus }) => skus.length > 0)
         .map(({ id, [this.SKUS]: skus }) => [id, JSON.stringify(skus)]),
     );
 
-    this._completedLineItemCustomAttrs = await Promise.all(
+    this._completedLineItem = await Promise.all(
       this.lineItems.map(async ({ id, name, properties, variant_id }) => {
         let skus: string | undefined | null =
           skusByLineItemId[id] ?? properties.find((p) => p.name === this.SKUS)?.value;
@@ -101,19 +99,19 @@ export class ShopifyOrderForNoteAttrs extends ShopifyOrder {
     );
   }
 
-  async completeDeliveryScheduleCustomAttrs() {
-    if (this.hasValidSavedDeliverySchedule) {
-      this._completedDeliveryScheduleCustomAttrs = this.savedDeliveryScheduleCustomAttrs;
+  async completeDeliverySchedule() {
+    if (this.hasValidSavedDeliveryScheduleAttrs) {
+      this._completedDeliverySchedule = this.savedDeliveryScheduleAttrs;
       return;
     }
     // SKU情報が一つでも不足していたら、配送日時は未確定とする
     if (!this.isCompletedSku) {
-      this._completedDeliveryScheduleCustomAttrs = { estimate: "" };
+      this._completedDeliverySchedule = { estimate: "" };
       return;
     }
     // unmanaged_itemのようなスケージュール計算がいらないものはscheduleがnullになる
-    const schedule = await getDeliverySchedule(this.completedLineItemCustomAttrs, this.db);
-    this._completedDeliveryScheduleCustomAttrs = { estimate: schedule ?? "" };
+    const schedule = await getDeliverySchedule(this.completedLineItem, this.db);
+    this._completedDeliverySchedule = { estimate: schedule ?? "" };
   }
 
   async updateNoteAttributes() {
@@ -121,12 +119,12 @@ export class ShopifyOrderForNoteAttrs extends ShopifyOrder {
     if (this.shouldSendDeliveryScheduleNotification)
       newNoteAttributes.push({
         name: this.DELIVERY_SCHEDULE,
-        value: JSON.stringify(this.completedDeliveryScheduleCustomAttrs),
+        value: JSON.stringify(this.completedDeliverySchedule),
       });
-    if (this.shouldUpdateLineItemCustomAttrs)
+    if (this.shouldUpdateLineItemAttrs)
       newNoteAttributes.push({
         name: this.LINE_ITEMS,
-        value: JSON.stringify(this.completedLineItemCustomAttrs),
+        value: JSON.stringify(this.completedLineItem),
       });
 
     const merged = new Map(
@@ -152,16 +150,13 @@ export class ShopifyOrderForNoteAttrs extends ShopifyOrder {
   }
 }
 
-type LineItemCustomAttr = {
+type LineItemAttr = {
   id: number;
   name: string;
   _skus: string[];
 };
 
-const eqLineItemCustomAttrs = (
-  dataA: LineItemCustomAttr[],
-  dataB: LineItemCustomAttr[],
-): boolean => {
+const isEqualLineItemAttrs = (dataA: LineItemAttr[], dataB: LineItemAttr[]): boolean => {
   if (dataA.length !== dataB.length) return false;
 
   const sortedA = [...dataA].sort((a, b) => a.id - b.id);
@@ -175,12 +170,12 @@ const eqLineItemCustomAttrs = (
   });
 };
 
-type DeliveryScheduleCustomAttrs = {
+type DeliveryScheduleAttrs = {
   estimate: string;
 };
 
 export const getDeliverySchedule = async (
-  data: LineItemCustomAttr[],
+  data: LineItemAttr[],
   client: DB,
 ): Promise<string | null> => {
   const codes = [...new Set(data.flatMap(({ _skus }) => _skus))];

@@ -130,19 +130,21 @@ app.post("/order", async (c) => {
   console.log(c.get("label"));
 
   // line_items/note_attributes及びDBからSKU情報を補完
-  await order.completeLineItemCustomAttrs();
+  await order.completeLineItem();
   // note_attributes及びSKU情報から配送スケジュール情報を補完
-  await order.completeDeliveryScheduleCustomAttrs();
+  await order.completeDeliverySchedule();
 
   // 配送スケージュールのメールを送信
   if (order.shouldSendDeliveryScheduleNotification)
-    await blockReRun(`notifyDeliverySchedule-${order.numericId}`, c.env.CACHE, () =>
-      mailer.notifyDeliverySchedule(order.completedDeliveryScheduleCustomAttrs.estimate),
-    );
+    await blockReRun(`notifyDeliverySchedule-${order.numericId}`, c.env.CACHE, () => {
+      console.log(`send delivery schedule mail: ${order.completedDeliverySchedule.estimate}`);
+      return mailer.notifyDeliverySchedule(order.completedDeliverySchedule.estimate);
+    });
 
   if (order.shouldUpdateNoteAttributes) {
     // SKU情報が不足している場合にSlack通知
     if (!order.isCompletedSku) notifier.appendNotConnectedSkuOrder(order, "notify-order");
+    console.log("update note attributes");
     const res = await order.updateNoteAttributes().catch(notifier.appendErrorMessage);
     if (res) await notifier.appendErrorResponse(res);
   }
