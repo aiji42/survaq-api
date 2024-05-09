@@ -42,19 +42,20 @@ export class Cancel extends KiribiPerformer<{ requestId: number }, void, Binding
       log.push("Completed cancelling Logiless");
 
       // Shopify上でキャンセル
-      log.push(`Cancelling Shopify: ${this.shopifyOrder.numericId} (${this.shopifyOrder.code})`);
-      // TODO: 未払だとShopify上はクローズ扱いになって通知メールが送られない(はずな)ので別途キャンセルメール送る(本当に送られないかは要確認)
-      await this.shopifyOrder.cancel(request.reason ?? "");
-      // MEMO: ↑が完了すると自動的にShopifyからキャンセル完了メールが送られる
-      log.push("Completed cancelling Shopify");
-
-      // MEMO: 将来的にはorderのwebhookによる処理にして、キャンセルリクエストによらない共通処理にしても良いかもしれない
-      // 返金用口座を聞かないといけない注文の場合、返金用口座を聞くメールを送信
-      if (this.shopifyOrder.isRequiringCashRefunds) {
-        log.push("Sending ask bank account mail...");
-        await this.shopifyOrderMailSender.sendAskBankAccountMail();
-        log.push("Completed sending ask bank account mail");
+      if (this.shopifyOrder.isAvailableCancelOperation) {
+        log.push(`Cancelling Shopify: ${this.shopifyOrder.numericId} (${this.shopifyOrder.code})`);
+        await this.shopifyOrder.cancel(request.reason ?? "");
+        log.push("Completed cancelling Shopify");
+      } else {
+        // キャンセルできない場合は代わりにクローズする
+        log.push(`Closing Shopify: ${this.shopifyOrder.numericId} (${this.shopifyOrder.code})`);
+        await this.shopifyOrder.close(true);
+        log.push("Completed closing Shopify");
       }
+
+      log.push("Sending cancel completed mail");
+      await this.shopifyOrderMailSender.sendCancelCompletedMail();
+      log.push("Completed sending cancel completed mail");
 
       success = true;
     } catch (e) {
@@ -83,7 +84,7 @@ export class Cancel extends KiribiPerformer<{ requestId: number }, void, Binding
 
     await this.db.updateCancelRequestByOrderKey(request.orderKey, {
       status: success ? "Completed" : "Failed",
-      log: request.log ? `${log.toString()}\n${request.log}` : log.toString(),
+      log: request.log ? `${request.log}\n${log.toString()}` : log.toString(),
     });
 
     if (!success) throw new Error(`Failed to cancel. See: CancelRequest#${requestId}`);

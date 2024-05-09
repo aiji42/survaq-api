@@ -7,6 +7,7 @@ const API_VERSION = "2024-04";
 export class ShopifyOrder {
   constructor(private env: { SHOPIFY_ACCESS_TOKEN: string }) {}
   private _order: ShopifyOrderData | undefined;
+  private _cancellingOperated = false;
 
   get headers() {
     return new Headers({
@@ -71,6 +72,7 @@ export class ShopifyOrder {
     return new Date(this.order.created_at);
   }
 
+  // ShopifyのAPIでのキャンセル可不可条件ではなく、あくまでサバキュー独自のキャンセルを許すかどうかの条件
   get cancelable() {
     const data = this.order;
 
@@ -80,6 +82,15 @@ export class ShopifyOrder {
     return { isCancelable: true };
   }
 
+  // ShopifyのAPIでキャンセル可能かどうか
+  get isAvailableCancelOperation() {
+    // 未払はキャンセルできない
+    if (this.order.financial_status === "pending") return false;
+    // 出荷済みはキャンセルできない
+    return !this.order.fulfillment_status;
+  }
+
+  // コンビニ決済・銀行振込の場合、返金用口座を聞かないといけない
   get isRequiringCashRefunds() {
     if (!["paid", "partially_paid"].includes(this.order.financial_status)) return false;
 
@@ -88,7 +99,12 @@ export class ShopifyOrder {
     );
   }
 
+  get isCompletedCancelOperation() {
+    return this._cancellingOperated;
+  }
+
   async cancel(reason: string) {
+    // MEMO: キャンセルを実行すると自動的にクローズされる
     const res = await fetch(`https://survaq.myshopify.com/admin/api/${API_VERSION}/graphql.json`, {
       method: "POST",
       headers: this.headers,
@@ -97,7 +113,8 @@ export class ShopifyOrder {
         query: `mutation OrderCancel($orderId: ID!, $notifyCustomer: Boolean, $refund: Boolean!, $restock: Boolean!, $reason: OrderCancelReason!, $staffNote: String) { orderCancel(orderId: $orderId, notifyCustomer: $notifyCustomer, refund: $refund, restock: $restock, reason: $reason, staffNote: $staffNote) { job { id done } orderCancelUserErrors { field message code } } }`,
         variables: {
           orderId: this.gid,
-          notifyCustomer: true,
+          // 自動通知はしない
+          notifyCustomer: false,
           refund: true,
           restock: true,
           reason: "CUSTOMER",
@@ -126,6 +143,47 @@ export class ShopifyOrder {
           .map(({ field, message, code }) => `${field.join(".")}: ${message} (${code})`)
           .join("\n"),
       );
+
+    this._cancellingOperated = true;
+  }
+
+  async close(asCancel = false) {
+    const res = await fetch(`https://survaq.myshopify.com/admin/api/${API_VERSION}/graphql.json`, {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify({
+        // SEE: https://shopify.dev/docs/api/admin-graphql/2024-04/mutations/orderClose
+        query: `mutation OrderClose($input: OrderCloseInput!) { orderClose(input: $input) { userErrors { field message } } }`,
+        variables: {
+          input: {
+            id: this.gid,
+          },
+        },
+      }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+
+    const result = (await res.json()) as
+      | {
+          data: {
+            orderClose: {
+              userErrors: { field: string[]; message: string }[];
+            };
+          };
+        }
+      | {
+          errors: { message: string }[];
+        };
+
+    if ("errors" in result) throw new Error(result.errors.map(({ message }) => message).join("\n"));
+    else if (result.data.orderClose.userErrors.length)
+      throw new Error(
+        result.data.orderClose.userErrors
+          .map(({ field, message }) => `${field.join(".")}: ${message}`)
+          .join("\n"),
+      );
+
+    if (asCancel) this._cancellingOperated = true;
   }
 
   async updateNoteAttributes(updatableNoteAttrs: ShopifyOrder["noteAttributes"]) {

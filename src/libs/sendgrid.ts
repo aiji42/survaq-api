@@ -161,7 +161,7 @@ type NotifyCancelRequestReceivedDynamicData = {
   orderId: string;
 };
 
-type AskBankAccountDynamicData = {
+type NotifyCancelCompletedMailDynamicData = {
   customerName: string;
   orderId: string;
 };
@@ -239,20 +239,29 @@ export class ShopifyOrderMailSender extends MailSender {
     });
   }
 
-  async sendAskBankAccountMail() {
-    // サバキューストア: キャンセル時の返金先情報を問うメール(日本語のみ)
-    const templateId = "d-c0f1410eee2d4d9ea39a75577e01008a";
+  async sendCancelCompletedMail() {
+    if (!this.order.isCompletedCancelOperation) throw new Error("Order is not cancelled.");
+    let templateId: string = "";
+    if (this.order.isRequiringCashRefunds) {
+      // サバキューストア: キャンセル完了+返金先を問うメール(日本語のみ)
+      templateId = "d-c0f1410eee2d4d9ea39a75577e01008a";
+    } else {
+      // サバキューストア: キャンセル完了メール(日本語|English)
+      templateId =
+        this.locale === "ja"
+          ? "d-0af33758e30643e4b1a37c8739e42ba1"
+          : "d-31a9daae534943be8c899536f231cd56";
+    }
 
     return this.sendMailByTemplate({
       to: { email: this.customerEmail },
-      // FIXME: BCC確認
-      bcc: { email: "support@survaq.com" },
+      // FIXME: BCC
       from: this.support,
       templateId,
       templateData: {
         customerName: this.customerName,
         orderId: this.order.code,
-      } satisfies AskBankAccountDynamicData,
+      } satisfies NotifyCancelCompletedMailDynamicData,
       bypassListManagement: true,
     });
   }
