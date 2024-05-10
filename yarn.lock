@@ -83,11 +83,6 @@
   resolved "https://registry.yarnpkg.com/@cloudflare/workerd-windows-64/-/workerd-windows-64-1.20240419.0.tgz#a6ec1ad8386c13fc533bfc5d8a37695c2c5ec2a0"
   integrity sha512-YJjgaJN2yGTkV7Cr4K3i8N4dUwVQTclT3Pr3NpRZCcLjTszwlE53++XXDnHMKGXBbSguIizaVbmcU2EtmIXyeQ==
 
-"@cloudflare/workers-types@4.20240405.0":
-  version "4.20240405.0"
-  resolved "https://registry.yarnpkg.com/@cloudflare/workers-types/-/workers-types-4.20240405.0.tgz#6baab25dbae8d9c9be1454f82e29279215b5741f"
-  integrity sha512-sEVOhyOgXUwfLkgHqbLZa/sfkSYrh7/zLmI6EZNibPaVPvAnAcItbNNl3SAlLyLKuwf8m4wAIAgu9meKWCvXjg==
-
 "@cloudflare/workers-types@^4.20240423.0":
   version "4.20240423.0"
   resolved "https://registry.yarnpkg.com/@cloudflare/workers-types/-/workers-types-4.20240423.0.tgz#f09f18e338cd3e1ce0acbe02bb72d101cc38aa7f"
@@ -438,6 +433,11 @@
   dependencies:
     "@lit/reactive-element" "^1.0.0 || ^2.0.0"
 
+"@noble/hashes@^1.1.5":
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/@noble/hashes/-/hashes-1.4.0.tgz#45814aa329f30e4fe0ba49426f49dfccdd066426"
+  integrity sha512-V1JJ1WTRUqHHrOSh597hURcMqVKVGL/ea3kv0gSnEdsEZ0/+VyPghM1lMNGc00z7CIQorSvbKpuJkxvuHbvdbg==
+
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz#7619c2eb21b25483f6d167548b4cfd5a7488c3d5"
@@ -459,18 +459,17 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
+"@paralleldrive/cuid2@^2.2.2":
+  version "2.2.2"
+  resolved "https://registry.yarnpkg.com/@paralleldrive/cuid2/-/cuid2-2.2.2.tgz#7f91364d53b89e2c9cb9e02e8dd0f129e834455f"
+  integrity sha512-ZOBkgDwEdoYVlSeRbYYXs0S9MejQofiVYoTbKzy/6GQa39/q5tQU2IX46+shYnUkpEl3wc+J6wRlar7r2EK2xA==
+  dependencies:
+    "@noble/hashes" "^1.1.5"
+
 "@pkgjs/parseargs@^0.11.0":
   version "0.11.0"
   resolved "https://registry.yarnpkg.com/@pkgjs/parseargs/-/parseargs-0.11.0.tgz#a77ea742fab25775145434eb1d2328cf5013ac33"
   integrity sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==
-
-"@prisma/adapter-d1@^5.12.1":
-  version "5.13.0"
-  resolved "https://registry.yarnpkg.com/@prisma/adapter-d1/-/adapter-d1-5.13.0.tgz#587fd4e80f201d6f0be15cdd2e5362b82163c314"
-  integrity sha512-1VuQZyA0bEIEHv3joEsGi/7+XBsZIQSubTDhagOkmeTHKME/eXP8S5r7BRPyGcNk4Yp7WRuLuIMFM1LgGXytLQ==
-  dependencies:
-    "@cloudflare/workers-types" "4.20240405.0"
-    "@prisma/driver-adapter-utils" "5.13.0"
 
 "@prisma/adapter-pg-worker@^5.13.0":
   version "5.13.0"
@@ -480,7 +479,7 @@
     "@prisma/driver-adapter-utils" "5.13.0"
     postgres-array "3.0.2"
 
-"@prisma/client@5.13.0", "@prisma/client@^5.12.1":
+"@prisma/client@5.13.0":
   version "5.13.0"
   resolved "https://registry.yarnpkg.com/@prisma/client/-/client-5.13.0.tgz#b9f1d0983d714e982675201d8222a9ecb4bdad4a"
   integrity sha512-uYdfpPncbZ/syJyiYBwGZS8Gt1PTNoErNYMuqHDa2r30rNSFtgTA/LXsSk55R7pdRTMi5pHkeP9B14K6nHmwkg==
@@ -1452,6 +1451,11 @@ draht@1.0.1:
   dependencies:
     eventemitter2 "5.0.1"
 
+drizzle-orm@^0.30.10:
+  version "0.30.10"
+  resolved "https://registry.yarnpkg.com/drizzle-orm/-/drizzle-orm-0.30.10.tgz#1ae29d9d8e8fb5422e050e155c441854033ef13f"
+  integrity sha512-IRy/QmMWw9lAQHpwbUh1b8fcn27S/a9zMIzqea1WNOxK9/4EB8gIo+FZWLiPXzl2n9ixGSv8BhsLZiOppWEwBw==
+
 eastasianwidth@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/eastasianwidth/-/eastasianwidth-0.2.0.tgz#696ce2ec0aa0e6ea93a397ffcf24aa7840c827cb"
@@ -2140,10 +2144,10 @@ hasown@^2.0.1, hasown@^2.0.2:
   dependencies:
     function-bind "^1.1.2"
 
-hono@^4.2.4, hono@^4.3.2:
-  version "4.3.2"
-  resolved "https://registry.yarnpkg.com/hono/-/hono-4.3.2.tgz#8dc53c087794d01a7bc9573c90292c3a1ba9e832"
-  integrity sha512-wiZcF5N06tc232U11DnqW6hP8DNoypjsrxslKXfvOqOAkTdh7K1HLZJH/92Mf+urxUTGi96f1w4xx/1Qozoqiw==
+hono@^4.3.4:
+  version "4.3.4"
+  resolved "https://registry.yarnpkg.com/hono/-/hono-4.3.4.tgz#dfc498050164a0a2c6e472a6f707563afd7bb9e5"
+  integrity sha512-oh+PBwW8yElj3bUlY2dTXhuPt1MCZp6Nb04tejLwY+GXdphQH6uCpUP0dY5iLvFY5wM8fNHrMx1QeMKbhnzw9w==
 
 hosted-git-info@^2.1.4:
   version "2.8.9"
@@ -2507,16 +2511,16 @@ kind-of@^6.0.3:
   resolved "https://registry.yarnpkg.com/kind-of/-/kind-of-6.0.3.tgz#07c05034a6c349fa06e24fa35aa76db4580ce4dd"
   integrity sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==
 
-kiribi@^0.0.13:
-  version "0.0.13"
-  resolved "https://registry.yarnpkg.com/kiribi/-/kiribi-0.0.13.tgz#a9b45f38f55ed8bce8484aded005459d9002374f"
-  integrity sha512-1lWSMahzcc1HIkbWeYcY7kty7VByLlgPy9AwwXxN8FOaYMAjeySbWpiVCeD2MyHbdsmHxnW6wny+vrcdPn0Fsw==
+kiribi@^0.0.15:
+  version "0.0.15"
+  resolved "https://registry.yarnpkg.com/kiribi/-/kiribi-0.0.15.tgz#bf3bc2d4638a6a82cf094138649973abc677e132"
+  integrity sha512-yyBSUFFYqeFCAxjMLxdreg+n0ZFFbY7Kfe4vdCxAZIH3CqvE3IMIobrM23FAJjJMua4TmGyxpdeHxThBHBMIcw==
   dependencies:
     "@hono/zod-validator" "^0.2.1"
-    "@prisma/adapter-d1" "^5.12.1"
-    "@prisma/client" "^5.12.1"
-    hono "^4.2.4"
-    zod "^3.22.4"
+    "@paralleldrive/cuid2" "^2.2.2"
+    drizzle-orm "^0.30.10"
+    hono "^4.3.4"
+    zod "^3.23.8"
 
 lilconfig@^2.1.0:
   version "2.1.0"
@@ -4645,7 +4649,7 @@ zod@^3.20.6:
   resolved "https://registry.yarnpkg.com/zod/-/zod-3.21.4.tgz#10882231d992519f0a10b5dd58a38c9dabbb64db"
   integrity sha512-m46AKbrzKVzOzs/DZgVnG5H55N1sv1M8qZU3A8RIKbs3mrACDNeIOeilDymVb2HdmP8uwshOCF4uJ8uM9rCqJw==
 
-zod@^3.22.4:
-  version "3.23.6"
-  resolved "https://registry.yarnpkg.com/zod/-/zod-3.23.6.tgz#c08a977e2255dab1fdba933651584a05fcbf19e1"
-  integrity sha512-RTHJlZhsRbuA8Hmp/iNL7jnfc4nZishjsanDAfEY1QpDQZCahUp3xDzl+zfweE9BklxMUcgBgS1b7Lvie/ZVwA==
+zod@^3.23.8:
+  version "3.23.8"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-3.23.8.tgz#e37b957b5d52079769fb8097099b592f0ef4067d"
+  integrity sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==

@@ -1,6 +1,6 @@
 import { Pool } from "@prisma/pg-worker";
 import { PrismaPg } from "@prisma/adapter-pg-worker";
-import { PrismaClient, Prisma } from "../prisma";
+import { PrismaClient, Prisma } from "@prisma/client";
 import { sanitizeSkusJSON } from "./makeVariants";
 
 type TransactionalPrismaClient = Omit<
@@ -330,6 +330,12 @@ export class DB {
         updatedAt: new Date(),
       },
     });
+  }
+
+  updateVariantBulk(records: [string, Prisma.ShopifyVariantsUpdateInput][]) {
+    return Promise.all(
+      records.map(async ([variantId, data]) => this.updateVariant(variantId, data)),
+    );
   }
 
   updateTransactionMail(id: number, data: Prisma.TransactionMailsUpdateInput) {

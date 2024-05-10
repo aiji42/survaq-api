@@ -21,6 +21,9 @@ queue = "kiribi-queue-survaq-api"
 queue = "kiribi-queue-survaq-api"
 max_retries = 5
 
+[triggers]
+crons = [ "0 0 * * *" ]
+
 [[services]]
 binding = "KIRIBI"
 service = "kiribi-survaq-api"
@@ -29,6 +32,11 @@ service = "kiribi-survaq-api"
 binding = "Cancel"
 service = "kiribi-survaq-api"
 entrypoint = "Cancel"
+
+[[services]]
+binding = "ProductSync"
+service = "kiribi-survaq-api"
+entrypoint = "ProductSync"
 
 [site]
 bucket = "./node_modules/kiribi/client"
