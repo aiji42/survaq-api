@@ -332,12 +332,6 @@ export class DB {
     });
   }
 
-  updateVariantBulk(records: [string, Prisma.ShopifyVariantsUpdateInput][]) {
-    return Promise.all(
-      records.map(async ([variantId, data]) => this.updateVariant(variantId, data)),
-    );
-  }
-
   updateTransactionMail(id: number, data: Prisma.TransactionMailsUpdateInput) {
     return this.prisma.transactionMails.update({
       where: { id },

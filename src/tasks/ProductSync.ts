@@ -67,13 +67,12 @@ export class ProductSync extends KiribiPerformer<ShopifyProduct, void, Bindings>
 
         if (shouldUpdateVariantIds.length) {
           console.log(`update ${shouldUpdateVariantIds.length} variant(s)`);
-          await db.updateVariantBulk(
-            shouldUpdateVariantIds.map<[string, { variantName: string }]>((variantId) => [
-              variantId,
-              {
+          await Promise.all(
+            shouldUpdateVariantIds.map(async (variantId) =>
+              db.updateVariant(variantId, {
                 variantName: shopifyVariants[variantId]!,
-              },
-            ]),
+              }),
+            ),
           );
         }
       }
