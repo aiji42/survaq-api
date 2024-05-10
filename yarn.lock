@@ -2511,10 +2511,10 @@ kind-of@^6.0.3:
   resolved "https://registry.yarnpkg.com/kind-of/-/kind-of-6.0.3.tgz#07c05034a6c349fa06e24fa35aa76db4580ce4dd"
   integrity sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==
 
-kiribi@^0.0.15:
-  version "0.0.15"
-  resolved "https://registry.yarnpkg.com/kiribi/-/kiribi-0.0.15.tgz#bf3bc2d4638a6a82cf094138649973abc677e132"
-  integrity sha512-yyBSUFFYqeFCAxjMLxdreg+n0ZFFbY7Kfe4vdCxAZIH3CqvE3IMIobrM23FAJjJMua4TmGyxpdeHxThBHBMIcw==
+kiribi@^0.0.16:
+  version "0.0.16"
+  resolved "https://registry.yarnpkg.com/kiribi/-/kiribi-0.0.16.tgz#b952a6701c5cc1448ccd6ffe1e9da3266b8bca80"
+  integrity sha512-QoPK6cpCrVFwhl2V2uMunm8ydbwvrN6o6N+HtvsY3bvwjkzSBQ5GZ52LhWg8P8QXsNvN8fkTUdHyAqhh/Pf1xQ==
   dependencies:
     "@hono/zod-validator" "^0.2.1"
     "@paralleldrive/cuid2" "^2.2.2"
