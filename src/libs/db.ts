@@ -306,6 +306,7 @@ export class DB {
         updatedAt: new Date(),
         createdAt: new Date(),
       })),
+      skipDuplicates: true,
     });
   }
 
