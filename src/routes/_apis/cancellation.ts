@@ -18,6 +18,10 @@ app.get("/cancelable", async (c) => {
   const id = c.req.query("id");
   if (!id) return c.text("Missing id", 400);
 
+  const db = new DB(c.env);
+  const existingRequest = await db.getCancelRequestByOrderKey(id);
+  if (existingRequest) return c.json({ isCancelable: false, reason: "AlreadyRequested" });
+
   const shopifyOrder = new ShopifyOrderForCancel(c.env);
   try {
     await shopifyOrder.setOrderById(id);
