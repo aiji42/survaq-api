@@ -1,9 +1,11 @@
+// FIXME: /shopifyでは名前が広すぎるので、webhookとわかる名前に変更
 import { Hono } from "hono";
 import { Bindings } from "../../../bindings";
 import { ShopifyOrderForNoteAttrs } from "../../libs/models/shopify/ShopifyOrderForNoteAttrs";
 import { SlackNotifier } from "../../libs/slack";
 import { ShopifyProduct } from "../../types/shopify";
 import { ShopifyOrderMailSender } from "../../libs/sendgrid";
+import { blockReRun } from "../../libs/utils";
 
 type Variables = { label: string; topic: string; notifier: SlackNotifier };
 
@@ -72,15 +74,5 @@ app.post("/order", async (c) => {
 
   return c.json({ message: "update order" });
 });
-
-/**
- * 60秒間同一キーのコールバックの実行を抑制する(メールが二重に送られないようにするとか)
- * KVの仕様上expirationTtlを60秒未満にできない
- */
-const blockReRun = async (key: string, kv: KVNamespace, callback: () => Promise<unknown>) => {
-  if (await kv.get(key)) return;
-  await kv.put(key, "processing", { expirationTtl: 60 });
-  await callback();
-};
 
 export default app;

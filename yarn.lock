@@ -1092,6 +1092,11 @@ capnp-ts@^0.7.0:
     debug "^4.3.1"
     tslib "^2.2.0"
 
+cfw-bq@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/cfw-bq/-/cfw-bq-0.0.3.tgz#5ed3a933794e4f72e91398d0321d85a557bd8267"
+  integrity sha512-oV8Jxn0DP2zEqEMGj8wTwcp+nk8mLaEmMJ71T1T4kvWSPcBZQ3Qibxcq2y2rfrkNYcfd65PKd2Nj5gsgAk6zTA==
+
 chai@^4.3.10:
   version "4.4.1"
   resolved "https://registry.yarnpkg.com/chai/-/chai-4.4.1.tgz#3603fa6eba35425b0f2ac91a009fe924106e50d1"

@@ -5,7 +5,8 @@ export class ShopifyOrderForCancel extends ShopifyOrder {
 
   // ShopifyのAPIでのキャンセル可不可条件ではなく、あくまでサバキュー独自のキャンセルを許すかどうかの条件
   get cancelable() {
-    if (this.cancelledAt) return { isCancelable: false, reason: "Canceled" };
+    if (this.isCancelled) return { isCancelable: false, reason: "Canceled" };
+    if (this.isClosed) return { isCancelable: false, reason: "Closed" };
     if (this.fulfillmentStatus) return { isCancelable: false, reason: "Shipped" };
 
     return { isCancelable: true };

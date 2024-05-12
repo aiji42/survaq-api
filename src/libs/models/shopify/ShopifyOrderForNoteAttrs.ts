@@ -174,10 +174,7 @@ type DeliveryScheduleAttrs = {
   estimate: string;
 };
 
-export const getDeliverySchedule = async (
-  data: LineItemAttr[],
-  client: DB,
-): Promise<string | null> => {
+const getDeliverySchedule = async (data: LineItemAttr[], client: DB): Promise<string | null> => {
   const codes = [...new Set(data.flatMap(({ _skus }) => _skus))];
   const skus = await client.getDeliverySchedulesBySkuCodes(codes);
   const schedules = skus.map((sku) =>

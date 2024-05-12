@@ -41,6 +41,7 @@
     "@prisma/adapter-pg-worker": "^5.13.0",
     "@prisma/client": "5.13.0",
     "@prisma/pg-worker": "^5.13.0",
+    "cfw-bq": "^0.0.3",
     "csv-parse": "^5.5.5",
     "dayjs": "^1.11.11",
     "hono": "^4.3.4",

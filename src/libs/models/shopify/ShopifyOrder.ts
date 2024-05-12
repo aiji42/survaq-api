@@ -17,17 +17,21 @@ export class ShopifyOrder {
     return this;
   }
 
-  async setOrderById(_id: number | string) {
+  async setOrderById(_id: number | string, throwIfNotFound = true) {
     const id = Number(_id);
 
     const res = await fetch(
       `https://survaq.myshopify.com/admin/api/${this.API_VERSION}/orders/${id}.json`,
       { headers: this.headers },
     );
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok && throwIfNotFound) throw new Error(await res.text());
     this._order = ((await res.json()) as { order: ShopifyOrderData }).order;
 
     return this;
+  }
+
+  get isOrderSet() {
+    return !!this._order;
   }
 
   get order() {
@@ -80,7 +84,15 @@ export class ShopifyOrder {
     return this.order.cancelled_at ? new Date(this.order.cancelled_at) : null;
   }
 
+  get isCancelled() {
+    return !!this.cancelledAt;
+  }
+
   get closedAt() {
     return this.order.closed_at ? new Date(this.order.closed_at) : null;
+  }
+
+  get isClosed() {
+    return !!this.closedAt;
   }
 }
