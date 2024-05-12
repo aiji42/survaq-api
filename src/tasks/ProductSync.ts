@@ -79,7 +79,7 @@ export class ProductSync extends KiribiPerformer<ShopifyProduct, void, Bindings>
     // バリエーション削除時に、SKU紐付け用の中間テーブルが残らないようにする
     if (data.status !== "active" && productRecordId) {
       console.log("delete variants by product record id", productRecordId);
-      await db.deleteVariantManyByProductId(productRecordId);
+      await this.db.deleteVariantManyByProductId(productRecordId);
     }
   }
 }
