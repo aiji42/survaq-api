@@ -70,7 +70,18 @@ export class ShopifyOrderDeliverySchedule extends ShopifyOrder {
     // - まだorder_skusにデータが取り込まれていない
     // - un_managedのSKUのみで注文が構成されている(手数料徴収用の特別対応注文)
     // - 注文から180日以上経過している
-    if (waitingQuantityBySku.length < 1) return null;
+    if (waitingQuantityBySku.length < 1) {
+      // 注文から1時間以内ならまだorder_skusにデータが取り込まれていないので、note_attributeのデータを使用してスケジュールを出す
+      if (
+        Date.now() - this.createdAt.getTime() < 60 * 60 * 1000 &&
+        this.hasValidSavedDeliveryScheduleAttrs
+      ) {
+        return makeSchedule(this.validSavedDeliveryScheduleAttrs.estimate, this.locale, false);
+      }
+
+      // それ以外の場合はスケジュールを出せないのでnullを返す
+      return null;
+    }
 
     const codes = waitingQuantityBySku.map(({ code }) => code);
     const inventoriesBySku = await this.getInventories(codes);

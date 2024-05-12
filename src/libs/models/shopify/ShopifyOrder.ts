@@ -4,6 +4,11 @@ export class ShopifyOrder {
   constructor(private env: { SHOPIFY_ACCESS_TOKEN: string }) {}
   private _order: ShopifyOrderData | undefined;
   protected readonly API_VERSION = "2024-04";
+  protected readonly LINE_ITEMS = "__line_items";
+  protected readonly DELIVERY_SCHEDULE = "__delivery_schedule";
+  protected readonly SKUS = "_skus";
+  protected readonly EMPTY_ARRAY = "[]";
+  protected readonly EMPTY_OBJ = "{}";
 
   get headers() {
     return new Headers({
@@ -95,4 +100,36 @@ export class ShopifyOrder {
   get isClosed() {
     return !!this.closedAt;
   }
+
+  get savedLineItemAttrs(): LineItemAttr[] {
+    const { value } = this.noteAttributes.find(({ name }) => name === this.LINE_ITEMS) ?? {};
+    return JSON.parse(value || this.EMPTY_ARRAY);
+  }
+
+  private get savedDeliveryScheduleAttrs() {
+    const { value } = this.noteAttributes.find(({ name }) => name === this.DELIVERY_SCHEDULE) ?? {};
+    return JSON.parse(value || this.EMPTY_OBJ);
+  }
+
+  get validSavedDeliveryScheduleAttrs(): DeliveryScheduleAttrs {
+    if (!this.hasValidSavedDeliveryScheduleAttrs)
+      throw new Error("Invalid saved delivery schedule attrs");
+    return this.savedDeliveryScheduleAttrs;
+  }
+
+  get hasValidSavedDeliveryScheduleAttrs() {
+    return (
+      "estimate" in this.savedDeliveryScheduleAttrs && !!this.savedDeliveryScheduleAttrs.estimate
+    );
+  }
 }
+
+export type LineItemAttr = {
+  id: number;
+  name: string;
+  _skus: string[];
+};
+
+export type DeliveryScheduleAttrs = {
+  estimate: string;
+};
