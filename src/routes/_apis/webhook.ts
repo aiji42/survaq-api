@@ -1,4 +1,3 @@
-// FIXME: /shopifyでは名前が広すぎるので、webhookとわかる名前に変更
 import { Hono } from "hono";
 import { Bindings } from "../../../bindings";
 import { ShopifyOrderForNoteAttrs } from "../../libs/models/shopify/ShopifyOrderForNoteAttrs";
@@ -36,6 +35,8 @@ app.post("/product", async (c) => {
   // キューにいれるにはbody_htmlが大きすぎるので削除
   delete data.body_html;
 
+  // FIXME: /order同様にこちらもwebhookが叩かれるときは、一度に複数回叩かれることがあるので、遅延実行と重複実行の対策が必要
+  // payloadも大きい上に、遅延実行させるのであれば、payloadにidだけを渡して、タスク側で最新の情報を取得してから処理するようにする
   await c.env.KIRIBI.enqueue("ProductSync", data, { maxRetries: 1 });
 
   return c.json({ message: "enqueue ProductSync" });
