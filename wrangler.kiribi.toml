@@ -7,6 +7,10 @@ node_compat = true
 binding = "CACHE"
 id = "e45d1964fa5549a484bf4b3855a46a90"
 
+[[r2_buckets]]
+binding = 'CMS_BUCKETS'
+bucket_name = 'directus'
+
 [[d1_databases]]
 binding = "KIRIBI_DB"
 database_name = "kiribi-db-survaq-api"
@@ -37,6 +41,11 @@ entrypoint = "Cancel"
 binding = "ProductSync"
 service = "kiribi-survaq-api"
 entrypoint = "ProductSync"
+
+[[services]]
+binding = "TransactionMailSend"
+service = "kiribi-survaq-api"
+entrypoint = "TransactionMailSend"
 
 [[services]]
 binding = "CompleteOrder"

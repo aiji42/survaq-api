@@ -298,6 +298,7 @@ export class DB {
     return this.prisma.transactionMails.findFirst({
       where: { id },
       select: {
+        id: true,
         from: true,
         fromName: true,
         subject: true,

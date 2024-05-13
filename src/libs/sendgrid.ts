@@ -265,34 +265,3 @@ export class ShopifyOrderMailSender extends MailSender {
     });
   }
 }
-
-export class TransactionMailSender extends MailSender {
-  constructor(env: { SENDGRID_API_KEY: string }) {
-    super(env);
-  }
-
-  async send(
-    {
-      fromName,
-      from,
-      subject,
-      body,
-      isTest,
-    }: { from: string; fromName: string; subject: string; body: string; isTest: boolean },
-    receivers: Array<{ email: string; [key: string]: string }>,
-  ) {
-    // フェイルセーフで、テストを誤って実ユーザに送信しないよう送信上限を設ける
-    if (isTest && receivers.length > 5) throw new Error("too many test receivers. limit is 5.");
-
-    return this.sendMailBulk({
-      receivers: receivers.map(({ email, ...substitutions }) => ({
-        email,
-        substitutions,
-      })),
-      subject: isTest ? `[TEST] ${subject}` : subject,
-      contentBody: body,
-      from: { email: from, name: fromName },
-      bypassListManagement: true,
-    });
-  }
-}

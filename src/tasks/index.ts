@@ -9,8 +9,15 @@ import { ProductSync } from "./ProductSync";
 export { ProductSync } from "./ProductSync";
 import { CompleteOrder } from "./CompleteOrder";
 export { CompleteOrder } from "./CompleteOrder";
+import { TransactionMailSend } from "./TransactionMailSend";
+export { TransactionMailSend } from "./TransactionMailSend";
 
-type Performers = { Cancel: Cancel; ProductSync: ProductSync; CompleteOrder: CompleteOrder };
+type Performers = {
+  Cancel: Cancel;
+  ProductSync: ProductSync;
+  CompleteOrder: CompleteOrder;
+  TransactionMailSend: TransactionMailSend;
+};
 type BindingKeys = keyof Performers;
 
 export default class extends Kiribi<Performers, Bindings> {

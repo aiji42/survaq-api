@@ -4,6 +4,7 @@ import { DB } from "../libs/db";
 import { ShopifyOrderForCancel } from "../libs/models/shopify/ShopifyOrderForCancel";
 import { LogilessSalesOrder } from "../libs/logiless";
 import { MailSender, ShopifyOrderMailSender } from "../libs/sendgrid";
+import { Logger } from "../libs/logger";
 
 export class Cancel extends KiribiPerformer<{ requestId: number }, void, Bindings> {
   db: DB;
@@ -25,7 +26,7 @@ export class Cancel extends KiribiPerformer<{ requestId: number }, void, Binding
     if (request.status !== "Pending") throw new Error("Request is not pending");
     if (request.store !== "Shopify") throw new Error("Unsupported store: " + request.store);
 
-    const log = new Log();
+    const log = new Logger();
 
     log.push("Began!");
 
@@ -90,18 +91,5 @@ export class Cancel extends KiribiPerformer<{ requestId: number }, void, Binding
     });
 
     if (!success) throw new Error(`Failed to cancel. See: CancelRequest#${requestId}`);
-  }
-}
-
-class Log {
-  logs: string[] = [];
-
-  push(log: string, level: "info" | "warn" | "error" = "info") {
-    if (!log) return;
-    this.logs.push(`[${new Date().toISOString().slice(0, 19)}][${level}] ${log}`);
-  }
-
-  toString() {
-    return this.logs.join("\n");
   }
 }

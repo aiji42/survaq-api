@@ -68,4 +68,24 @@ app.post("/order", async (c) => {
   return c.json({ message: "enqueue CompleteOrder" });
 });
 
+app.post("transaction-mail", async (c) => {
+  const body = await c.req.json<
+    | {
+        event: "items.create";
+        collection: "TransactionMails";
+        key: number;
+      }
+    | {
+        event: "items.update";
+        collection: "TransactionMails";
+        keys: string[];
+      }
+  >();
+
+  const key = "key" in body ? body.key : Number(body.keys[0]);
+  await c.env.KIRIBI.enqueue("TransactionMailSend", { id: key }, { maxRetries: 1 });
+
+  return c.text("webhook received");
+});
+
 export default app;
