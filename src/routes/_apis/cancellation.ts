@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { Bindings } from "../../../bindings";
-import { LogilessSalesOrder } from "../../libs/logiless";
+import { LogilessSalesOrder } from "../../libs/models/logiless/LogilessSalesOrder";
 import { ShopifyOrderForCancel } from "../../libs/models/shopify/ShopifyOrderForCancel";
 import { DB } from "../../libs/db";
 import { zValidator } from "@hono/zod-validator";

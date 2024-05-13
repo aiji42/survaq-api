@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { Bindings } from "../../../bindings";
-import { LogilessClient } from "../../libs/logiless";
+import { LogilessClient } from "../../libs/models/logiless/LogilessClient";
 
 type Env = {
   Bindings: Bindings;

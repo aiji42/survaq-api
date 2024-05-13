@@ -2,7 +2,7 @@ import { KiribiPerformer } from "kiribi/performer";
 import { Bindings } from "../../bindings";
 import { DB } from "../libs/db";
 import { ShopifyOrderForCancel } from "../libs/models/shopify/ShopifyOrderForCancel";
-import { LogilessSalesOrder } from "../libs/logiless";
+import { LogilessSalesOrder } from "../libs/models/logiless/LogilessSalesOrder";
 import { MailSender, ShopifyOrderMailSender } from "../libs/sendgrid";
 import { Logger } from "../libs/logger";
 
