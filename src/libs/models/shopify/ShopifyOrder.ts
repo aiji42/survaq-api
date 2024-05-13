@@ -1,21 +1,13 @@
 import { ShopifyOrderData } from "../../../types/shopify";
+import { ShopifyClient } from "./ShopifyClient";
 
-export class ShopifyOrder {
-  constructor(private env: { SHOPIFY_ACCESS_TOKEN: string }) {}
+export class ShopifyOrder extends ShopifyClient {
   private _order: ShopifyOrderData | undefined;
-  protected readonly API_VERSION = "2024-04";
   protected readonly LINE_ITEMS = "__line_items";
   protected readonly DELIVERY_SCHEDULE = "__delivery_schedule";
   protected readonly SKUS = "_skus";
   protected readonly EMPTY_ARRAY = "[]";
   protected readonly EMPTY_OBJ = "{}";
-
-  get headers() {
-    return new Headers({
-      "X-Shopify-Access-Token": this.env.SHOPIFY_ACCESS_TOKEN,
-      "Content-Type": "application/json",
-    });
-  }
 
   setOrder(order: ShopifyOrderData) {
     this._order = order;

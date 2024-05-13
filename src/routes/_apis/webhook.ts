@@ -1,8 +1,7 @@
 import { Hono } from "hono";
 import { Bindings } from "../../../bindings";
-import { ShopifyOrderForNoteAttrs } from "../../libs/models/shopify/ShopifyOrderForNoteAttrs";
 import { SlackNotifier } from "../../libs/slack";
-import { ShopifyProduct } from "../../types/shopify";
+import { ShopifyOrderData, ShopifyProductData } from "../../types/shopify";
 import { blockReRun } from "../../libs/utils";
 
 type Variables = { label: string; topic: string; notifier: SlackNotifier };
@@ -28,22 +27,28 @@ app.onError(async (err, c) => {
 });
 
 app.post("/product", async (c) => {
-  const data = await c.req.json<ShopifyProduct>();
+  const data = await c.req.json<ShopifyProductData>();
   c.set("label", `${c.get("topic")}: ${data.id}, ${data.handle}, ${data.status}`);
   console.log(c.get("label"));
 
-  // キューにいれるにはbody_htmlが大きすぎるので削除
-  delete data.body_html;
-
-  // FIXME: /order同様にこちらもwebhookが叩かれるときは、一度に複数回叩かれることがあるので、遅延実行と重複実行の対策が必要
-  // payloadも大きい上に、遅延実行させるのであれば、payloadにidだけを渡して、タスク側で最新の情報を取得してから処理するようにする
-  await c.env.KIRIBI.enqueue("ProductSync", data, { maxRetries: 1 });
+  // MEMO: shopify上で、productが更新されるときは大抵webhookが複数同時に起動するため、いくつかの対策を行っている
+  // - firstDelayでタイミングを遅らせる(20秒+キューのデフォルトの待ち秒数(最大10秒))ことで、他のwebhook終わってから処理を開始する
+  // - blockReRunで60秒間重複実行を防ぐことで、この処理で発生したupdateによるwebhookを無視する
+  // - payloadにidだけを渡して、タスク側で最新の情報を取得してから処理するようにする
+  await blockReRun(`ProductSync-${data.id}`, c.env.CACHE, async () => {
+    console.log("enqueue ProductSync:", data.id);
+    await c.env.KIRIBI.enqueue(
+      "ProductSync",
+      { productId: data.id },
+      { maxRetries: 1, firstDelay: 20 },
+    );
+  });
 
   return c.json({ message: "enqueue ProductSync" });
 });
 
 app.post("/order", async (c) => {
-  const data = await c.req.json<ShopifyOrderForNoteAttrs["order"]>();
+  const data = await c.req.json<ShopifyOrderData>();
   c.set("label", `${c.get("topic")}: ${data.id}`);
   console.log(c.get("label"));
 
@@ -52,6 +57,7 @@ app.post("/order", async (c) => {
   // - blockReRunで60秒間重複実行を防ぐことで、この処理で発生したupdateによるwebhookを無視する
   // - payloadにidだけを渡して、タスク側で最新の情報を取得してから処理するようにする
   await blockReRun(`CompleteOrder-${data.id}`, c.env.CACHE, async () => {
+    console.log("enqueue CompleteOrder:", data.id);
     await c.env.KIRIBI.enqueue(
       "CompleteOrder",
       { orderId: data.id },
