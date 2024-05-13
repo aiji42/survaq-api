@@ -38,5 +38,10 @@ binding = "ProductSync"
 service = "kiribi-survaq-api"
 entrypoint = "ProductSync"
 
+[[services]]
+binding = "CompleteOrder"
+service = "kiribi-survaq-api"
+entrypoint = "CompleteOrder"
+
 [site]
 bucket = "./node_modules/kiribi/client"

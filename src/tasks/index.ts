@@ -7,8 +7,10 @@ import { Cancel } from "./Cancel";
 export { Cancel } from "./Cancel";
 import { ProductSync } from "./ProductSync";
 export { ProductSync } from "./ProductSync";
+import { CompleteOrder } from "./CompleteOrder";
+export { CompleteOrder } from "./CompleteOrder";
 
-type Performers = { Cancel: Cancel; ProductSync: ProductSync };
+type Performers = { Cancel: Cancel; ProductSync: ProductSync; CompleteOrder: CompleteOrder };
 type BindingKeys = keyof Performers;
 
 export default class extends Kiribi<Performers, Bindings> {
@@ -21,7 +23,7 @@ export default class extends Kiribi<Performers, Bindings> {
   }
 
   async onSuccess(binding: BindingKeys, payload: any) {
-    if (binding === "ProductSync") return;
+    if (binding === "ProductSync" || binding === "CompleteOrder") return;
     const slack = new SlackNotifier(this.env);
     slack.append({
       color: "good",

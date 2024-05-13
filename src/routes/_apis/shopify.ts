@@ -4,7 +4,6 @@ import { Bindings } from "../../../bindings";
 import { ShopifyOrderForNoteAttrs } from "../../libs/models/shopify/ShopifyOrderForNoteAttrs";
 import { SlackNotifier } from "../../libs/slack";
 import { ShopifyProduct } from "../../types/shopify";
-import { ShopifyOrderMailSender } from "../../libs/sendgrid";
 import { blockReRun } from "../../libs/utils";
 
 type Variables = { label: string; topic: string; notifier: SlackNotifier };
@@ -43,36 +42,23 @@ app.post("/product", async (c) => {
 });
 
 app.post("/order", async (c) => {
-  const order = new ShopifyOrderForNoteAttrs(c.env);
-  const notifier = c.get("notifier");
-  const mailer = new ShopifyOrderMailSender(c.env, order);
-
-  order.setOrder(await c.req.json<ShopifyOrderForNoteAttrs["order"]>());
-
-  c.set("label", `${c.get("topic")}: ${order.numericId}`);
+  const data = await c.req.json<ShopifyOrderForNoteAttrs["order"]>();
+  c.set("label", `${c.get("topic")}: ${data.id}`);
   console.log(c.get("label"));
 
-  // line_items/note_attributes及びDBからSKU情報を補完
-  await order.completeLineItem();
-  // note_attributes及びSKU情報から配送スケジュール情報を補完
-  await order.completeDeliverySchedule();
+  // MEMO: shopify上で、orderが生成された時点で複数のwebhookが同時に起動するためいくつかの対策を行っている
+  // - firstDelayでタイミングを遅らせる(20秒+キューのデフォルトの待ち秒数(最大10秒))ことで、他のwebhook終わってから処理を開始する
+  // - blockReRunで60秒間重複実行を防ぐことで、この処理で発生したupdateによるwebhookを無視する
+  // - payloadにidだけを渡して、タスク側で最新の情報を取得してから処理するようにする
+  await blockReRun(`CompleteOrder-${data.id}`, c.env.CACHE, async () => {
+    await c.env.KIRIBI.enqueue(
+      "CompleteOrder",
+      { orderId: data.id },
+      { maxRetries: 1, firstDelay: 20 },
+    );
+  });
 
-  // 配送スケージュールのメールを送信
-  if (order.shouldSendDeliveryScheduleNotification)
-    await blockReRun(`notifyDeliverySchedule-${order.numericId}`, c.env.CACHE, () => {
-      console.log(`send delivery schedule mail: ${order.completedDeliverySchedule.estimate}`);
-      return mailer.notifyDeliverySchedule(order.completedDeliverySchedule.estimate);
-    });
-
-  if (order.shouldUpdateNoteAttributes) {
-    // SKU情報が不足している場合にSlack通知
-    if (!order.isCompletedSku) notifier.appendNotConnectedSkuOrder(order, "notify-order");
-    console.log("update note attributes");
-    const res = await order.updateNoteAttributes().catch(notifier.appendErrorMessage);
-    if (res) await notifier.appendErrorResponse(res);
-  }
-
-  return c.json({ message: "update order" });
+  return c.json({ message: "enqueue CompleteOrder" });
 });
 
 export default app;

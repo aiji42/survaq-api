@@ -1,5 +1,4 @@
 import { MessageAttachment, SlackApp, SlackEdgeAppEnv } from "slack-cloudflare-workers";
-import { ShopifyOrder } from "./models/shopify/ShopifyOrder";
 import { ChatPostMessageRequest } from "slack-web-api-client/dist/client/request";
 
 const CHANNEL = "notify-test";
@@ -45,44 +44,6 @@ export class SlackNotifier {
           {
             title: "stack",
             value: e.stack ? codeBlock(e.stack) : "",
-          },
-        ],
-      },
-      channel,
-    );
-  }
-
-  // FIXME: リファクタ(ここだけ抽象度が低い)
-  public appendNotConnectedSkuOrder(order: ShopifyOrder, channel?: string) {
-    this.append(
-      {
-        title: `注文番号 ${order.code}`,
-        title_link: `https://survaq.myshopify.com/admin/orders/${order.numericId}`,
-        color: "warning",
-        pretext: "SKU情報の無い注文が処理されています。",
-        fields: [
-          {
-            title: "購入日時(UTC)",
-            value: order.createdAt.toISOString(),
-          },
-        ],
-      },
-      channel,
-    );
-  }
-
-  public async appendErrorResponse(res: Response, channel?: string) {
-    if (res.ok) return;
-
-    this.append(
-      {
-        title: `${res.statusText}: ${res.status}`,
-        color: "danger",
-        pretext: inlineCode(res.url),
-        fields: [
-          {
-            title: "response body",
-            value: codeBlock(await res.text()),
           },
         ],
       },
