@@ -1,7 +1,6 @@
 import { html } from "lit";
 import { Task } from "@lit/task";
 import { customElement, property } from "lit/decorators.js";
-import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { BaseLitElement } from "./BaseLitElement";
 import { ScheduleRoute } from "../routes/_apis/schedule";
 import { hc } from "hono/client";
