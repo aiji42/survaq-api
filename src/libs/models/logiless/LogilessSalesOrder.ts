@@ -53,7 +53,9 @@ export class LogilessSalesOrder extends LogilessClient {
     return this;
   }
 
-  get cancelable() {
+  get cancelable():
+    | { isCancelable: true; reason?: never }
+    | { isCancelable: false; reason: "Working" | "Pending" | "Canceled" | "Shipped" } {
     if (this.deliveryStatus === "WaitingForShipment") return { isCancelable: true };
 
     if (this.deliveryStatus === "Working") return { isCancelable: false, reason: "Working" };

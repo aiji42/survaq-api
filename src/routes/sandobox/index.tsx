@@ -25,6 +25,14 @@ app.get("/delivery-schedules/:id", (c) => {
   );
 });
 
+app.get("/orders/cancel", (c) => {
+  return c.html(
+    <Layout isDev={!!c.env.DEV}>
+      <survaq-order-cancel orderId={5946083901645} />
+    </Layout>,
+  );
+});
+
 app.get("/orders/schedule", (c) => {
   const id = c.req.param("id");
   return c.html(
@@ -39,6 +47,15 @@ app.get("/orders/:id/schedule", (c) => {
   return c.html(
     <Layout isDev={!!c.env.DEV}>
       <survaq-delivery-schedule-order orderId={id} />
+    </Layout>,
+  );
+});
+
+app.get("/orders/:id/cancel", (c) => {
+  const id = c.req.param("id");
+  return c.html(
+    <Layout isDev={!!c.env.DEV}>
+      <survaq-order-cancel orderId={id} />
     </Layout>,
   );
 });
