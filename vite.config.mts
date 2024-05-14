@@ -15,4 +15,14 @@ export default defineConfig({
     },
     outDir: './assets/static',
   },
+  server: {
+    proxy: {
+      '^/sandbox/.*': 'http://localhost:8787',
+      '^/products/.*': 'http://localhost:8787',
+      '^/cancellation/.*': 'http://localhost:8787',
+      '^/logiless/.*': 'http://localhost:8787',
+      '^/schedule/.*': 'http://localhost:8787',
+      '^/webhook/.*': 'http://localhost:8787',
+    },
+  },
 });

@@ -15,10 +15,12 @@ class SurvaqDeliverySchedule extends BaseLitElement {
     task: async ([productId, delayedOnly], { signal }) => {
       if (!productId) throw new Error("productIdを指定してください。");
 
-      // TODO: 本番と開発と分けたい
-      const url = new URL(
-        `https://api.survaq.com/products/${productId}/delivery`,
-      );
+      const url = new URL(`https://api.survaq.com/products/${productId}/delivery`);
+      if (import.meta.env.DEV) {
+        url.protocol = "http:";
+        url.hostname = "localhost";
+        url.port = "8787";
+      }
       url.searchParams.append("filter", String(delayedOnly));
 
       const response = await fetch(url, { signal });
@@ -27,9 +29,7 @@ class SurvaqDeliverySchedule extends BaseLitElement {
         throw new Error("商品が存在しません。");
       }
       if (!response.ok) {
-        throw new Error(
-          `想定しないエラーが発生しました。status: ${response.status}`,
-        );
+        throw new Error(`想定しないエラーが発生しました。status: ${response.status}`);
       }
       return response.json() as Promise<DeliveryRouteResponse>;
     },
@@ -73,17 +73,13 @@ class SurvaqDeliverySchedule extends BaseLitElement {
                       class="p-1 text-center font-bold text-slate-700 border-y border-neutral-400 pt-1 pb-2"
                     >
                       <p class="text-2xl text-red-500 m-0">△</p>
-                      <p class="text-xs leading-none">
-                        ${sku.schedule.text.slice(5)}発送予定
-                      </p>
+                      <p class="text-xs leading-none">${sku.schedule.text.slice(5)}発送予定</p>
                     </td>
                   </tr>`,
               )}
             </tbody>
           </table>
-          <p class="my-1 text-center text-xs text-slate-700">
-            ◎：在庫あり｜△：残りわずか｜×：完売
-          </p>
+          <p class="my-1 text-center text-xs text-slate-700">◎：在庫あり｜△：残りわずか｜×：完売</p>
         </div>`;
       },
       error: (e) => html`<p>${e}</p>`,

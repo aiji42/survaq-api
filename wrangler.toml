@@ -11,10 +11,6 @@ id = "e45d1964fa5549a484bf4b3855a46a90"
 binding = 'CMS_BUCKETS'
 bucket_name = 'directus'
 
-[build]
-command = "npm run build:wc"
-watch_dir = "./src/web-components"
-
 [site]
 bucket = "./assets"
 
