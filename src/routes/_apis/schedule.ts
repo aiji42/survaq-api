@@ -2,39 +2,43 @@ import { Hono } from "hono";
 import { Bindings } from "../../../bindings";
 import { ShopifyOrderDeliverySchedule } from "../../libs/models/shopify/ShopifyOrderDeliverySchedule";
 import { SlackNotifier } from "../../libs/slack";
+import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
+import { HTTPException } from "hono/http-exception";
 
 type Env = { Bindings: Bindings; Variables: { notifier: SlackNotifier; label: string } };
 
 const app = new Hono<Env>();
 
-app.use("*", async (c, next) => {
-  const notifier = new SlackNotifier(c.env);
-  c.set("label", c.req.url);
-  c.set("notifier", notifier);
+const route = app.get(
+  "/:id",
+  zValidator(
+    "param",
+    z.object({
+      id: z.string(),
+    }),
+  ),
+  async (c) => {
+    const id = c.req.param("id");
+    c.set("label", `Schedule API for Shopify orderId: ${id}`);
 
-  await next();
+    // TODO: このAPIはレスポンスが遅いので、キャッシュしてもよいかもしれない
 
-  c.executionCtx.waitUntil(notifier.notify(c.get("label")));
-});
+    const order = new ShopifyOrderDeliverySchedule(c.env);
+    await order.setOrderById(id, false);
+    if (!order.isOrderSet) throw new HTTPException(404);
 
-app.get("/:id", async (c) => {
-  const id = c.req.param("id");
-  c.set("label", `Schedule API for Shopify orderId: ${id}`);
+    try {
+      const res = await order.getSchedule();
+      if (res) return c.json(res);
+    } catch (e) {
+      c.get("notifier").appendErrorMessage(e);
+    }
 
-  // TODO: このAPIはレスポンスが遅いので、キャッシュしてもよいかもしれない
+    throw new HTTPException(404);
+  },
+);
 
-  const order = new ShopifyOrderDeliverySchedule(c.env);
-  await order.setOrderById(id, false);
-  if (!order.isOrderSet) return c.notFound();
-
-  try {
-    const res = await order.getSchedule();
-    return res ? c.json(res) : c.notFound();
-  } catch (e) {
-    c.get("notifier").appendErrorMessage(e);
-  }
-
-  return c.notFound();
-});
+export type ScheduleRoute = typeof route;
 
 export default app;
