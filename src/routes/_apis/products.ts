@@ -1,9 +1,12 @@
 import { Hono } from "hono";
-import { earliest, Locale, makeSchedule, Schedule } from "../../libs/makeSchedule";
+import { earliest, Locale, makeSchedule } from "../../libs/makeSchedule";
 import { makeVariants } from "../../libs/makeVariants";
-import { makeSKUsForDelivery, SKUsForDelivery } from "../../libs/makeSKUsForDelivery";
+import { makeSKUsForDelivery } from "../../libs/makeSKUsForDelivery";
 import { Bindings } from "../../../bindings";
 import { DB } from "../../libs/db";
+import { HTTPException } from "hono/http-exception";
+import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
 
 type Variables = {
   locale: Locale;
@@ -43,27 +46,32 @@ app.get("/pages", async (c) => {
   return c.json(data);
 });
 
-export type DeliveryRouteResponse = {
-  current: Schedule<boolean>;
-  skus: SKUsForDelivery;
-};
+const productDeliveryRoute = app.get(
+  "/:id/delivery",
+  zValidator(
+    "query",
+    z.object({
+      filter: z.string().optional(),
+    }),
+  ),
+  async (c) => {
+    const db = new DB(c.env);
+    const filterDelaying = c.req.valid("query")?.filter !== "false";
 
-app.get("/:id/delivery", async (c) => {
-  const db = new DB(c.env);
+    const { product: data, skus: skusData } = await db.getProductWithSKUs(c.req.param("id"));
 
-  const { product: data, skus: skusData } = await db.getProductWithSKUs(c.req.param("id"));
+    const current = makeSchedule(null);
 
-  const current = makeSchedule(null);
+    if (!data) throw new HTTPException(404);
 
-  if (!data) return c.json({ current, skus: [] } satisfies DeliveryRouteResponse, 404);
+    const variants = await makeVariants(data, skusData, c.get("locale"));
+    const skus = makeSKUsForDelivery(variants, filterDelaying);
 
-  const variants = await makeVariants(data, skusData, c.get("locale"));
+    return c.json({ current, skus });
+  },
+);
 
-  const filterDelaying = c.req.query("filter") !== "false";
-  const skus = makeSKUsForDelivery(variants, filterDelaying);
-
-  return c.json({ current, skus } satisfies DeliveryRouteResponse);
-});
+export type ProductDeliveryRoute = typeof productDeliveryRoute;
 
 app.get("/:id", async (c) => {
   const db = new DB(c.env);
