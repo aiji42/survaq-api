@@ -58,7 +58,7 @@ class SurvaqOrderCancel extends BaseLitElement {
         }
         return html`<div class="border rounded-md w-full p-4 text-gray-800 leading-loose my-3">
           <details class="[&_svg]:open:-rotate-180">
-            <summary class="text-lg cursor-pointer list-none flex justify-between items-center">
+            <summary class="text-lg cursor-pointer flex justify-between items-center">
               キャンセルについて
               <div>
                 <!-- notice here, we added our own triangle/arrow svg -->
