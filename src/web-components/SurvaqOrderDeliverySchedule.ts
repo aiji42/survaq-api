@@ -40,7 +40,7 @@ class SurvaqDeliverySchedule extends BaseLitElement {
           <div class="text-lg">発送予定日</div>
           <div>${schedule.text}(${schedule.subText})</div>
           <div class="text-xs text-gray-700">
-            商品の発送が完了いたしましたら、配送業者の追跡番号を含む別のメールでご連絡差し上げます。
+            商品の発送が完了いたしましたら、配送業者の追跡番号をメールでご連絡差し上げます。
           </div>
           <div class="text-xs text-gray-700">
             予定日は生産状況、海運状況、通関状況等により前後する可能性がございます。予めご了承くださいませ。
