@@ -1,14 +1,13 @@
 import { html } from "lit";
 import { Task } from "@lit/task";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, state, queryAssignedNodes } from "lit/decorators.js";
 import { BaseLitElement } from "./BaseLitElement";
 import { CancellationRoute } from "../routes/_apis/cancellation";
 import { hc } from "hono/client";
 
 const initialFormState = {
-  reason: { isValid: true, error: "" },
   submitting: false,
-  requested: false,
+  completed: false,
   error: "",
 };
 
@@ -104,34 +103,27 @@ class SurvaqOrderCancel extends BaseLitElement {
                     class="w-full border border-gray-300 rounded-md px-2 leading-normal"
                     rows="10"
                     @input=${this.onChanceReason}
-                    aria-invalid=${this.formState.reason.isValid ? "false" : "true"}
-                    ?disabled=${this.submitting || this.requested}
-                    aria-describedby="reason-error"
+                    ?disabled=${this.submitting || this.completed}
                   ></textarea>
-                  <div class="text-red-600 text-sm text-center" id="reason-error">
-                    ${this.formState.reason.error}
-                  </div>
                 </div>
               </fieldset>
               <div class="flex flex-col gap-1">
                 <button
-                  class=${"mx-auto py-2 px-4 text-lg block rounded-md text-white disabled:cursor-not-allowed " +
-                  (this.requested
-                    ? "bg-transparent border border-rose-700 text-rose-700"
+                  ?disabled=${this.submitting || this.completed}
+                  class=${"mx-auto py-2 px-4 text-lg block rounded-md disabled:cursor-not-allowed " +
+                  (this.completed
+                    ? "bg-transparent border border-rose-700 text-rose-700 "
                     : "bg-rose-700 text-white ") +
                   (this.submitting ? "animate-pulse " : "")}
                   type="submit"
-                  ?disabled=${this.submitting || this.requested}
                 >
                   ${this.submitting
                     ? "キャンセルリクエスト送信中"
-                    : this.requested
+                    : this.completed
                       ? "キャンセルリクエスト送信済"
                       : "注文をキャンセルする"}
                 </button>
-                <div class="text-red-600 text-sm text-center" id="form-error">
-                  ${this.formState.error}
-                </div>
+                <div class="text-red-600 text-sm text-center" id="form-error">${this.error}</div>
               </div>
             </form>
           </details>
@@ -140,59 +132,53 @@ class SurvaqOrderCancel extends BaseLitElement {
     });
   }
 
-  private onChanceReason() {
-    this.formState.reason.isValid = true;
-    this.formState.reason.error = "";
-    this.requestUpdate();
+  private onChanceReason(e: Event) {
+    const target = e.target as HTMLTextAreaElement;
+    target.setCustomValidity("");
+    target.reportValidity();
   }
 
   private async submit(e: Event) {
     e.preventDefault();
-    this.resetFormState();
+    this.error = "";
 
     const form = e.target as HTMLFormElement;
-    const values = this.validate(form);
+    this.validate(form);
 
-    if (this.isValid) await this.postCancelRequest(values);
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries()) as { reason: string };
+
+    if (form.checkValidity()) await this.postCancelRequest(data);
   }
 
   private validate(form: HTMLFormElement) {
     const reason = form.elements.namedItem("reason") as HTMLTextAreaElement;
-    if (reason.value.trim().length < 20) {
-      this.formState.reason.isValid = false;
-      this.formState.reason.error = "20文字以上で入力してください。";
+    // スペース(全角を含む)や改行などを除いて文字数をカウント
+    const length = reason.value.replace(/\s/g, "").length;
+    if (length < 20) {
+      reason.setCustomValidity("20文字以上で入力してください。");
     } else if (reason.value.trim().length > 200) {
-      this.formState.reason.isValid = false;
-      this.formState.reason.error = "200文字以内で入力してください。";
+      reason.setCustomValidity("200文字以内で入力してください。");
+    } else {
+      reason.setCustomValidity("");
     }
-    this.requestUpdate();
-
-    return { reason: reason.value };
-  }
-
-  private get isValid() {
-    return this.formState.reason.isValid;
+    reason.reportValidity();
   }
 
   private async postCancelRequest({ reason }: { reason: string }) {
     this.submitting = true;
+
     try {
+      console.log(reason);
       await new Promise((resolve) => setTimeout(resolve, 2000));
       // たまにエラー発生させる
       if (Math.random() > 0.5) throw new Error("");
-      this.formState.requested = true;
+      this.completed = true;
     } catch (e) {
-      this.formState.error = "エラーが発生しました。";
-    } finally {
-      this.submitting = false;
+      this.error = "エラーが発生しました。";
     }
 
-    this.requestUpdate();
-  }
-
-  private resetFormState() {
-    this.formState = Object.assign({}, initialFormState);
-    this.requestUpdate();
+    this.submitting = false;
   }
 
   private set submitting(value: boolean) {
@@ -204,7 +190,21 @@ class SurvaqOrderCancel extends BaseLitElement {
     return this.formState.submitting;
   }
 
-  private get requested() {
-    return this.formState.requested;
+  private set completed(value: boolean) {
+    this.formState.completed = value;
+    this.requestUpdate();
+  }
+
+  private get completed() {
+    return this.formState.completed;
+  }
+
+  private set error(value: string) {
+    this.formState.error = value;
+    this.requestUpdate();
+  }
+
+  private get error() {
+    return this.formState.error;
   }
 }
