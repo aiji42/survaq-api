@@ -34,9 +34,8 @@ class SurvaqDeliverySchedule extends BaseLitElement {
       error: () => html``,
       complete: (schedule) => {
         // TODO: English
-        // TODO: [確認] キャンセルリクエストを送ったらスケジュールを表示してはいけないが、キャンセルリクエストを送った時点で非表示になるか？
         if (!schedule) return html``;
-        return html`<div class="border rounded-md w-full p-4 text-gray-800 leading-loose my-3">
+        return html`<div class="w-full text-gray-800 leading-loose">
           <div class="text-lg">発送予定日</div>
           <div>${schedule.text}(${schedule.subText})</div>
           <div class="text-xs text-gray-700">

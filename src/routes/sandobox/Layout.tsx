@@ -13,10 +13,13 @@ export const Layout: FC<{ lang?: "ja" | "en"; isDev?: boolean; children: Child }
         {!isDev ? (
           <script type="module" src="/static/web-components.js" />
         ) : (
-          <script type="module" src="/src/web-components/index.ts" />
+          <>
+            <script type="module" src="/src/web-components/index.ts" />
+            <link type="text/css" rel="stylesheet" href="/src/web-components/globals.css" />
+          </>
         )}
       </head>
-      <body>{children}</body>
+      <body className="p-4">{children}</body>
     </html>
   );
 };

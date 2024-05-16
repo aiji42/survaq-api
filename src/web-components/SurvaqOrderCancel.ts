@@ -44,19 +44,30 @@ class SurvaqOrderCancel extends BaseLitElement {
         // TODO: English
         if (!status) return html``;
         if (!status.isCancelable) {
-          if (["Closed", "Canceled", "AlreadyRequested"].includes(status.reason)) {
-            return html`<div class="border rounded-md w-full p-4 text-gray-800 leading-loose my-3">
-              <div class="text-lg">
-                ${status.reason === "AlreadyRequested"
-                  ? "キャンセル対応中です。しばらくお待ちください。"
-                  : "こちらの注文はキャンセルされました。"}
-              </div>
+          if (status.reason === "Closed") {
+            return html`<div class="text-lg w-full text-gray-800 leading-loose">
+              この注文はクローズされました。
             </div>`;
           }
-          // Working, Pending, Shipped
+          if (status.reason === "Canceled") {
+            return html`<div class="text-lg w-full text-gray-800 leading-loose">
+              この注文はキャンセルされました。
+            </div>`;
+          }
+          if (status.reason === "AlreadyRequested") {
+            return html`<div class="text-lg w-full text-gray-800 leading-loose">
+              キャンセル対応中です。しばらくお待ちください。
+            </div>`;
+          }
+          if (["Working", "Shipped"].includes(status.reason)) {
+            return html`<div class="text-lg w-full text-gray-800 leading-loose">
+              出荷作業中あるいは出荷済みのため、キャンセルできません。
+            </div>`;
+          }
+          // Shipped
           return html``;
         }
-        return html`<div class="border rounded-md w-full p-4 text-gray-800 leading-loose my-3">
+        return html`<div class="w-full text-gray-800 leading-loose">
           <details class="[&_svg]:open:-rotate-180">
             <summary class="text-lg cursor-pointer flex justify-between items-center">
               キャンセルについて

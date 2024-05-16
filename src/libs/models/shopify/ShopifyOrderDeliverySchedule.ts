@@ -63,6 +63,7 @@ export class ShopifyOrderDeliverySchedule extends ShopifyOrder {
   }
 
   async getSchedule() {
+    // キャンセル・クローズ・出荷済みの場合は表示しない
     if (!this.isWaitingForShipment) return null;
 
     const waitingQuantityBySku = await this.getWaitingQuantitiesBySku();
