@@ -61,7 +61,6 @@ class SurvaqOrderCancel extends BaseLitElement {
             <summary class="text-lg cursor-pointer flex justify-between items-center">
               キャンセルについて
               <div>
-                <!-- notice here, we added our own triangle/arrow svg -->
                 <svg
                   class="rotate-0 transform text-vela-cyan"
                   fill="none"
@@ -78,38 +77,50 @@ class SurvaqOrderCancel extends BaseLitElement {
               </div>
             </summary>
             <div>ここに色々注意を書くよ</div>
-            <form class="flex gap-4 flex-col" @submit=${this.submit} aria-describedby="form-error">
+            <form
+              class="flex gap-4 flex-col m-0"
+              @submit=${this.submit}
+              aria-describedby="form-error"
+            >
               <fieldset>
                 <legend>
                   キャンセル理由
-                  <span class="text-sm text-gray-700">(x文字以上で入力してください)</span>
+                  <span class="text-sm text-gray-700">(20文字以上で入力してください)</span>
                 </legend>
-                <textarea
-                  name="reason"
-                  class="w-full border border-gray-300 rounded-md px-2 leading-normal"
-                  rows="10"
-                  @input=${this.onChanceReason}
-                  aria-invalid=${this.formState.reason.isValid ? "false" : "true"}
-                  ?disabled=${this.submitting || this.requested}
-                  aria-describedby="reason-error"
-                ></textarea>
-                <div class="text-red-600 text-sm" id="reason-error">
-                  ${this.formState.reason.error}
+                <div class="flex flex-col gap-1">
+                  <textarea
+                    name="reason"
+                    class="w-full border border-gray-300 rounded-md px-2 leading-normal"
+                    rows="10"
+                    @input=${this.onChanceReason}
+                    aria-invalid=${this.formState.reason.isValid ? "false" : "true"}
+                    ?disabled=${this.submitting || this.requested}
+                    aria-describedby="reason-error"
+                  ></textarea>
+                  <div class="text-red-600 text-sm text-center" id="reason-error">
+                    ${this.formState.reason.error}
+                  </div>
                 </div>
               </fieldset>
-              <button
-                class="mx-auto py-2 px-4 text-lg block rounded-md bg-rose-700 text-white font-bold disabled:bg-gray-300 disabled:text-gray-600 disabled:cursor-not-allowed"
-                type="submit"
-                ?disabled=${this.submitting || this.requested}
-              >
-                ${this.submitting
-                  ? "キャンセルリクエスト送信中"
-                  : this.requested
-                    ? "キャンセルリクエストを受け付けました"
-                    : "注文をキャンセルする"}
-              </button>
-              <div class="text-red-600 text-sm block mx-auto" id="form-error">
-                ${this.formState.error}
+              <div class="flex flex-col gap-1">
+                <button
+                  class=${"mx-auto py-2 px-4 text-lg block rounded-md text-white disabled:cursor-not-allowed " +
+                  (this.requested
+                    ? "bg-transparent border border-rose-700 text-rose-700"
+                    : "bg-rose-700 text-white ") +
+                  (this.submitting ? "animate-pulse " : "")}
+                  type="submit"
+                  ?disabled=${this.submitting || this.requested}
+                >
+                  ${this.submitting
+                    ? "キャンセルリクエスト送信中"
+                    : this.requested
+                      ? "キャンセルリクエスト送信済"
+                      : "注文をキャンセルする"}
+                </button>
+                <div class="text-red-600 text-sm text-center" id="form-error">
+                  ${this.formState.error}
+                </div>
               </div>
             </form>
           </details>
@@ -136,9 +147,9 @@ class SurvaqOrderCancel extends BaseLitElement {
 
   private validate(form: HTMLFormElement) {
     const reason = form.elements.namedItem("reason") as HTMLTextAreaElement;
-    if (reason.value.trim().length < 50) {
+    if (reason.value.trim().length < 20) {
       this.formState.reason.isValid = false;
-      this.formState.reason.error = "50文字以上で入力してください。";
+      this.formState.reason.error = "20文字以上で入力してください。";
     } else if (reason.value.trim().length > 200) {
       this.formState.reason.isValid = false;
       this.formState.reason.error = "200文字以内で入力してください。";
@@ -155,7 +166,7 @@ class SurvaqOrderCancel extends BaseLitElement {
   private async postCancelRequest({ reason }: { reason: string }) {
     this.submitting = true;
     try {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       // たまにエラー発生させる
       if (Math.random() > 0.5) throw new Error("");
       this.formState.requested = true;
