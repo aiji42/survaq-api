@@ -118,9 +118,9 @@ class SurvaqOrderCancel extends BaseLitElement {
                   type="submit"
                 >
                   ${this.submitting
-                    ? "キャンセルリクエスト送信中"
+                    ? "キャンセル申請中"
                     : this.completed
-                      ? "キャンセルリクエスト送信済"
+                      ? "キャンセル申請済"
                       : "注文をキャンセルする"}
                 </button>
                 <div class="text-red-600 text-sm text-center" id="form-error">${this.error}</div>
