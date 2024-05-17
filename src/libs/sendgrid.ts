@@ -228,7 +228,7 @@ export class ShopifyOrderMailSender extends MailSender {
 
     return this.sendMailByTemplate({
       to: { email: this.customerEmail },
-      // FIXME: BCC
+      bcc: { email: "request@survaq.com" },
       from: this.support,
       templateId: templates[this.locale],
       templateData: {
@@ -254,7 +254,7 @@ export class ShopifyOrderMailSender extends MailSender {
 
     return this.sendMailByTemplate({
       to: { email: this.customerEmail },
-      // FIXME: BCC
+      bcc: { email: "request@survaq.com" },
       from: this.support,
       templateId,
       templateData: {

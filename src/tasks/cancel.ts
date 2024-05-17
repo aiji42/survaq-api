@@ -5,6 +5,7 @@ import { ShopifyOrderForCancel } from "../libs/models/shopify/ShopifyOrderForCan
 import { LogilessSalesOrder } from "../libs/models/logiless/LogilessSalesOrder";
 import { MailSender, ShopifyOrderMailSender } from "../libs/sendgrid";
 import { Logger } from "../libs/logger";
+import { SlackNotifier } from "../libs/slack";
 
 export class Cancel extends KiribiPerformer<{ requestId: number }, void, Bindings> {
   db: DB;
@@ -12,6 +13,7 @@ export class Cancel extends KiribiPerformer<{ requestId: number }, void, Binding
   logilessOrder: LogilessSalesOrder;
   mailSender: MailSender;
   shopifyOrderMailSender: ShopifyOrderMailSender;
+  slack: SlackNotifier;
   constructor(ctx: ExecutionContext, env: Bindings) {
     super(ctx, env);
     this.db = new DB(env);
@@ -19,6 +21,7 @@ export class Cancel extends KiribiPerformer<{ requestId: number }, void, Binding
     this.logilessOrder = new LogilessSalesOrder(env);
     this.mailSender = new MailSender(env);
     this.shopifyOrderMailSender = new ShopifyOrderMailSender(env, this.shopifyOrder);
+    this.slack = new SlackNotifier(env);
   }
 
   async perform({ requestId }: { requestId: number }) {
@@ -66,19 +69,25 @@ export class Cancel extends KiribiPerformer<{ requestId: number }, void, Binding
         log.push(e.message, "error");
         e.stack && log.push(e.stack, "error");
       }
+      this.slack.appendErrorMessage(e);
 
       await this.mailSender
         .sendMail({
-          to: { email: "uejima.aiji@survaq.com" }, // FIXME
-          from: { email: "support@survaq.com", name: "サバキューストアサポート" }, // FIXME: system@にする(Sendgrid側でsenderの設定が必要)
-          subject: "キャンセルリクエスト処理失敗", // FIXME
-          contentBody: "キャンセルが失敗しました。フォローアップしてください。", // FIXME: レコード(cms)のURL、Shopify・Logiless管理画面URLを含める
+          to: { email: "support@survaq.com" },
+          from: { email: "support@survaq.com", name: "system" },
+          subject: "【サバキューストア】ご注文商品　キャンセル未処理の件",
+          contentBody: cancelFailedFollowUpMailBody(this.shopifyOrder, log),
           bypassListManagement: true,
         })
         .catch((e) => {
           log.push(`Failed to send mail: ${e.message}`, "error");
           e.stack && log.push(e.stack, "error");
         });
+
+      await this.slack.notify(`Failed to cancel ${this.shopifyOrder.code}`).catch((e) => {
+        log.push(`Failed to send mail: ${e.message}`, "error");
+        e.stack && log.push(e.stack, "error");
+      });
 
       success = false;
     }
@@ -93,3 +102,17 @@ export class Cancel extends KiribiPerformer<{ requestId: number }, void, Binding
     if (!success) throw new Error(`Failed to cancel. See: CancelRequest#${requestId}`);
   }
 }
+
+const cancelFailedFollowUpMailBody = (order: ShopifyOrderForCancel, log: Logger) => `担当者の方
+
+下記ご注文番号のキャンセル申請について、
+自動処理が失敗したため手動での対応をお願いします。
+
+【注文番号】
+${order.code}
+
+【Shopify管理画面URL】
+${order.adminUrl}
+
+【エラーログ】
+${log.toString()}`;

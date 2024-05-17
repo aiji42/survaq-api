@@ -114,6 +114,10 @@ export class ShopifyOrder extends ShopifyClient {
       "estimate" in this.savedDeliveryScheduleAttrs && !!this.savedDeliveryScheduleAttrs.estimate
     );
   }
+
+  get adminUrl() {
+    return `https://admin.shopify.com/store/survaq/orders/${this.numericId}`;
+  }
 }
 
 export type LineItemAttr = {
