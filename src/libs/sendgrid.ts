@@ -159,11 +159,13 @@ type NotifyDeliveryScheduleDynamicData = {
 type NotifyCancelRequestReceivedDynamicData = {
   customerName: string;
   orderId: string;
+  lineItems: Array<{ title: string }>;
 };
 
 type NotifyCancelCompletedMailDynamicData = {
   customerName: string;
   orderId: string;
+  lineItems: Array<{ title: string }>;
 };
 
 export class ShopifyOrderMailSender extends MailSender {
@@ -234,6 +236,7 @@ export class ShopifyOrderMailSender extends MailSender {
       templateData: {
         customerName: this.customerName,
         orderId: this.order.code,
+        lineItems: this.order.lineItems.map(({ name }) => ({ title: name })),
       } satisfies NotifyCancelRequestReceivedDynamicData,
       bypassListManagement: true,
     });
@@ -260,6 +263,7 @@ export class ShopifyOrderMailSender extends MailSender {
       templateData: {
         customerName: this.customerName,
         orderId: this.order.code,
+        lineItems: this.order.lineItems.map(({ name }) => ({ title: name })),
       } satisfies NotifyCancelCompletedMailDynamicData,
       bypassListManagement: true,
     });
