@@ -169,10 +169,16 @@ class SurvaqOrderCancel extends BaseLitElement {
     this.submitting = true;
 
     try {
-      console.log(reason);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      // たまにエラー発生させる
-      if (Math.random() > 0.5) throw new Error("");
+      const baseUrl = new URL("https://api.survaq.com/cancellation/");
+      if (import.meta.env.DEV) {
+        baseUrl.protocol = "http:";
+        baseUrl.hostname = "localhost";
+        baseUrl.port = "8787";
+      }
+      const client = hc<CancellationRoute>(baseUrl.toString());
+      if (!this.orderId) throw new Error("orderIdを指定してください。");
+      await client.cancel.$post({ json: { id: String(this.orderId), reason } });
+
       this.completed = true;
     } catch (e) {
       this.error = "エラーが発生しました。";
