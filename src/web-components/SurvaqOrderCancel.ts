@@ -1,6 +1,7 @@
 import { html } from "lit";
 import { Task } from "@lit/task";
-import { customElement, property, state, queryAssignedNodes } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
+import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { BaseLitElement } from "./BaseLitElement";
 import { CancellationRoute } from "../routes/_apis/cancellation";
 import { hc } from "hono/client";
@@ -12,7 +13,7 @@ const initialFormState = {
 };
 
 const REASON_MAX_LENGTH = 200;
-const REASON_MIN_LENGTH = 20;
+const REASON_MIN_LENGTH = 10;
 
 @customElement("survaq-order-cancel")
 class SurvaqOrderCancel extends BaseLitElement {
@@ -88,48 +89,55 @@ class SurvaqOrderCancel extends BaseLitElement {
                 </svg>
               </div>
             </summary>
-            <div>ここに色々注意を書くよ</div>
-            <form
-              class="flex gap-4 flex-col m-0"
-              @submit=${this.submit}
-              aria-describedby="form-error"
-            >
-              <fieldset>
-                <legend>
-                  ${messages.reason[this.lang]}
-                  <span class="text-sm text-gray-700"
-                    >(${messages.validate.reason[this.lang](REASON_MIN_LENGTH)})</span
-                  >
-                </legend>
-                <div class="flex flex-col gap-1">
-                  <textarea
-                    name="reason"
-                    class="w-full border border-gray-300 rounded-md px-2 leading-normal"
-                    rows="10"
-                    @input=${this.onChanceReason}
-                    ?disabled=${this.submitting || this.completed}
-                  ></textarea>
-                </div>
-              </fieldset>
-              <div class="flex flex-col gap-1">
-                <button
-                  ?disabled=${this.submitting || this.completed}
-                  class=${"mx-auto py-2 px-4 text-lg block rounded-md disabled:cursor-not-allowed " +
-                  (this.completed
-                    ? "bg-transparent border border-rose-700 text-rose-700 "
-                    : "bg-rose-700 text-white ") +
-                  (this.submitting ? "animate-pulse " : "")}
-                  type="submit"
-                >
-                  ${this.submitting
-                    ? messages.button.submitting[this.lang]
-                    : this.completed
-                      ? messages.button.completed[this.lang]
-                      : messages.button.submit[this.lang]}
-                </button>
-                <div class="text-red-600 text-sm text-center" id="form-error">${this.error}</div>
+            <div class="flex flex-col gap-4 mt-2">
+              <div class="leading-normal text-sm">
+                ${messages.caution[this.lang].map(
+                  (message) => html`<p class="mb-1">${unsafeHTML(message)}</p>`,
+                )}
               </div>
-            </form>
+              <form
+                class="flex gap-4 flex-col m-0"
+                @submit=${this.submit}
+                aria-describedby="form-error"
+              >
+                <fieldset class="gap-1 flex flex-col">
+                  <legend>
+                    ${messages.reason[this.lang]}
+                    <span class="text-sm text-gray-700">
+                      (${messages.validate.reason[this.lang](REASON_MIN_LENGTH)})
+                    </span>
+                  </legend>
+                  <p class="text-xs text-gray-700">${messages.reasonNote[this.lang]}</p>
+                  <div class="flex flex-col gap-1">
+                    <textarea
+                      name="reason"
+                      class="w-full border border-gray-300 rounded-md px-2 leading-normal"
+                      rows="5"
+                      @input=${this.onChanceReason}
+                      ?disabled=${this.submitting || this.completed}
+                    ></textarea>
+                  </div>
+                </fieldset>
+                <div class="flex flex-col gap-1">
+                  <button
+                    ?disabled=${this.submitting || this.completed}
+                    class=${"mx-auto py-2 px-4 text-lg block rounded-md disabled:cursor-not-allowed " +
+                    (this.completed
+                      ? "bg-transparent border border-rose-700 text-rose-700 "
+                      : "bg-rose-700 text-white ") +
+                    (this.submitting ? "animate-pulse " : "")}
+                    type="submit"
+                  >
+                    ${this.submitting
+                      ? messages.button.submitting[this.lang]
+                      : this.completed
+                        ? messages.button.completed[this.lang]
+                        : messages.button.submit[this.lang]}
+                  </button>
+                  <div class="text-red-600 text-sm text-center" id="form-error">${this.error}</div>
+                </div>
+              </form>
+            </div>
           </details>
         </div>`;
       },
@@ -244,9 +252,23 @@ const messages = {
     ja: "キャンセルについて",
     en: "About cancellation",
   },
+  caution: {
+    ja: [
+      "※申請完了後にお送りするメールを必ずご確認ください。ご返信が必要な場合もございます。",
+      '※ご注文内の一部商品キャンセルをご希望の場合は、以下へお問い合わせください。<br />問い合わせ先：<a href="mailto:support@survaq.com" class="text-blue-500">support@survaq.com</a>',
+    ],
+    en: [
+      "* Please be sure to check the email we will send you after the application is completed. A reply may be required.",
+      '* If you wish to cancel some of the items in your order, please contact us below.<br />Contact: <a href="mailto:support@survaq.com" class="text-blue-500">support@survaq.com</a>',
+    ],
+  },
   reason: {
     ja: "キャンセル理由",
     en: "Reason for cancellation",
+  },
+  reasonNote: {
+    ja: "利用規約に則りご対応いたしますので、理由内容によってはキャンセルできない場合もございます。予めご了承ください。",
+    en: "We will respond in accordance with the terms of use, so please note that you may not be able to cancel depending on the reason.",
   },
   button: {
     submitting: {
@@ -258,8 +280,8 @@ const messages = {
       en: "Cancel request completed",
     },
     submit: {
-      ja: "注文をキャンセルする",
-      en: "Cancel order",
+      ja: "キャンセルを申請する",
+      en: "Apply for cancellation",
     },
   },
   validate: {
