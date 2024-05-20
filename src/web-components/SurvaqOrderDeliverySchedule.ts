@@ -28,24 +28,38 @@ class SurvaqDeliverySchedule extends BaseLitElement {
     args: () => [this.orderId] as const,
   });
 
+  get lang() {
+    return document.documentElement.lang === "ja" ? "ja" : "en";
+  }
+
   render() {
     return this._orderDeliveryScheduleTask.render({
       pending: () => html``,
       error: () => html``,
       complete: (schedule) => {
-        // TODO: English
         if (!schedule) return html``;
         return html`<div class="w-full text-gray-800 leading-loose">
-          <div class="text-lg">発送予定日</div>
+          <div class="text-lg">${messages.title[this.lang]}</div>
           <div>${schedule.text}(${schedule.subText})</div>
-          <div class="text-xs text-gray-700">
-            商品の発送が完了いたしましたら、配送業者の追跡番号をメールでご連絡差し上げます。
-          </div>
-          <div class="text-xs text-gray-700">
-            予定日は生産状況、海運状況、通関状況等により前後する可能性がございます。予めご了承くださいませ。
-          </div>
+          <div class="text-xs text-gray-700">${messages.note[this.lang]}</div>
+          <div class="text-xs text-gray-700">${messages.caution[this.lang]}</div>
         </div>`;
       },
     });
   }
 }
+
+const messages = {
+  title: {
+    ja: "発送予定日",
+    en: "Delivery Schedule",
+  },
+  note: {
+    ja: "商品の発送が完了いたしましたら、配送業者の追跡番号をメールでご連絡差し上げます。",
+    en: "We will send you a tracking number by email when the product is shipped.",
+  },
+  caution: {
+    ja: "予定日は生産状況、海運状況、通関状況等により前後する可能性がございます。予めご了承くださいませ。",
+    en: "The scheduled date may vary depending on production status, shipping status, customs status, etc. Please note that.",
+  },
+};
