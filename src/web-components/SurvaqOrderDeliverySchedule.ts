@@ -29,7 +29,8 @@ class SurvaqDeliverySchedule extends BaseLitElement {
   });
 
   get lang() {
-    return document.documentElement.lang === "ja" ? "ja" : "en";
+    // lang="ja"もあればlang="ja-JP"もあるのでstartsWithで判定
+    return document.documentElement.lang.startsWith("ja") ? "ja" : "en";
   }
 
   render() {
