@@ -11,6 +11,9 @@ const initialFormState = {
   error: "",
 };
 
+const REASON_MAX_LENGTH = 200;
+const REASON_MIN_LENGTH = 20;
+
 @customElement("survaq-order-cancel")
 class SurvaqOrderCancel extends BaseLitElement {
   @property({ type: Number }) orderId?: number;
@@ -40,36 +43,35 @@ class SurvaqOrderCancel extends BaseLitElement {
       pending: () => html``,
       error: () => html``,
       complete: (status) => {
-        // TODO: English
         if (!status) return html``;
         if (!status.isCancelable) {
           if (status.reason === "Closed") {
             return html`<div class="text-lg w-full text-gray-800 leading-loose">
-              この注文はクローズされました。
+              ${messages.closed[this.lang]}
             </div>`;
           }
           if (status.reason === "Canceled") {
             return html`<div class="text-lg w-full text-gray-800 leading-loose">
-              この注文はキャンセルされました。
+              ${messages.cancelled[this.lang]}
             </div>`;
           }
           if (status.reason === "AlreadyRequested") {
             return html`<div class="text-lg w-full text-gray-800 leading-loose">
-              キャンセル対応中です。しばらくお待ちください。
+              ${messages.cancelProcessing[this.lang]}
             </div>`;
           }
           if (["Working", "Shipped"].includes(status.reason)) {
             return html`<div class="text-lg w-full text-gray-800 leading-loose">
-              出荷作業中あるいは出荷済みのため、キャンセルできません。
+              ${messages.working[this.lang]}
             </div>`;
           }
-          // Shipped
+          // Pending
           return html``;
         }
         return html`<div class="w-full text-gray-800 leading-loose">
           <details class="[&_svg]:open:-rotate-180">
             <summary class="text-lg cursor-pointer flex justify-between items-center">
-              キャンセルについて
+              ${messages.title[this.lang]}
               <div>
                 <svg
                   class="rotate-0 transform text-vela-cyan"
@@ -94,8 +96,10 @@ class SurvaqOrderCancel extends BaseLitElement {
             >
               <fieldset>
                 <legend>
-                  キャンセル理由
-                  <span class="text-sm text-gray-700">(20文字以上で入力してください)</span>
+                  ${messages.reason[this.lang]}
+                  <span class="text-sm text-gray-700"
+                    >(${messages.validate.reason[this.lang](REASON_MIN_LENGTH)})</span
+                  >
                 </legend>
                 <div class="flex flex-col gap-1">
                   <textarea
@@ -118,10 +122,10 @@ class SurvaqOrderCancel extends BaseLitElement {
                   type="submit"
                 >
                   ${this.submitting
-                    ? "キャンセル申請中"
+                    ? messages.button.submitting[this.lang]
                     : this.completed
-                      ? "キャンセル申請済"
-                      : "注文をキャンセルする"}
+                      ? messages.button.completed[this.lang]
+                      : messages.button.submit[this.lang]}
                 </button>
                 <div class="text-red-600 text-sm text-center" id="form-error">${this.error}</div>
               </div>
@@ -155,10 +159,10 @@ class SurvaqOrderCancel extends BaseLitElement {
     const reason = form.elements.namedItem("reason") as HTMLTextAreaElement;
     // スペース(全角を含む)や改行などを除いて文字数をカウント
     const length = reason.value.replace(/\s/g, "").length;
-    if (length < 20) {
-      reason.setCustomValidity("20文字以上で入力してください。");
-    } else if (reason.value.trim().length > 200) {
-      reason.setCustomValidity("200文字以内で入力してください。");
+    if (length < REASON_MIN_LENGTH) {
+      reason.setCustomValidity(messages.validate.reason[this.lang](REASON_MIN_LENGTH));
+    } else if (reason.value.trim().length > REASON_MAX_LENGTH) {
+      reason.setCustomValidity(messages.validate.maxLength[this.lang](REASON_MAX_LENGTH));
     } else {
       reason.setCustomValidity("");
     }
@@ -181,7 +185,7 @@ class SurvaqOrderCancel extends BaseLitElement {
 
       this.completed = true;
     } catch (e) {
-      this.error = "エラーが発生しました。";
+      this.error = messages.unknownError[this.lang];
     }
 
     this.submitting = false;
@@ -213,4 +217,63 @@ class SurvaqOrderCancel extends BaseLitElement {
   private get error() {
     return this.formState.error;
   }
+
+  get lang() {
+    return document.documentElement.lang === "ja" ? "ja" : "en";
+  }
 }
+
+const messages = {
+  closed: {
+    ja: "この注文はクローズされました。",
+    en: "This order has been closed.",
+  },
+  cancelled: {
+    ja: "この注文はキャンセルされました。",
+    en: "This order has been cancelled.",
+  },
+  cancelProcessing: {
+    ja: "キャンセル対応中です。しばらくお待ちください。",
+    en: "Cancellation is in progress. Please wait for a while.",
+  },
+  working: {
+    ja: "出荷作業中あるいは出荷済みです。",
+    en: "It is in the process of shipping or has already been shipped.",
+  },
+  title: {
+    ja: "キャンセルについて",
+    en: "About cancellation",
+  },
+  reason: {
+    ja: "キャンセル理由",
+    en: "Reason for cancellation",
+  },
+  button: {
+    submitting: {
+      ja: "キャンセル申請中",
+      en: "Cancel request in progress",
+    },
+    completed: {
+      ja: "キャンセル申請済",
+      en: "Cancel request completed",
+    },
+    submit: {
+      ja: "注文をキャンセルする",
+      en: "Cancel order",
+    },
+  },
+  validate: {
+    reason: {
+      ja: (len: number) => `${len}文字以上で入力してください。`,
+      en: (len: number) => `Please enter ${len} characters or more.`,
+    },
+    maxLength: {
+      ja: (len: number) => `${len}文字以内で入力してください。`,
+      en: (len: number) => `Please enter within ${len} characters.`,
+    },
+  },
+  unknownError: {
+    ja: "エラーが発生しました。",
+    en: "An error occurred.",
+  },
+};
