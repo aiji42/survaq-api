@@ -52,5 +52,10 @@ binding = "CompleteOrder"
 service = "kiribi-survaq-api"
 entrypoint = "CompleteOrder"
 
+[[services]]
+binding = "PurchaseMeasurementProtocol"
+service = "kiribi-survaq-api"
+entrypoint = "PurchaseMeasurementProtocol"
+
 [site]
 bucket = "./node_modules/kiribi/client"

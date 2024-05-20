@@ -13,6 +13,8 @@ export type Bindings = {
   LOGILESS_CLIENT_SECRET: string;
   LOGILESS_REDIRECT_URI: string;
   GCP_SERVICE_ACCOUNT: string;
+  MEASUREMENT_PROTOCOL_API_SECRET: string;
+  MEASUREMENT_PROTOCOL_MEASUREMENT_ID: string;
 
   // Kiribi
   KIRIBI_DB: D1Database;

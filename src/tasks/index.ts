@@ -11,12 +11,15 @@ import { CompleteOrder } from "./CompleteOrder";
 export { CompleteOrder } from "./CompleteOrder";
 import { TransactionMailSend } from "./TransactionMailSend";
 export { TransactionMailSend } from "./TransactionMailSend";
+import { PurchaseMeasurementProtocol } from "./PurchaseMeasurementProtocol";
+export { PurchaseMeasurementProtocol } from "./PurchaseMeasurementProtocol";
 
 type Performers = {
   Cancel: Cancel;
   ProductSync: ProductSync;
   CompleteOrder: CompleteOrder;
   TransactionMailSend: TransactionMailSend;
+  PurchaseMeasurementProtocol: PurchaseMeasurementProtocol;
 };
 type BindingKeys = keyof Performers;
 

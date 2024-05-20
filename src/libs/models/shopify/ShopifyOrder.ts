@@ -61,6 +61,24 @@ export class ShopifyOrder extends ShopifyClient {
     return this.order.line_items;
   }
 
+  get currency() {
+    return this.order.currency;
+  }
+
+  // 割引は加味、送料・税金は除く
+  get subTotalPrice() {
+    return Number(this.order.subtotal_price);
+  }
+
+  // 割引・送料・税金を含む
+  get totalPrice() {
+    return Number(this.order.total_price);
+  }
+
+  get totalTax() {
+    return Number(this.order.total_tax);
+  }
+
   get noteAttributes() {
     return this.order.note_attributes;
   }
