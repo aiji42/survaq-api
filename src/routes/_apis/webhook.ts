@@ -66,13 +66,13 @@ app.post("/order", async (c) => {
   });
 
   // MEMO: 注文が作成された時点で、Google AnalyticsのPurchase Measurement Protocolを送信する(サテライトサイト連携用)
-  if (c.get("topic") === "orders/create") {
-    await c.env.KIRIBI.enqueue(
-      "PurchaseMeasurementProtocol",
-      { orderId: data.id },
-      { maxRetries: 1 },
-    );
-  }
+  // if (c.get("topic") === "orders/create") {
+  //   await c.env.KIRIBI.enqueue(
+  //     "PurchaseMeasurementProtocol",
+  //     { orderId: data.id },
+  //     { maxRetries: 1 },
+  //   );
+  // }
 
   return c.json({ message: "enqueue CompleteOrder" });
 });

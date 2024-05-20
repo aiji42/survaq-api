@@ -42,7 +42,7 @@ export class PurchaseMeasurementProtocol extends KiribiPerformer<
           params: {
             currency: this.order.currency,
             value: this.order.subTotalPrice,
-            transaction_id: this.order.code,
+            transaction_id: this.order.numericId.toString(),
             tax: this.order.totalTax,
             items: [
               this.order.lineItems.map(({ title, name, quantity, variant_id, price }) => ({
