@@ -136,6 +136,12 @@ export class ShopifyOrder extends ShopifyClient {
   get adminUrl() {
     return `https://admin.shopify.com/store/survaq/orders/${this.numericId}`;
   }
+
+  get isUnmanaged() {
+    return this.savedLineItemAttrs.every(
+      ({ _skus }) => _skus.length === 1 && _skus[0] === "un_managed",
+    );
+  }
 }
 
 export type LineItemAttr = {

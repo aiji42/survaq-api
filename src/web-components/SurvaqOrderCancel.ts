@@ -66,7 +66,7 @@ class SurvaqOrderCancel extends BaseLitElement {
               ${messages.working[this.lang]}
             </div>`;
           }
-          // Pending
+          // Pending, Unmanaged
           return html``;
         }
         return html`<div class="w-full text-gray-800 leading-loose">
