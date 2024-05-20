@@ -246,7 +246,7 @@ const messages = {
     en: "Cancellation is in progress. Please wait for a while.",
   },
   working: {
-    ja: "出荷作業中あるいは出荷済みです。",
+    ja: "出荷作業中または出荷済みです。",
     en: "It is in the process of shipping or has already been shipped.",
   },
   title: {
