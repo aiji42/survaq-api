@@ -42,8 +42,7 @@ const cancellationRoute = app
   })
   .post(
     "/cancel",
-    // TODO: reasonの最小文字数を協議
-    zValidator("json", z.object({ id: z.string(), reason: z.string().trim().min(1) })),
+    zValidator("json", z.object({ id: z.string(), reason: z.string().trim().min(10).max(200) })),
     async (c) => {
       const { id, reason } = c.req.valid("json");
 
