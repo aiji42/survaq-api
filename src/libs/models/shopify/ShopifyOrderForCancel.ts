@@ -109,22 +109,7 @@ export class ShopifyOrderForCancel extends ShopifyOrder {
 
   async commitCancelReason(_reason: string) {
     const reason = `---キャンセル理由---\n${_reason}`;
-    const note = this.note ? `${this.note}\n\n${reason}` : reason;
-    const res = await fetch(
-      `https://survaq.myshopify.com/admin/api/${this.API_VERSION}/orders/${this.numericId}.json`,
-      {
-        method: "PUT",
-        headers: this.headers,
-        body: JSON.stringify({
-          order: {
-            id: this.numericId,
-            note,
-          },
-        }),
-      },
-    );
-
-    if (!res.ok) throw new Error(await res.text());
+    await this.updateNote(reason);
   }
 }
 

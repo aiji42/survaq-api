@@ -141,10 +141,58 @@ export class ShopifyOrder extends ShopifyClient {
     return `https://admin.shopify.com/store/survaq/orders/${this.numericId}`;
   }
 
+  get statusPageUrl() {
+    return this.order.order_status_url;
+  }
+
   get isUnmanaged() {
     return this.savedLineItemAttrs.every(
       ({ _skus }) => _skus.length === 1 && _skus[0] === "un_managed",
     );
+  }
+
+  async updateNoteAttributes(attributes: { name: string; value: string }[], overwrite = false) {
+    const merged = !overwrite
+      ? new Map(this.noteAttributes.concat(attributes).map(({ name, value }) => [name, value]))
+      : new Map(attributes.map(({ name, value }) => [name, value]));
+
+    const res = await fetch(
+      `https://survaq.myshopify.com/admin/api/${this.API_VERSION}/orders/${this.numericId}.json`,
+      {
+        method: "PUT",
+        headers: this.headers,
+        body: JSON.stringify({
+          order: {
+            id: String(this.numericId),
+            note_attributes: Array.from(merged, ([name, value]) => ({
+              name,
+              value,
+            })),
+          },
+        }),
+      },
+    );
+
+    if (!res.ok) throw new Error(await res.text());
+  }
+
+  async updateNote(text: string, overwrite = false) {
+    const note = this.note && !overwrite ? `${this.note}\n\n${text}` : text;
+    const res = await fetch(
+      `https://survaq.myshopify.com/admin/api/${this.API_VERSION}/orders/${this.numericId}.json`,
+      {
+        method: "PUT",
+        headers: this.headers,
+        body: JSON.stringify({
+          order: {
+            id: String(this.numericId),
+            note,
+          },
+        }),
+      },
+    );
+
+    if (!res.ok) throw new Error(await res.text());
   }
 }
 

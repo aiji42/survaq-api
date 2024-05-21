@@ -106,26 +106,7 @@ export class ShopifyOrderForNoteAttrs extends ShopifyOrder {
         value: JSON.stringify(this.completedLineItem),
       });
 
-    const merged = new Map(
-      this.noteAttributes.concat(newNoteAttributes).map(({ name, value }) => [name, value]),
-    );
-
-    return fetch(
-      `https://survaq.myshopify.com/admin/api/${this.API_VERSION}/orders/${this.numericId}.json`,
-      {
-        method: "PUT",
-        body: JSON.stringify({
-          order: {
-            id: String(this.numericId),
-            note_attributes: Array.from(merged, ([name, value]) => ({
-              name,
-              value,
-            })),
-          },
-        }),
-        headers: this.headers,
-      },
-    );
+    return super.updateNoteAttributes(newNoteAttributes);
   }
 }
 

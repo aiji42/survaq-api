@@ -21,6 +21,7 @@ export type ShopifyOrderData = {
   subtotal_price: string;
   total_price: string;
   total_tax: string;
+  order_status_url: string;
   line_items: {
     id: number;
     variant_id: number;
