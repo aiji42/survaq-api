@@ -94,7 +94,7 @@ export class ShopifyOrderForNoteAttrs extends ShopifyOrder {
   }
 
   async updateNoteAttributes() {
-    const newNoteAttributes = [];
+    const newNoteAttributes: { name: string; value: string }[] = [];
     if (this.shouldSendDeliveryScheduleNotification)
       newNoteAttributes.push({
         name: this.DELIVERY_SCHEDULE,
