@@ -79,6 +79,10 @@ export class ShopifyOrder extends ShopifyClient {
     return Number(this.order.total_tax);
   }
 
+  get note() {
+    return this.order.note;
+  }
+
   get noteAttributes() {
     return this.order.note_attributes;
   }

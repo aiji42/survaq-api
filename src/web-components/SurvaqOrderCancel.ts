@@ -12,7 +12,7 @@ const initialFormState = {
   error: "",
 };
 
-const REASON_MAX_LENGTH = 200;
+const REASON_MAX_LENGTH = 500;
 const REASON_MIN_LENGTH = 10;
 
 @customElement("survaq-order-cancel")
@@ -189,7 +189,9 @@ class SurvaqOrderCancel extends BaseLitElement {
       }
       const client = hc<CancellationRoute>(baseUrl.toString());
       if (!this.orderId) throw new Error("orderIdを指定してください。");
-      await client.cancel.$post({ json: { id: String(this.orderId), reason } });
+      const res = await client.cancel.$post({ json: { id: String(this.orderId), reason } });
+
+      if (!res.ok) throw new Error(await res.text());
 
       this.completed = true;
     } catch (e) {

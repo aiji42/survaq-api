@@ -16,6 +16,7 @@ export type ShopifyOrderData = {
   created_at: string;
   name: string;
   note_attributes: Array<{ name: string; value: string }>;
+  note: string;
   currency: string;
   subtotal_price: string;
   total_price: string;

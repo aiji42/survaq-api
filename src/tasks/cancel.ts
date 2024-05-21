@@ -53,7 +53,7 @@ export class Cancel extends KiribiPerformer<{ requestId: number }, void, Binding
       } else {
         // キャンセルできない場合は代わりにクローズする
         log.push(`Closing Shopify: ${this.shopifyOrder.numericId} (${this.shopifyOrder.code})`);
-        await this.shopifyOrder.close(true);
+        await this.shopifyOrder.close(true, request.reason ?? "");
         log.push("Completed closing Shopify");
       }
 

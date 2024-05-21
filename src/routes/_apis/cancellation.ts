@@ -42,27 +42,31 @@ const cancellationRoute = app
   })
   .post(
     "/cancel",
-    zValidator("json", z.object({ id: z.string(), reason: z.string().trim().min(10).max(200) })),
+    zValidator("json", z.object({ id: z.string(), reason: z.string().trim().min(10).max(500) })),
     async (c) => {
       const { id, reason } = c.req.valid("json");
 
       const shopifyOrder = new ShopifyOrderForCancel(c.env);
       try {
         await shopifyOrder.setOrderById(id);
-        if (!shopifyOrder.cancelable.isCancelable)
-          return c.text(`Not cancelable (${shopifyOrder.cancelable.reason})`, 400);
       } catch (e) {
-        return c.text("Not found", 404);
+        throw new HTTPException(404);
       }
+      if (!shopifyOrder.cancelable.isCancelable)
+        throw new HTTPException(400, {
+          message: `Not cancelable (${shopifyOrder.cancelable.reason})`,
+        });
 
       const logiless = new LogilessSalesOrder(c.env);
       try {
         await logiless.setSalesOrderByShopifyOrder(shopifyOrder);
-        if (!logiless.cancelable.isCancelable)
-          return c.text(`Not cancelable (${logiless.cancelable.reason})`, 400);
       } catch (e) {
-        return c.text("Not found", 404);
+        throw new HTTPException(404);
       }
+      if (!logiless.cancelable.isCancelable)
+        throw new HTTPException(400, {
+          message: `Not cancelable (${logiless.cancelable.reason})`,
+        });
 
       const db = new DB(c.env);
       const res = await db.useTransaction(async (tdb) => {

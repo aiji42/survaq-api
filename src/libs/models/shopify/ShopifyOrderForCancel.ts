@@ -45,7 +45,7 @@ export class ShopifyOrderForCancel extends ShopifyOrder {
         headers: this.headers,
         body: JSON.stringify({
           // SEE: https://shopify.dev/docs/api/admin-graphql/2024-04/mutations/orderCancel?language=cURL
-          query: `mutation OrderCancel($orderId: ID!, $notifyCustomer: Boolean, $refund: Boolean!, $restock: Boolean!, $reason: OrderCancelReason!, $staffNote: String) { orderCancel(orderId: $orderId, notifyCustomer: $notifyCustomer, refund: $refund, restock: $restock, reason: $reason, staffNote: $staffNote) { job { id done } orderCancelUserErrors { field message code } } }`,
+          query: `mutation OrderCancel($orderId: ID!, $notifyCustomer: Boolean, $refund: Boolean!, $restock: Boolean!, $reason: OrderCancelReason!) { orderCancel(orderId: $orderId, notifyCustomer: $notifyCustomer, refund: $refund, restock: $restock, reason: $reason) { job { id done } orderCancelUserErrors { field message code } } }`,
           variables: {
             orderId: this.gid,
             // 自動通知はしない
@@ -53,7 +53,6 @@ export class ShopifyOrderForCancel extends ShopifyOrder {
             refund: true,
             restock: true,
             reason: "CUSTOMER",
-            staffNote: reason,
           },
         }),
       },
@@ -71,9 +70,11 @@ export class ShopifyOrderForCancel extends ShopifyOrder {
       );
 
     this._cancellingOperated = true;
+
+    await this.commitCancelReason(reason);
   }
 
-  async close(asCancel = false) {
+  async close(asCancel = false, reason?: string) {
     const res = await fetch(
       `https://survaq.myshopify.com/admin/api/${this.API_VERSION}/graphql.json`,
       {
@@ -103,6 +104,27 @@ export class ShopifyOrderForCancel extends ShopifyOrder {
       );
 
     if (asCancel) this._cancellingOperated = true;
+    if (asCancel && reason) await this.commitCancelReason(reason);
+  }
+
+  async commitCancelReason(_reason: string) {
+    const reason = `---キャンセル理由---\n${_reason}`;
+    const note = this.note ? `${this.note}\n\n${reason}` : reason;
+    const res = await fetch(
+      `https://survaq.myshopify.com/admin/api/${this.API_VERSION}/orders/${this.numericId}.json`,
+      {
+        method: "PUT",
+        headers: this.headers,
+        body: JSON.stringify({
+          order: {
+            id: this.numericId,
+            note,
+          },
+        }),
+      },
+    );
+
+    if (!res.ok) throw new Error(await res.text());
   }
 }
 
