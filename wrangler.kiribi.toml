@@ -57,5 +57,10 @@ binding = "PurchaseMeasurementProtocol"
 service = "kiribi-survaq-api"
 entrypoint = "PurchaseMeasurementProtocol"
 
+[[services]]
+binding = "CMSChecker"
+service = "kiribi-survaq-api"
+entrypoint = "CMSChecker"
+
 [site]
 bucket = "./node_modules/kiribi/client"

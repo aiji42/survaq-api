@@ -1,15 +1,22 @@
 import type { Child, FC } from "hono/jsx";
 
-export const Layout: FC<{ lang?: "ja" | "en"; isDev?: boolean; children: Child }> = ({
-  children,
-  lang = "ja",
-  isDev = false,
-}) => {
+export type LayoutProps = {
+  lang?: "ja" | "en";
+  isDev?: boolean;
+  title?: string;
+};
+
+export const Layout: FC<{
+  lang?: "ja" | "en";
+  isDev?: boolean;
+  title?: string;
+  children: Child;
+}> = ({ children, lang = "ja", title = "sandbox", isDev = false }) => {
   return (
     <html lang={lang}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>sandbox</title>
+        <title>{title}</title>
         {!isDev ? (
           <>
             <script type="module" src="/static/web-components.js" />
@@ -22,7 +29,7 @@ export const Layout: FC<{ lang?: "ja" | "en"; isDev?: boolean; children: Child }
           </>
         )}
       </head>
-      <body className="p-4">{children}</body>
+      <body className="max-w-4xl mx-auto">{children}</body>
     </html>
   );
 };

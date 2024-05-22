@@ -13,6 +13,8 @@ import { TransactionMailSend } from "./TransactionMailSend";
 export { TransactionMailSend } from "./TransactionMailSend";
 import { PurchaseMeasurementProtocol } from "./PurchaseMeasurementProtocol";
 export { PurchaseMeasurementProtocol } from "./PurchaseMeasurementProtocol";
+import { CMSChecker } from "./CMSChecker";
+export { CMSChecker } from "./CMSChecker";
 
 type Performers = {
   Cancel: Cancel;
@@ -20,6 +22,7 @@ type Performers = {
   CompleteOrder: CompleteOrder;
   TransactionMailSend: TransactionMailSend;
   PurchaseMeasurementProtocol: PurchaseMeasurementProtocol;
+  CMSChecker: CMSChecker;
 };
 type BindingKeys = keyof Performers;
 

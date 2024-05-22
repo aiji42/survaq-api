@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { Layout } from "./Layout";
+import { Layout } from "../../components/Layout";
 
 const app = new Hono<{ Bindings: { DEV?: string } }>();
 

@@ -17,3 +17,8 @@ bucket = "./assets"
 [[services]]
 binding = "KIRIBI"
 service = "kiribi-survaq-api"
+
+[[services]]
+binding = "CMSChecker"
+service = "kiribi-survaq-api"
+entrypoint = "CMSChecker"

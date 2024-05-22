@@ -3,6 +3,7 @@ import { serveStatic } from "hono/cloudflare-workers";
 import { cors } from "hono/cors";
 import { logiless, products, webhook, cancellation, schedule } from "./routes/_apis";
 import sandbox from "./routes/sandobox";
+import status from "./routes/status";
 import manifest from "__STATIC_CONTENT_MANIFEST";
 
 const app = new Hono();
@@ -16,6 +17,8 @@ app.route("/webhook", webhook);
 app.route("/logiless", logiless);
 app.route("/cancellation", cancellation);
 app.route("/schedule", schedule);
+
+app.route("/status", status);
 
 app.route("/sandbox", sandbox);
 
