@@ -30,13 +30,22 @@ export default class extends Kiribi<Performers, Bindings> {
   client = client;
   rest = rest;
 
-  async scheduled() {
-    // Sweep jobs older than 3 days with statuses COMPLETED, CANCELLED
-    await this.sweep({ olderThan: 1000 * 60 * 60 * 24 * 3 });
+  async scheduled({ cron }: ScheduledEvent) {
+    // every day at 00:00
+    if (cron === "0 0 * * *") {
+      // Sweep jobs older than 3 days with statuses COMPLETED, CANCELLED
+      await this.sweep({ olderThan: 1000 * 60 * 60 * 24 * 3 });
+    }
+
+    // every hour
+    if (cron === "0 * * * *") {
+      // Check CMS
+      await this.enqueue("CMSChecker", undefined, { maxRetries: 1 });
+    }
   }
 
   async onSuccess(binding: BindingKeys, payload: any) {
-    if (binding === "ProductSync" || binding === "CompleteOrder") return;
+    if (["ProductSync", "CompleteOrder", "CMSChecker"].includes(binding)) return;
     const slack = new SlackNotifier(this.env);
     slack.append({
       color: "good",

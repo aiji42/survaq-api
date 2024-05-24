@@ -1,6 +1,7 @@
 import { KiribiPerformer } from "kiribi/performer";
 import { Bindings } from "../../bindings";
 import { DB } from "../libs/db";
+import { SlackNotifier } from "../libs/slack";
 
 type ValidationResult = {
   products: {
@@ -23,15 +24,51 @@ type ValidationResult = {
   }[];
 };
 
-export class CMSChecker extends KiribiPerformer<{ orderId: number }, void, Bindings> {
+const channel = "notify-cms";
+
+export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
   private db: DB;
+  private slack: SlackNotifier;
   constructor(ctx: ExecutionContext, env: Bindings) {
     super(ctx, env);
     this.db = new DB(env);
+    this.slack = new SlackNotifier(env);
   }
 
-  perform(payload: { orderId: number }): Promise<void> | void {
-    return undefined;
+  async perform() {
+    const result = await this.validate();
+
+    if (result.products.length)
+      this.slack.append(
+        {
+          title: "プロダクトを確認してください",
+          text: `${result.products.length}件の問題が発生中`,
+          color: "danger",
+        },
+        channel,
+      );
+    if (result.variations.length)
+      this.slack.append(
+        {
+          title: "バリエーションを確認してください",
+          text: `${result.variations.length}件の問題が発生中`,
+          color: "danger",
+        },
+        channel,
+      );
+    if (result.inventories.length)
+      this.slack.append(
+        {
+          title: "発注を確認してください",
+          text: `${result.inventories.length}件の問題が発生中`,
+          color: "danger",
+        },
+        channel,
+      );
+
+    await this.slack.notify(
+      "設定値に問題が発生しています。<https://api.survaq.com/status/data|ステータスページ>を確認し、適宜対応してください。",
+    );
   }
 
   async validate(): Promise<ValidationResult> {

@@ -26,7 +26,8 @@ queue = "kiribi-queue-survaq-api"
 max_retries = 5
 
 [triggers]
-crons = [ "0 0 * * *" ]
+# 1日に1回と1時間に1回
+crons = [ "0 0 * * *", "0 * * * *" ]
 
 [[services]]
 binding = "KIRIBI"
