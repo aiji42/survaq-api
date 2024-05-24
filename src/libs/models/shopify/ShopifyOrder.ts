@@ -79,6 +79,18 @@ export class ShopifyOrder extends ShopifyClient {
     return Number(this.order.total_tax);
   }
 
+  get totalShippingPrice() {
+    return Number(this.order.total_shipping_price_set.shop_money.amount);
+  }
+
+  get taxesIncluded() {
+    return this.order.taxes_included;
+  }
+
+  get lineItemQuantity() {
+    return this.lineItems.reduce((sum, { quantity }) => sum + quantity, 0);
+  }
+
   get note() {
     return this.order.note;
   }
@@ -89,6 +101,10 @@ export class ShopifyOrder extends ShopifyClient {
 
   get createdAt() {
     return new Date(this.order.created_at);
+  }
+
+  get updatedAt() {
+    return this.order.updated_at ? new Date(this.order.updated_at) : null;
   }
 
   get fulfillmentStatus() {
@@ -113,6 +129,15 @@ export class ShopifyOrder extends ShopifyClient {
 
   get isClosed() {
     return !!this.closedAt;
+  }
+
+  get fulfillments() {
+    return this.order.fulfillments;
+  }
+
+  get fulfilledAt() {
+    const fulfillment = this.order.fulfillments[0];
+    return fulfillment?.created_at ? new Date(fulfillment.created_at) : null;
   }
 
   get savedLineItemAttrs(): LineItemAttr[] {
@@ -194,6 +219,28 @@ export class ShopifyOrder extends ShopifyClient {
 
     if (!res.ok) throw new Error(await res.text());
   }
+
+  async graphql<T extends Record<string, any>>(
+    query: string,
+    variables: Record<string, any>,
+  ): Promise<T> {
+    console.log(query);
+    const res = await fetch(
+      `https://survaq.myshopify.com/admin/api/${this.API_VERSION}/graphql.json`,
+      {
+        method: "POST",
+        headers: this.headers,
+        body: JSON.stringify({ query, variables }),
+      },
+    );
+    if (!res.ok) throw new Error(await res.text());
+
+    const result: GraphQLResponse<T> = await res.json();
+
+    if ("errors" in result) throw new Error(result.errors.map(({ message }) => message).join("\n"));
+
+    return result.data;
+  }
 }
 
 export type LineItemAttr = {
@@ -205,3 +252,11 @@ export type LineItemAttr = {
 export type DeliveryScheduleAttrs = {
   estimate: string;
 };
+
+type GraphQLResponse<T extends Record<string, any>> =
+  | {
+      data: T;
+    }
+  | {
+      errors: { message: string }[];
+    };

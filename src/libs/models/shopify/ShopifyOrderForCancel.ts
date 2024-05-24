@@ -38,33 +38,21 @@ export class ShopifyOrderForCancel extends ShopifyOrder {
 
   async cancel(reason: string) {
     // MEMO: キャンセルを実行すると自動的にクローズされる
-    const res = await fetch(
-      `https://survaq.myshopify.com/admin/api/${this.API_VERSION}/graphql.json`,
+    const data = await this.graphql<CancelGraphQLData>(
+      `mutation OrderCancel($orderId: ID!, $notifyCustomer: Boolean, $refund: Boolean!, $restock: Boolean!, $reason: OrderCancelReason!) { orderCancel(orderId: $orderId, notifyCustomer: $notifyCustomer, refund: $refund, restock: $restock, reason: $reason) { job { id done } orderCancelUserErrors { field message code } } }`,
       {
-        method: "POST",
-        headers: this.headers,
-        body: JSON.stringify({
-          // SEE: https://shopify.dev/docs/api/admin-graphql/2024-04/mutations/orderCancel?language=cURL
-          query: `mutation OrderCancel($orderId: ID!, $notifyCustomer: Boolean, $refund: Boolean!, $restock: Boolean!, $reason: OrderCancelReason!) { orderCancel(orderId: $orderId, notifyCustomer: $notifyCustomer, refund: $refund, restock: $restock, reason: $reason) { job { id done } orderCancelUserErrors { field message code } } }`,
-          variables: {
-            orderId: this.gid,
-            // 自動通知はしない
-            notifyCustomer: false,
-            refund: true,
-            restock: true,
-            reason: "CUSTOMER",
-          },
-        }),
+        orderId: this.gid,
+        // 自動通知はしない
+        notifyCustomer: false,
+        refund: true,
+        restock: true,
+        reason: "CUSTOMER",
       },
     );
-    if (!res.ok) throw new Error(await res.text());
 
-    const result = (await res.json()) as CancelGraphQLResponse;
-
-    if ("errors" in result) throw new Error(result.errors.map(({ message }) => message).join("\n"));
-    else if (result.data.orderCancel.orderCancelUserErrors.length)
+    if (data.orderCancel.orderCancelUserErrors.length)
       throw new Error(
-        result.data.orderCancel.orderCancelUserErrors
+        data.orderCancel.orderCancelUserErrors
           .map(({ field, message, code }) => `${field.join(".")}: ${message} (${code})`)
           .join("\n"),
       );
@@ -75,30 +63,18 @@ export class ShopifyOrderForCancel extends ShopifyOrder {
   }
 
   async close(asCancel = false, reason?: string) {
-    const res = await fetch(
-      `https://survaq.myshopify.com/admin/api/${this.API_VERSION}/graphql.json`,
+    const data = await this.graphql<CloseGraphQLData>(
+      `mutation OrderClose($input: OrderCloseInput!) { orderClose(input: $input) { userErrors { field message } } }`,
       {
-        method: "POST",
-        headers: this.headers,
-        body: JSON.stringify({
-          // SEE: https://shopify.dev/docs/api/admin-graphql/2024-04/mutations/orderClose
-          query: `mutation OrderClose($input: OrderCloseInput!) { orderClose(input: $input) { userErrors { field message } } }`,
-          variables: {
-            input: {
-              id: this.gid,
-            },
-          },
-        }),
+        input: {
+          id: this.gid,
+        },
       },
     );
-    if (!res.ok) throw new Error(await res.text());
 
-    const result = (await res.json()) as CloseGraphQLResponse;
-
-    if ("errors" in result) throw new Error(result.errors.map(({ message }) => message).join("\n"));
-    else if (result.data.orderClose.userErrors.length)
+    if (data.orderClose.userErrors.length)
       throw new Error(
-        result.data.orderClose.userErrors
+        data.orderClose.userErrors
           .map(({ field, message }) => `${field.join(".")}: ${message}`)
           .join("\n"),
       );
@@ -113,26 +89,14 @@ export class ShopifyOrderForCancel extends ShopifyOrder {
   }
 }
 
-type CancelGraphQLResponse =
-  | {
-      data: {
-        orderCancel: {
-          orderCancelUserErrors: { field: string[]; message: string; code: string }[];
-        };
-      };
-    }
-  | {
-      errors: { message: string }[];
-    };
+type CancelGraphQLData = {
+  orderCancel: {
+    orderCancelUserErrors: { field: string[]; message: string; code: string }[];
+  };
+};
 
-type CloseGraphQLResponse =
-  | {
-      data: {
-        orderClose: {
-          userErrors: { field: string[]; message: string }[];
-        };
-      };
-    }
-  | {
-      errors: { message: string }[];
-    };
+type CloseGraphQLData = {
+  orderClose: {
+    userErrors: { field: string[]; message: string }[];
+  };
+};

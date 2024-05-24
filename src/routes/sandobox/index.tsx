@@ -1,7 +1,9 @@
 import { Hono } from "hono";
 import { Layout } from "../../components/Layout";
+import { ShopifyOrderSyncBQ } from "../../libs/models/shopify/ShopifyOrderSyncBQ";
+import { Bindings } from "../../../bindings";
 
-const app = new Hono<{ Bindings: { DEV?: string } }>();
+const app = new Hono<{ Bindings: Bindings & { DEV?: string } }>();
 
 app.get("/delivery-schedules", (c) => {
   return c.html(
@@ -80,6 +82,18 @@ app.get("/orders/:id/cancel", (c) => {
       </div>
     </Layout>,
   );
+});
+
+app.get("/shopify/:id", async (c) => {
+  const id = c.req.param("id");
+  const order = new ShopifyOrderSyncBQ(c.env);
+  await order.prepare(id);
+
+  return c.json({
+    order: order.createBQOrdersTableData(),
+    lineItems: order.createBQLineItemsTableData(),
+    orderSKUs: order.createBQOrderSKUsTableData(),
+  });
 });
 
 export default app;
