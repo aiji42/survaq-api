@@ -84,6 +84,7 @@ app.get("/orders/:id/cancel", (c) => {
   );
 });
 
+// TODO: 過去のデータをサンプリングし、実際のBQの保存値と比較してテストする
 app.get("/shopify/:id", async (c) => {
   const id = c.req.param("id");
   const order = new ShopifyOrderSyncBQ(c.env);

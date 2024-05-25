@@ -195,7 +195,9 @@ export class DB {
 
   getPage(pathnameOrDomain: string) {
     return this.prisma.shopifyPages.findFirst({
+      orderBy: { updatedAt: "desc" },
       where: {
+        NOT: { pathname: { contains: "test" } },
         OR: [{ pathname: pathnameOrDomain }, { domain: pathnameOrDomain }],
       },
       select: {
