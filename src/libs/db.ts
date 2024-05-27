@@ -1,7 +1,6 @@
 import { Pool } from "@prisma/pg-worker";
 import { PrismaPg } from "@prisma/adapter-pg-worker";
 import { PrismaClient, Prisma } from "@prisma/client";
-import { sanitizeSkusJSON } from "./makeVariants";
 
 type TransactionalPrismaClient = Omit<
   PrismaClient,
@@ -43,55 +42,6 @@ export class DB {
     });
   }
 
-  getProduct(productId: string) {
-    return this.prisma.shopifyProducts.findFirst({
-      where: { productId },
-      select: {
-        id: true,
-        productName: true,
-        productId: true,
-        ShopifyVariants: {
-          select: {
-            id: true,
-            variantName: true,
-            variantId: true,
-            skusJSON: true,
-            customSelects: true,
-            skuLabel: true,
-            skus: {
-              select: {
-                sku: {
-                  select: {
-                    id: true,
-                    code: true,
-                    name: true,
-                    subName: true,
-                    displayName: true,
-                    skipDeliveryCalc: true,
-                    sortNumber: true,
-                    currentInventoryOrderSKU: {
-                      select: {
-                        id: true,
-                        ShopifyInventoryOrders: {
-                          select: {
-                            id: true,
-                            name: true,
-                            deliverySchedule: true,
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-              orderBy: [{ sort: "asc" }, { id: "asc" }],
-            },
-          },
-        },
-      },
-    });
-  }
-
   getVariants(productRecordId: number) {
     return this.prisma.shopifyVariants.findMany({
       where: { product: productRecordId },
@@ -107,34 +57,6 @@ export class DB {
       where: { variantId: String(variantId) },
       select: {
         skusJSON: true,
-      },
-    });
-  }
-
-  getSKUs(codes: string[]) {
-    if (codes.length < 1) return [];
-    return this.prisma.shopifyCustomSKUs.findMany({
-      where: { code: { in: codes } },
-      select: {
-        id: true,
-        code: true,
-        name: true,
-        subName: true,
-        displayName: true,
-        skipDeliveryCalc: true,
-        sortNumber: true,
-        currentInventoryOrderSKU: {
-          select: {
-            id: true,
-            ShopifyInventoryOrders: {
-              select: {
-                id: true,
-                name: true,
-                deliverySchedule: true,
-              },
-            },
-          },
-        },
       },
     });
   }
@@ -228,47 +150,7 @@ export class DB {
         },
         ShopifyProducts: {
           select: {
-            id: true,
-            productName: true,
             productId: true,
-            ShopifyVariants: {
-              select: {
-                id: true,
-                variantName: true,
-                variantId: true,
-                skusJSON: true,
-                customSelects: true,
-                skuLabel: true,
-                skus: {
-                  select: {
-                    sku: {
-                      select: {
-                        id: true,
-                        code: true,
-                        name: true,
-                        subName: true,
-                        displayName: true,
-                        skipDeliveryCalc: true,
-                        sortNumber: true,
-                        currentInventoryOrderSKU: {
-                          select: {
-                            id: true,
-                            ShopifyInventoryOrders: {
-                              select: {
-                                id: true,
-                                name: true,
-                                deliverySchedule: true,
-                              },
-                            },
-                          },
-                        },
-                      },
-                    },
-                  },
-                  orderBy: [{ sort: "asc" }, { id: "asc" }],
-                },
-              },
-            },
           },
         },
       },
@@ -422,37 +304,4 @@ export class DB {
       },
     });
   }
-
-  deleteCancelRequest(id: number) {
-    return this.prisma.cancelRequests.delete({
-      where: { id },
-    });
-  }
-
-  getProductWithSKUs(productId: string) {
-    return this.useTransaction(async (db) => {
-      const product = await db.getProduct(productId);
-      const skuCodes =
-        product?.ShopifyVariants.flatMap((item) => sanitizeSkusJSON(item.skusJSON)) ?? [];
-      const skus = await db.getSKUs(skuCodes);
-
-      return { product, skus };
-    });
-  }
-
-  getPageWithSKUs(code: string) {
-    return this.useTransaction(async (db) => {
-      const page = await db.getPage(code);
-      const skuCodes =
-        page?.ShopifyProducts.ShopifyVariants.flatMap((item) => sanitizeSkusJSON(item.skusJSON)) ??
-        [];
-      const skus = await db.getSKUs(skuCodes);
-
-      return { page, skus };
-    });
-  }
 }
-
-export type Product = Exclude<Awaited<ReturnType<DB["getProduct"]>>, null | undefined>;
-
-export type SKUs = Awaited<ReturnType<DB["getSKUs"]>>;

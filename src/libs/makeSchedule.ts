@@ -13,7 +13,7 @@ const terms = {
   late: 2,
 } as const;
 
-export type Schedule<T extends boolean> = {
+export type Schedule = {
   year: number;
   month: number;
   term: keyof typeof terms;
@@ -21,32 +21,19 @@ export type Schedule<T extends boolean> = {
   numeric: number;
   text: string;
   subText: string;
-  texts: T extends true ? string[] : never;
 };
 
 export type Locale = "ja" | "en";
 
-type ResultType<T, W extends boolean> = T extends string
-  ? Schedule<W>
-  : T extends null
-    ? null
-    : never;
+type ResultType<T> = T extends string ? Schedule : T extends null ? null : never;
 
 export const makeScheduleFromDeliverySchedule = <T extends string | null>(
   str: T,
   locale: Locale,
-  withTexts: boolean = true,
-): ResultType<T, typeof withTexts> => {
-  if (!str) return null as ResultType<T, typeof withTexts>;
-  const [year, month, term] = str.split("-") as [
-    string,
-    string,
-    keyof typeof terms,
-  ];
-  return schedule(year, month, term, locale, withTexts) as ResultType<
-    T,
-    typeof withTexts
-  >;
+): ResultType<T> => {
+  if (!str) return null as ResultType<T>;
+  const [year, month, term] = str.split("-") as [string, string, keyof typeof terms];
+  return schedule(year, month, term, locale) as ResultType<T>;
 };
 
 const schedule = <W extends boolean>(
@@ -54,9 +41,8 @@ const schedule = <W extends boolean>(
   month: string | number,
   term: keyof typeof terms,
   locale: Locale,
-  withTexts: boolean = true,
-): Schedule<W> => {
-  const texts = createScheduleTextArray(
+): Schedule => {
+  const text = createScheduleText(
     {
       year,
       month,
@@ -64,8 +50,6 @@ const schedule = <W extends boolean>(
     },
     locale,
   );
-  const text = texts[0];
-  if (!text) throw new Error();
   return {
     year: Number(year),
     month: Number(month),
@@ -73,12 +57,11 @@ const schedule = <W extends boolean>(
     termIndex: terms[term],
     numeric: Number(`${year}${String(month).padStart(2, "0")}${terms[term]}`),
     text,
-    ...(withTexts ? { texts } : undefined),
     subText: monthWithDateRange(Number(year), Number(month) - 1, term, locale),
-  } as Schedule<W>;
+  };
 };
 
-const createScheduleTextArray = (
+const createScheduleText = (
   {
     year,
     month,
@@ -89,15 +72,9 @@ const createScheduleTextArray = (
     term?: keyof typeof terms;
   },
   locale: "ja" | "en" = "ja",
-  size = 7,
-): string[] => {
-  const begin = dayjs(
-    `${year}-${month}-${term === "late" ? 28 : term === "middle" ? 18 : 8}`,
-  );
-  return Array.from({ length: size }).map((_, index) => {
-    const date = begin.add(-1 * index * 10, "days");
-    return yearMonthTerm(date.year(), date.month(), date.date(), locale);
-  });
+): string => {
+  const date = dayjs(`${year}-${month}-${term === "late" ? 28 : term === "middle" ? 18 : 8}`);
+  return yearMonthTerm(date.year(), date.month(), date.date(), locale);
 };
 
 const yearMonthTerm = (
@@ -107,13 +84,9 @@ const yearMonthTerm = (
   locale: "ja" | "en" = "ja",
 ) => {
   if (locale === "ja")
-    return `${year}年${monthIndex + 1}月${
-      date > 20 ? "下旬" : date > 10 ? "中旬" : "上旬"
-    }`;
+    return `${year}年${monthIndex + 1}月${date > 20 ? "下旬" : date > 10 ? "中旬" : "上旬"}`;
 
-  return `${date > 20 ? "late" : date > 10 ? "mid" : "early"} ${
-    months[monthIndex]
-  }. ${year}`;
+  return `${date > 20 ? "late" : date > 10 ? "mid" : "early"} ${months[monthIndex]}. ${year}`;
 };
 
 const monthWithDateRange = (
@@ -133,33 +106,12 @@ const monthWithDateRange = (
   return `${months[monthIndex]}. ${begin} - ${end}`;
 };
 
-const months = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
+const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export const makeSchedule = (
-  customSchedule: string | null,
-  locale: Locale = "ja",
-  withTexts: boolean = true,
-): Schedule<typeof withTexts> => {
-  let scheduleMadeByCustom: undefined | Schedule<true>;
+export const makeSchedule = (customSchedule: string | null, locale: Locale = "ja"): Schedule => {
+  let scheduleMadeByCustom: undefined | Schedule;
   if (customSchedule) {
-    scheduleMadeByCustom = makeScheduleFromDeliverySchedule(
-      customSchedule,
-      locale,
-      withTexts,
-    );
+    scheduleMadeByCustom = makeScheduleFromDeliverySchedule(customSchedule, locale);
   }
   const date = dayjs().tz();
   let year = date.year();
@@ -172,17 +124,16 @@ export const makeSchedule = (
   const term: keyof typeof terms =
     28 <= day || day <= 7 ? "early" : 8 <= day && day <= 17 ? "middle" : "late";
 
-  const scheduleMadeByCurrent = schedule(year, month, term, locale, withTexts);
+  const scheduleMadeByCurrent = schedule(year, month, term, locale);
 
   if (!scheduleMadeByCustom) return scheduleMadeByCurrent;
-  if (scheduleMadeByCustom.numeric > scheduleMadeByCurrent.numeric)
-    return scheduleMadeByCustom;
+  if (scheduleMadeByCustom.numeric > scheduleMadeByCurrent.numeric) return scheduleMadeByCustom;
 
   return scheduleMadeByCurrent;
 };
 
 // 引数が過去日で構成される場合、過去日が最遅として計算されてしまうので、それを防ぎたい場合にはmakeSchedule(null)で最短配送日をガードとして入れないといけないことに注意
-export const latest = (schedules: Array<null | Schedule<boolean>>) => {
+export const latest = (schedules: Array<null | Schedule>) => {
   return (
     schedules.sort((a, b) => {
       const l = a?.numeric ?? makeSchedule(null).numeric;
@@ -192,7 +143,7 @@ export const latest = (schedules: Array<null | Schedule<boolean>>) => {
   );
 };
 
-export const earliest = (schedules: Array<null | Schedule<boolean>>) => {
+export const earliest = (schedules: Array<null | Schedule>) => {
   return (
     schedules.sort((a, b) => {
       const l = a?.numeric ?? 1000000;

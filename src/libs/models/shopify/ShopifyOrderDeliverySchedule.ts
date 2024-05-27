@@ -77,7 +77,7 @@ export class ShopifyOrderDeliverySchedule extends ShopifyOrder {
         Date.now() - this.createdAt.getTime() < 60 * 60 * 1000 &&
         this.hasValidSavedDeliveryScheduleAttrs
       ) {
-        return makeSchedule(this.validSavedDeliveryScheduleAttrs.estimate, this.locale, false);
+        return makeSchedule(this.validSavedDeliveryScheduleAttrs.estimate, this.locale);
       }
 
       // それ以外の場合はスケジュールを出せないのでnullを返す
@@ -94,7 +94,7 @@ export class ShopifyOrderDeliverySchedule extends ShopifyOrder {
 
       for (const { availableQuantity, schedule } of inventories) {
         cumulativeSum += availableQuantity;
-        if (cumulativeSum >= quantity) return makeSchedule(schedule, this.locale, false);
+        if (cumulativeSum >= quantity) return makeSchedule(schedule, this.locale);
       }
 
       // ここに到達するということは販売可能枠が最終に到達し枯渇している状態。
@@ -102,7 +102,7 @@ export class ShopifyOrderDeliverySchedule extends ShopifyOrder {
       throw new Error(`SKU ${code} is out of stock`);
     });
 
-    return latest([...schedules, makeSchedule(null, this.locale, false)]);
+    return latest([...schedules, makeSchedule(null, this.locale)]);
   }
 }
 

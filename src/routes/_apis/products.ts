@@ -1,12 +1,12 @@
 import { Hono } from "hono";
-import { earliest, Locale, makeSchedule } from "../../libs/makeSchedule";
-import { makeVariants } from "../../libs/makeVariants";
+import { Locale, makeSchedule } from "../../libs/makeSchedule";
 import { makeSKUsForDelivery } from "../../libs/makeSKUsForDelivery";
 import { Bindings } from "../../../bindings";
 import { DB } from "../../libs/db";
 import { HTTPException } from "hono/http-exception";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
+import { Product } from "../../libs/models/cms/Product";
 
 type Variables = {
   locale: Locale;
@@ -55,18 +55,18 @@ const productDeliveryRoute = app.get(
     }),
   ),
   async (c) => {
-    const db = new DB(c.env);
     const filterDelaying = c.req.valid("query")?.filter !== "false";
 
-    const { product: data, skus: skusData } = await db.getProductWithSKUs(c.req.param("id"));
+    const db = new DB(c.env);
+    const product = await db.useTransaction(async (transactedDb) => {
+      const product = new Product(transactedDb, c.get("locale"));
+      return product.getProductByShopifyId(c.req.param("id"));
+    });
+    if (!product) throw new HTTPException(404);
+
+    const skus = makeSKUsForDelivery(Object.values(product.skus), filterDelaying);
 
     const current = makeSchedule(null);
-
-    if (!data) throw new HTTPException(404);
-
-    const variants = await makeVariants(data, skusData, c.get("locale"));
-    const skus = makeSKUsForDelivery(variants, filterDelaying);
-
     return c.json({ current, skus });
   },
 );
@@ -75,38 +75,36 @@ export type ProductDeliveryRoute = typeof productDeliveryRoute;
 
 app.get("/:id", async (c) => {
   const db = new DB(c.env);
-  const { product: data, skus: skusData } = await db.getProductWithSKUs(c.req.param("id"));
-  if (!data) return c.notFound();
-
-  const variants = await makeVariants(data, skusData, c.get("locale"));
-
-  const schedule = earliest(variants.map(({ defaultSchedule }) => defaultSchedule));
-
-  return c.json({
-    variants,
-    schedule: schedule ?? makeSchedule(schedule, c.get("locale")),
+  const product = await db.useTransaction(async (transactedDb) => {
+    const product = new Product(transactedDb, c.get("locale"));
+    return product.getProductByShopifyId(c.req.param("id"));
   });
+  if (!product) throw new HTTPException(404);
+
+  return c.json(product);
 });
 
 app.get("/page-data/:code", async (c) => {
   const db = new DB(c.env);
-  const { page: data, skus } = await db.getPageWithSKUs(c.req.param("code"));
-  if (!data) return c.notFound();
+  const data = await db.useTransaction(async (transactedDb) => {
+    const data = await db.getPage(c.req.param("code"));
+    if (!data) throw new HTTPException(404);
+    const { ShopifyProducts, faviconFile: favicon, logoFile: logo, ...page } = data;
 
-  const { ShopifyProducts: product, faviconFile: favicon, logoFile: logo, ...page } = data;
+    const product = await new Product(transactedDb, c.get("locale")).getProductByShopifyId(
+      ShopifyProducts.productId,
+    );
+    if (!product) throw new HTTPException(404);
 
-  const variants = await makeVariants(product, skus, c.get("locale"));
-
-  const schedule = earliest(variants.map(({ defaultSchedule }) => defaultSchedule));
-
-  return c.json({
-    ...page,
-    favicon,
-    logo,
-    variants,
-    schedule: schedule ?? makeSchedule(schedule, c.get("locale")),
-    productId: product.productId,
+    return {
+      favicon,
+      logo,
+      page,
+      product,
+    };
   });
+
+  return c.json(data);
 });
 
 app.get("/page-data/by-domain/:domain", async (c) => {
