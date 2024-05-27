@@ -40,7 +40,7 @@ export default class extends Kiribi<Performers, Bindings> {
     // every hour
     if (cron === "0 * * * *") {
       // Check CMS
-      await this.enqueue("CMSChecker", undefined, { maxRetries: 1 });
+      await this.enqueue("CMSChecker", {}, { maxRetries: 1 });
     }
   }
 
