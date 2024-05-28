@@ -45,6 +45,12 @@ export default class extends Kiribi<Performers, Bindings> {
       // Check CMS
       await this.enqueue("CMSChecker", {}, { maxRetries: 1 });
     }
+
+    // every 10 minutes
+    if (cron === "*/10 * * * *") {
+      // re-enqueue zombie jobs
+      await this.recover();
+    }
   }
 
   async onSuccess(binding: BindingKeys, payload: any) {
