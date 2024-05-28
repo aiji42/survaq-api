@@ -17,6 +17,12 @@ type ValidationResult = {
     cmsLink: string;
     message: string;
   }[];
+  skus: {
+    code: string;
+    name: string;
+    cmsLink: string;
+    message: string;
+  }[];
   inventories: {
     id: number | string;
     name: string;
@@ -60,6 +66,15 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
         },
         channel,
       );
+    if (result.skus.length)
+      this.slack.append(
+        {
+          title: "SKUを確認してください",
+          text: `${result.skus.length}件の問題が発生中`,
+          color: "danger",
+        },
+        channel,
+      );
     if (result.inventories.length)
       this.slack.append(
         {
@@ -79,6 +94,7 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
     const result: ValidationResult = {
       products: [],
       variations: [],
+      skus: [],
       inventories: [],
     };
 
@@ -88,6 +104,7 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
       const getAllSKUGroupCodesPromise = getAllSKUGroupCodes(tDB.prisma);
       const getAllVariationsPromise = getAllVariations(tDB.prisma);
       const getAllDuplicatedInventorySKUsPromise = getAllDuplicatedInventorySKUs(tDB.prisma);
+      const getNegativeInventorySKUsPromise = getNegativeInventorySKUs(tDB.prisma);
 
       // 商品グループが設定されていない商品を取得
       (await getNotGroupedProductsPromise).forEach((product) => {
@@ -150,6 +167,16 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
           cmsLink: cmsInventoryLink(inventoryOrder.id),
         });
       });
+
+      // 在庫がマイナスになっているSKUを確認
+      (await getNegativeInventorySKUsPromise).forEach((sku) => {
+        result.skus.push({
+          code: sku.code,
+          name: sku.name,
+          message: `在庫がマイナスになっています(在庫数: ${sku.inventory})`,
+          cmsLink: cmsSKULink(sku.id),
+        });
+      });
     });
 
     return result;
@@ -163,6 +190,8 @@ const cmsVariationLink = (id: number) =>
 
 const cmsInventoryLink = (id: number) =>
   `https://cms.survaq.com/admin/content/ShopifyInventoryOrders/${id}`;
+
+const cmsSKULink = (id: number) => `https://cms.survaq.com/admin/content/ShopifyCustomSKUs/${id}`;
 
 const getNotGroupedProducts = async (tDB: DB["prisma"]) => {
   return tDB.shopifyProducts.findMany({
@@ -233,6 +262,22 @@ const getAllDuplicatedInventorySKUs = async (transactedPrisma: DB["prisma"]) => 
     },
     where: {
       id: { in: data.map(({ inventoryOrderId }) => inventoryOrderId) },
+    },
+  });
+};
+
+const getNegativeInventorySKUs = async (transactedPrisma: DB["prisma"]) => {
+  return transactedPrisma.shopifyCustomSKUs.findMany({
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      inventory: true,
+    },
+    where: {
+      inventory: {
+        lt: 0,
+      },
     },
   });
 };

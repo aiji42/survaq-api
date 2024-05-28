@@ -40,8 +40,8 @@ export default class extends Kiribi<Performers, Bindings> {
       await this.sweep({ olderThan: 1000 * 60 * 60 * 24 * 3 });
     }
 
-    // every hour
-    if (cron === "0 * * * *") {
+    // every hour at 5 minutes (毎時00分のCloud Run側のJOBが終わる頃を狙って実行する)
+    if (cron === "5 * * * *") {
       // Check CMS
       await this.enqueue("CMSChecker", {}, { maxRetries: 1 });
     }
