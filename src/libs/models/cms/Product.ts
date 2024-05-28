@@ -118,7 +118,7 @@ class Variant {
     const skuGroups = sanitizeSkuGroupsJSON(this._variant.skuGroupsJSON);
     // customAttributeとして扱う際に、keyが重複すると上書きされてしまうので、labelの前に番号を追加して重複を防ぐ
     return skuGroups.map(({ label, skuGroupCode }, index) => ({
-      label: `${index + 1}. ${label}`,
+      label: `${index + 1}.${label}`,
       skuGroupCode,
     }));
   }
@@ -128,7 +128,6 @@ class Variant {
   }
 
   get schedule(): Schedule | null {
-    // MEMO: skusJSONとskuGroupsJSONの両方が登録されているとスケジュールが狂うので注意
     return latest([
       latest(this.skus.map((code) => this.skuMap.get(code)!.schedule)),
       earliest(this.skuGroupsSkus.map((code) => this.skuMap.get(code)!.schedule)),

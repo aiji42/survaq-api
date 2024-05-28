@@ -224,7 +224,6 @@ export class ShopifyOrder extends ShopifyClient {
     query: string,
     variables: Record<string, any>,
   ): Promise<T> {
-    console.log(query);
     const res = await fetch(
       `https://survaq.myshopify.com/admin/api/${this.API_VERSION}/graphql.json`,
       {
