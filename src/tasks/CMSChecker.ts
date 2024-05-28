@@ -2,6 +2,7 @@ import { KiribiPerformer } from "kiribi/performer";
 import { Bindings } from "../../bindings";
 import { DB } from "../libs/db";
 import { SlackNotifier } from "../libs/slack";
+import { sanitizeSkuGroupsJSON, sanitizeSkusJSON } from "../libs/models/cms/Product";
 
 type ValidationResult = {
   products: {
@@ -79,8 +80,14 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
     };
 
     await this.db.useTransaction(async (tDB) => {
+      const getNotGroupedProductsPromise = getNotGroupedProducts(tDB.prisma);
+      const getAllSKUCodesPromise = getAllSKUCodes(tDB.prisma);
+      const getAllSKUGroupCodesPromise = getAllSKUGroupCodes(tDB.prisma);
+      const getAllVariationsPromise = getAllVariations(tDB.prisma);
+      const getAllDuplicatedInventorySKUsPromise = getAllDuplicatedInventorySKUs(tDB.prisma);
+
       // 商品グループが設定されていない商品を取得
-      (await getNotGroupedProducts(tDB.prisma)).forEach((product) => {
+      (await getNotGroupedProductsPromise).forEach((product) => {
         result.products.push({
           id: product.productId,
           name: product.productName,
@@ -90,10 +97,16 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
       });
 
       // バリエーションとSKUの整合性を確認
-      const skuCodes = new Set<string>((await getAllSKUCodes(tDB.prisma)).map(({ code }) => code));
-      const notConnectedSKUVariations = await getNotConnectedSKUVariations(tDB.prisma);
-      notConnectedSKUVariations.forEach((variant) => {
-        if (!variant.skusJSON) {
+      const skuCodes = new Set<string>((await getAllSKUCodesPromise).map(({ code }) => code));
+      const skuGroupCodes = new Set<string>(
+        (await getAllSKUGroupCodesPromise).map(({ code }) => code),
+      );
+      const variations = await getAllVariationsPromise;
+      variations.forEach((variant) => {
+        const skus = sanitizeSkusJSON(variant.skusJSON);
+        const skuGroups = sanitizeSkuGroupsJSON(variant.skuGroupsJSON);
+
+        if (!skus.length && !skuGroups.length) {
           result.variations.push({
             id: variant.variantId,
             name: variant.variantName,
@@ -103,27 +116,25 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
           return;
         }
 
-        try {
-          const skus: string[] = JSON.parse(variant.skusJSON);
-          if (skus.some((sku) => !skuCodes.has(sku)))
-            result.variations.push({
-              id: variant.variantId,
-              name: variant.variantName,
-              cmsLink: cmsVariationLink(variant.id),
-              message: "存在しないSKUコードがskusJSONに含まれています",
-            });
-        } catch (_) {
+        if (skus.some((sku) => !skuCodes.has(sku)))
           result.variations.push({
             id: variant.variantId,
             name: variant.variantName,
             cmsLink: cmsVariationLink(variant.id),
-            message: "skusJSONの形式が間違っています",
+            message: "存在しないSKUコードがskusJSONに含まれています",
           });
-        }
+
+        if (skuGroups.some(({ skuGroupCode }) => !skuGroupCodes.has(skuGroupCode)))
+          result.variations.push({
+            id: variant.variantId,
+            name: variant.variantName,
+            cmsLink: cmsVariationLink(variant.id),
+            message: "存在しないSKUグループコードがskuGroupsJSONに含まれています",
+          });
       });
 
       // 発注内訳のSKUの重複を確認
-      (await getAllDuplicatedInventorySKUs(tDB.prisma)).forEach((inventoryOrder) => {
+      (await getAllDuplicatedInventorySKUsPromise).forEach((inventoryOrder) => {
         const skus = [
           ...new Set(inventoryOrder.ShopifyInventoryOrderSKUs.map(({ sku }) => sku?.code)),
         ];
@@ -161,26 +172,26 @@ const getNotGroupedProducts = async (tDB: DB["prisma"]) => {
   });
 };
 
-const getNotConnectedSKUVariations = async (transactedPrisma: DB["prisma"]) => {
+const getAllVariations = async (transactedPrisma: DB["prisma"]) => {
   return transactedPrisma.shopifyVariants.findMany({
     select: {
       id: true,
       variantId: true,
       variantName: true,
       skusJSON: true,
-    },
-    where: {
-      skus: {
-        none: {
-          sku: { isNot: null },
-        },
-      },
+      skuGroupsJSON: true,
     },
   });
 };
 
 const getAllSKUCodes = async (transactedPrisma: DB["prisma"]) => {
   return transactedPrisma.shopifyCustomSKUs.findMany({
+    select: { code: true },
+  });
+};
+
+const getAllSKUGroupCodes = async (transactedPrisma: DB["prisma"]) => {
+  return transactedPrisma.shopifyCustomSKUGroups.findMany({
     select: { code: true },
   });
 };

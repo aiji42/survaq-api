@@ -239,7 +239,7 @@ const getSKUGroups = async (db: DB, skuGroupCodes: string[]) => {
   });
 };
 
-const sanitizeSkusJSON = (json: string | null) => {
+export const sanitizeSkusJSON = (json: string | null) => {
   if (typeof json !== "string") return [];
   try {
     const parsed = JSON.parse(json);
@@ -251,7 +251,7 @@ const sanitizeSkusJSON = (json: string | null) => {
   }
 };
 
-const sanitizeSkuGroupsJSON = (
+export const sanitizeSkuGroupsJSON = (
   json: string | null,
 ): Array<{ label: string; skuGroupCode: string }> => {
   if (typeof json !== "string") return [];
@@ -266,12 +266,4 @@ const sanitizeSkuGroupsJSON = (
   } catch (_) {
     return [];
   }
-};
-
-const uniqueBy = <T, K extends keyof T>(arr: T[], key: K) => {
-  const map = new Map<T[K], T>();
-  for (const item of arr) {
-    map.set(item[key], item);
-  }
-  return Array.from(map.values());
 };
