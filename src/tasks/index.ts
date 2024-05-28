@@ -49,9 +49,13 @@ export default class extends Kiribi<Performers, Bindings> {
 
   async onSuccess(binding: BindingKeys, payload: any) {
     if (
-      ["ProductSync", "CompleteOrder", "CMSChecker", "PurchaseMeasurementProtocol"].includes(
-        binding,
-      )
+      [
+        "ProductSync",
+        "CompleteOrder",
+        "CMSChecker",
+        "PurchaseMeasurementProtocol",
+        "SyncShopifyOrderToBigQuery",
+      ].includes(binding)
     )
       return;
     const slack = new SlackNotifier(this.env);
