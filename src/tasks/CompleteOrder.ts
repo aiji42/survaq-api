@@ -54,7 +54,10 @@ export class CompleteOrder extends KiribiPerformer<{ orderId: number }, void, Bi
 
     // BigQueryへ注文データを同期する
     // 最大1回のリトライを許容し、リトライの際には120秒待機
-    // await this.env.KIRIBI.enqueue('SyncShopifyOrderToBigQuery', data, { maxRetries: 2, retryDelay: 120 });
+    await this.env.KIRIBI.enqueue("SyncShopifyOrderToBigQuery", data, {
+      maxRetries: 2,
+      retryDelay: 120,
+    });
   }
 
   async sendNotConnectedSkuOrder() {
