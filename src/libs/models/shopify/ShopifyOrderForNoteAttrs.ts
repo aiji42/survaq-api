@@ -70,8 +70,14 @@ export class ShopifyOrderForNoteAttrs extends ShopifyOrder {
       this.lineItems.map(async ({ id, name, properties, variant_id }) => {
         let skus: string | undefined | null =
           skusByLineItemId[id] ?? properties.find((p) => p.name === this.SKUS)?.value;
-        if (!skus || skus === this.EMPTY_ARRAY)
-          skus = (await this.db.getVariant(variant_id))?.skusJSON;
+        if (!skus || skus === this.EMPTY_ARRAY) {
+          const variant = await this.db.getVariant(variant_id);
+
+          // MEMO: ここまで到達して、かつskuGroupsJSON存在している場合、ユーザの選択情報が正しく保存されなかったということを意味する。
+          // なので、skusJSONでの補完は行わず、空のままにしてエスカレーションしてやる
+          if (variant && (!variant.skuGroupsJSON || variant.skuGroupsJSON === this.EMPTY_ARRAY))
+            skus = variant.skusJSON;
+        }
 
         return { id, name, [this.SKUS]: JSON.parse(skus || this.EMPTY_ARRAY) };
       }),

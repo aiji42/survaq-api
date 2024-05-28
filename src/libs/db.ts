@@ -57,6 +57,7 @@ export class DB {
       where: { variantId: String(variantId) },
       select: {
         skusJSON: true,
+        skuGroupsJSON: true,
       },
     });
   }
