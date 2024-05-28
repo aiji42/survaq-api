@@ -6,6 +6,11 @@ import { ShopifyOrderForNoteAttrs } from "../libs/models/shopify/ShopifyOrderFor
 import { blockReRun } from "../libs/utils";
 import { SlackNotifier } from "../libs/slack";
 
+/**
+ * Shopifyの注文情報を更新するタスク
+ * - LineItemのNoteAttributesからSKU情報を取得し、NoteAttributeに記述する
+ * - 配送時期をユーザに通知するメールを送信する
+ */
 export class CompleteOrder extends KiribiPerformer<{ orderId: number }, void, Bindings> {
   db: DB;
   kv: KVNamespace;

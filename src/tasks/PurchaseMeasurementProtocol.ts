@@ -2,6 +2,10 @@ import { KiribiPerformer } from "kiribi/performer";
 import { Bindings } from "../../bindings";
 import { ShopifyOrder } from "../libs/models/shopify/ShopifyOrder";
 
+/**
+ * Shopifyの注文情報をGoogle AnalyticsのMeasurement Protocolに送信するタスク
+ * (サテライトからのCV情報はクロスドメインのためShopify側からは送信できないため、サーバーサイドで送信する)
+ */
 export class PurchaseMeasurementProtocol extends KiribiPerformer<
   { orderId: number },
   void,

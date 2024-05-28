@@ -3,6 +3,10 @@ import { Bindings } from "../../bindings";
 import { DB } from "../libs/db";
 import { ShopifyProduct } from "../libs/models/shopify/ShopifyProduct";
 
+// TODO:BigQueryへの同期もこのJOBでやってしまう
+/**
+ * Shopifyの商品情報をCMSに同期する
+ */
 export class ProductSync extends KiribiPerformer<{ productId: number }, void, Bindings> {
   db: DB;
   constructor(ctx: ExecutionContext, env: Bindings) {

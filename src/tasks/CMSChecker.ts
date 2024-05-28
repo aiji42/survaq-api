@@ -27,6 +27,9 @@ type ValidationResult = {
 
 const channel = "notify-cms";
 
+/**
+ * CMSの設定値に問題がないか確認するタスク
+ */
 export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
   private db: DB;
   private slack: SlackNotifier;

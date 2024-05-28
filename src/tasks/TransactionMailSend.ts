@@ -2,6 +2,9 @@ import { KiribiPerformer } from "kiribi/performer";
 import { Bindings } from "../../bindings";
 import { TransactionMail } from "../libs/models/cms/TransactionMail";
 
+/**
+ * CMSのトランザクションメールレコードを処理してメールを送信する
+ */
 export class TransactionMailSend extends KiribiPerformer<{ id: number }, void, Bindings> {
   tm: TransactionMail;
   constructor(ctx: ExecutionContext, env: Bindings) {

@@ -2,6 +2,9 @@ import { KiribiPerformer } from "kiribi/performer";
 import { Bindings } from "../../bindings";
 import { ShopifyOrderSyncBQ } from "../libs/models/shopify/ShopifyOrderSyncBQ";
 
+/**
+ * Shopifyの注文情報をBigQueryに同期するタスク
+ */
 export class SyncShopifyOrderToBigQuery extends KiribiPerformer<
   { orderId: number },
   void,

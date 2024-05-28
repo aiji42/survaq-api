@@ -7,6 +7,9 @@ import { MailSender, ShopifyOrderMailSender } from "../libs/sendgrid";
 import { Logger } from "../libs/logger";
 import { SlackNotifier } from "../libs/slack";
 
+/**
+ * キャンセルリクエストを処理し、ShopifyとLogilessの注文をキャンセルする
+ */
 export class Cancel extends KiribiPerformer<{ requestId: number }, void, Bindings> {
   db: DB;
   shopifyOrder: ShopifyOrderForCancel;
