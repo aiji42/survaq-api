@@ -1,23 +1,19 @@
-import { makeVariants } from "./makeVariants";
 import { makeSchedule, Schedule } from "./makeSchedule";
+import { CompletedSKU } from "./models/cms/Product";
 
 export type SKUsForDelivery = Array<{
   id: number;
   code: string;
   name: string;
-  schedule: Schedule<false>;
+  schedule: Schedule;
   sortNumber: number;
   delaying: boolean;
 }>;
 
-export const makeSKUsForDelivery = (
-  variants: Awaited<ReturnType<typeof makeVariants>>,
-  onlyDelaying = true,
-): SKUsForDelivery => {
+export const makeSKUsForDelivery = (skus: CompletedSKU[], onlyDelaying = true): SKUsForDelivery => {
   const earliestSchedule = makeSchedule(null);
 
-  return variants
-    .flatMap(({ baseSKUs, selectableSKUs }) => [...baseSKUs, ...selectableSKUs])
+  return skus
     .reduce<SKUsForDelivery>((acc, sku) => {
       const schedule = sku.schedule ?? earliestSchedule;
       const delaying = schedule.numeric > earliestSchedule.numeric;

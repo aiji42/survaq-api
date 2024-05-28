@@ -73,24 +73,25 @@ model GoogleMerchantCenter {
 }
 
 model ShopifyCustomSKUs {
-  id                                Int                                 @id @default(autoincrement())
-  createdAt                         DateTime?                           @db.Timestamptz(6)
-  updatedAt                         DateTime?                           @db.Timestamptz(6)
-  code                              String                              @unique(map: "shopifycustomskus_code_unique") @db.VarChar(255)
-  name                              String                              @db.VarChar(255)
-  subName                           String?                             @db.VarChar(255)
-  inventory                         Int                                 @default(0)
-  unshippedOrderCount               Int                                 @default(0)
-  lastSyncedAt                      DateTime?                           @db.Timestamp(6)
-  stockBuffer                       Int?                                @default(5)
-  skipDeliveryCalc                  Boolean?                            @default(false)
-  displayName                       String?                             @db.VarChar(255)
-  sortNumber                        Int                                 @default(0)
-  currentInventoryOrderSKUId        Int?
-  faultyRate                        Float                               @default(0) @db.Real
-  currentInventoryOrderSKU          ShopifyInventoryOrderSKUs?          @relation("ShopifyCustomSKUs_currentInventoryOrderSKUIdToShopifyInventoryOrderSKUs", fields: [currentInventoryOrderSKUId], references: [id], onUpdate: NoAction, map: "shopifycustomskus_currentinventoryorderskuid_foreign")
-  inventoryOrderSKUs                ShopifyInventoryOrderSKUs[]         @relation("ShopifyInventoryOrderSKUs_skuIdToShopifyCustomSKUs")
-  ShopifyVariants_ShopifyCustomSKUs ShopifyVariants_ShopifyCustomSKUs[]
+  id                                       Int                                        @id @default(autoincrement())
+  createdAt                                DateTime?                                  @db.Timestamptz(6)
+  updatedAt                                DateTime?                                  @db.Timestamptz(6)
+  code                                     String                                     @unique(map: "shopifycustomskus_code_unique") @db.VarChar(255)
+  name                                     String                                     @db.VarChar(255)
+  subName                                  String?                                    @db.VarChar(255)
+  inventory                                Int                                        @default(0)
+  unshippedOrderCount                      Int                                        @default(0)
+  lastSyncedAt                             DateTime?                                  @db.Timestamp(6)
+  stockBuffer                              Int?                                       @default(5)
+  skipDeliveryCalc                         Boolean?                                   @default(false)
+  displayName                              String?                                    @db.VarChar(255)
+  sortNumber                               Int                                        @default(0)
+  currentInventoryOrderSKUId               Int?
+  faultyRate                               Float                                      @default(0) @db.Real
+  ShopifyCustomSKUGroups_ShopifyCustomSKUs ShopifyCustomSKUGroups_ShopifyCustomSKUs[]
+  currentInventoryOrderSKU                 ShopifyInventoryOrderSKUs?                 @relation("ShopifyCustomSKUs_currentInventoryOrderSKUIdToShopifyInventoryOrderSKUs", fields: [currentInventoryOrderSKUId], references: [id], onUpdate: NoAction, map: "shopifycustomskus_currentinventoryorderskuid_foreign")
+  inventoryOrderSKUs                       ShopifyInventoryOrderSKUs[]                @relation("ShopifyInventoryOrderSKUs_skuIdToShopifyCustomSKUs")
+  ShopifyVariants_ShopifyCustomSKUs        ShopifyVariants_ShopifyCustomSKUs[]
 }
 
 model ShopifyInventoryOrderSKUs {
@@ -184,6 +185,7 @@ model ShopifyVariants {
   variantId       String                              @unique(map: "shopifyvariants_variantid_unique") @db.VarChar(255)
   skuLabel        String?                             @db.VarChar(255)
   skusJSON        String?                             @db.VarChar(255)
+  skuGroupsJSON   String?                             @db.VarChar(255)
   ShopifyProducts ShopifyProducts?                    @relation(fields: [product], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "shopifyvariants_product_foreign")
   skus            ShopifyVariants_ShopifyCustomSKUs[]
 }
@@ -656,4 +658,22 @@ model CancelRequests {
   log       String?
   reason    String?
   orderKey  String    @unique(map: "cancelrequests_orderkey_unique") @db.VarChar(255)
+}
+
+model ShopifyCustomSKUGroups {
+  id        Int                                        @id @default(autoincrement())
+  createdAt DateTime?                                  @db.Timestamptz(6)
+  updatedAt DateTime?                                  @db.Timestamptz(6)
+  code      String                                     @unique(map: "shopifycustomskugroups_code_unique") @db.VarChar(255)
+  name      String                                     @db.VarChar(255)
+  skus      ShopifyCustomSKUGroups_ShopifyCustomSKUs[]
+}
+
+model ShopifyCustomSKUGroups_ShopifyCustomSKUs {
+  id                        Int                     @id @default(autoincrement())
+  ShopifyCustomSKUGroups_id Int?
+  ShopifyCustomSKUs_id      Int?
+  sort                      Int?
+  skuGroup                  ShopifyCustomSKUGroups? @relation(fields: [ShopifyCustomSKUGroups_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "shopifycustomskugroups_shopifycustomskus_s__42ac7dc2_foreign")
+  sku                       ShopifyCustomSKUs?      @relation(fields: [ShopifyCustomSKUs_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "shopifycustomskugroups_shopifycustomskus_sh__9b1c1d9_foreign")
 }
