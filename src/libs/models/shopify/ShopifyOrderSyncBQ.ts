@@ -1,7 +1,18 @@
 import { ShopifyOrderForNoteAttrs } from "./ShopifyOrderForNoteAttrs";
+import { BigQuery } from "cfw-bq";
 
 export class ShopifyOrderSyncBQ extends ShopifyOrderForNoteAttrs {
   private _graphqlOrder: OrderGraphQLResponse | undefined;
+  private bq: BigQuery;
+
+  constructor(env: {
+    SHOPIFY_ACCESS_TOKEN: string;
+    DATABASE_URL: string;
+    GCP_SERVICE_ACCOUNT: string;
+  }) {
+    super(env);
+    this.bq = new BigQuery(JSON.parse(env.GCP_SERVICE_ACCOUNT), "shopify-322306");
+  }
 
   get graphqlOrder(): OrderGraphQLResponse {
     if (!this._graphqlOrder) throw new Error("Execute prepare() before");
@@ -109,7 +120,7 @@ export class ShopifyOrderSyncBQ extends ShopifyOrderForNoteAttrs {
           without_tax_total_price: withoutTaxTotalPrice,
           delivery_schedule: null,
           skus: null,
-          skus_quantity: null,
+          sku_quantity: null,
         };
       },
     );
@@ -144,6 +155,58 @@ export class ShopifyOrderSyncBQ extends ShopifyOrderForNoteAttrs {
         quantity: quantity * lineItem.quantity,
       }));
     });
+  }
+
+  async upsertBQOrdersTableData() {
+    const data = this.createBQOrdersTableData();
+    const query = `DELETE FROM \`shopify.orders\` WHERE id = '${this.gid}';
+        INSERT INTO \`shopify.orders\` (${Object.keys(data).join(", ")})
+        VALUES (${Object.values(data).map(valueToSQL).join(", ")});`;
+    await this.bq.query(query);
+  }
+
+  async upsertBQLineItemsTableData() {
+    const data = this.createBQLineItemsTableData();
+    let query = `DELETE FROM \`shopify.line_items\` WHERE order_id = '${this.gid}';`;
+    if (data.length) {
+      query += `
+          INSERT INTO \`shopify.line_items\` (${Object.keys(data[0]!).join(", ")})
+          VALUES ${data.map((d) => `(${Object.values(d).map(valueToSQL).join(", ")})`).join(", ")};`;
+    }
+    await this.bq.query(query);
+  }
+
+  async upsertBQOrderSKUsTableData() {
+    const data = this.createBQOrderSKUsTableData();
+    let query = `DELETE FROM \`shopify.order_skus\` WHERE order_id = '${this.gid}';`;
+    if (data.length) {
+      query += `
+          INSERT INTO \`shopify.order_skus\` (${Object.keys(data[0]!).join(", ")})
+          VALUES ${data.map((d) => `(${Object.values(d).map(valueToSQL).join(", ")})`).join(", ")};`;
+    }
+    await this.bq.query(query);
+  }
+
+  // 確認用
+  async getBQOrdersTableData() {
+    const res = await this.bq.query<BQOrdersTable>(
+      `SELECT * FROM \`shopify.orders\` WHERE id = '${this.gid}'`,
+    );
+    return res[0];
+  }
+
+  // 確認用
+  async getBQLineItemsTableData() {
+    return this.bq.query<BQLineItemsTable>(
+      `SELECT * FROM \`shopify.line_items\` WHERE order_id = '${this.gid}'`,
+    );
+  }
+
+  // 確認用
+  async getBQOrderSKUsTableData() {
+    return this.bq.query<BQOrderSKUsTable>(
+      `SELECT * FROM \`shopify.order_skus\` WHERE order_id = '${this.gid}'`,
+    );
   }
 }
 
@@ -191,7 +254,7 @@ type BQLineItemsTable = {
   without_tax_total_price: number;
   delivery_schedule: null; // Deprecated
   skus: null; // Deprecated
-  skus_quantity: null; // Deprecated
+  sku_quantity: null; // Deprecated
 };
 
 type BQOrderSKUsTable = {
@@ -302,3 +365,9 @@ const decode = <T extends string | null | undefined>(src: T): T => {
 
 const gidVariant = (id: number) => `gid://shopify/ProductVariant/${id}`;
 const gidProduct = (id: number) => `gid://shopify/Product/${id}`;
+
+const valueToSQL = (value: string | number | boolean | null) => {
+  if (value === null) return "NULL";
+  if (typeof value === "string") return `'${value}'`;
+  return value;
+};
