@@ -99,7 +99,7 @@ app.get("/page-data/:code", async (c) => {
     return {
       favicon,
       logo,
-      page,
+      ...page,
       product,
     };
   });

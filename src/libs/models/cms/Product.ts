@@ -41,15 +41,16 @@ export class Product {
     );
 
     // defaultScheduleを取得(各variantの中で最も早いスケジュールを選択)
-    const defaultSchedule =
+    const schedule =
       earliest(completedVariants.map((v) => v.schedule)) ?? makeSchedule(null, this.locale);
 
     return {
+      productId: product.productId,
       productName: product.productName,
       variants: completedVariants,
       skus: Object.fromEntries(skuMap.entries()),
       skuGroups: Object.fromEntries(skuGroupMap.entries()),
-      defaultSchedule,
+      schedule,
     };
   }
 }
@@ -58,6 +59,7 @@ const getProduct = async (db: DB, shopifyProductId: string) => {
   return db.prisma.shopifyProducts.findFirst({
     where: { productId: shopifyProductId },
     select: {
+      productId: true,
       productName: true,
       ShopifyVariants: {
         select: {
@@ -113,7 +115,12 @@ class Variant {
   }
 
   get skuGroups(): SkuGroup[] {
-    return sanitizeSkuGroupsJSON(this._variant.skuGroupsJSON);
+    const skuGroups = sanitizeSkuGroupsJSON(this._variant.skuGroupsJSON);
+    // customAttributeとして扱う際に、keyが重複すると上書きされてしまうので、labelの前に番号を追加して重複を防ぐ
+    return skuGroups.map(({ label, skuGroupCode }, index) => ({
+      label: `${index + 1}. ${label}`,
+      skuGroupCode,
+    }));
   }
 
   get skuGroupsSkus(): string[] {
@@ -131,31 +138,12 @@ class Variant {
   }
 
   get completed(): CompletedVariant {
-    if (this.skus.length) {
-      return {
-        variantId: this._variant.variantId,
-        variantName: this._variant.variantName,
-        skus: this.skus,
-        skuGroups: [],
-        schedule: this.schedule,
-      };
-    }
-    if (this.skuGroups.length) {
-      return {
-        variantId: this._variant.variantId,
-        variantName: this._variant.variantName,
-        skus: [],
-        skuGroups: this.skuGroups,
-        schedule: this.schedule,
-      };
-    }
-
     return {
       variantId: this._variant.variantId,
       variantName: this._variant.variantName,
-      skus: [],
-      skuGroups: [],
-      schedule: null,
+      skus: this.skus,
+      skuGroups: this.skuGroups,
+      schedule: this.schedule,
     };
   }
 }
