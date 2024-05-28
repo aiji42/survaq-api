@@ -15,6 +15,8 @@ import { PurchaseMeasurementProtocol } from "./PurchaseMeasurementProtocol";
 export { PurchaseMeasurementProtocol } from "./PurchaseMeasurementProtocol";
 import { CMSChecker } from "./CMSChecker";
 export { CMSChecker } from "./CMSChecker";
+import { SyncShopifyOrderToBigQuery } from "./SyncShopifyOrderToBigQuery";
+export { SyncShopifyOrderToBigQuery } from "./SyncShopifyOrderToBigQuery";
 
 type Performers = {
   Cancel: Cancel;
@@ -23,6 +25,7 @@ type Performers = {
   TransactionMailSend: TransactionMailSend;
   PurchaseMeasurementProtocol: PurchaseMeasurementProtocol;
   CMSChecker: CMSChecker;
+  SyncShopifyOrderToBigQuery: SyncShopifyOrderToBigQuery;
 };
 type BindingKeys = keyof Performers;
 

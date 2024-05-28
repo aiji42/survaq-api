@@ -63,5 +63,10 @@ binding = "CMSChecker"
 service = "kiribi-survaq-api"
 entrypoint = "CMSChecker"
 
+[[services]]
+binding = "SyncShopifyOrderToBigQuery"
+service = "kiribi-survaq-api"
+entrypoint = "SyncShopifyOrderToBigQuery"
+
 [site]
 bucket = "./node_modules/kiribi/client"
