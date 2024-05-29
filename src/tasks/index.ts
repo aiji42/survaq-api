@@ -40,7 +40,7 @@ export default class extends Kiribi<Performers, Bindings> {
   rest = rest;
 
   async scheduled({ cron }: ScheduledEvent) {
-    // every day at 00:00(UTC)
+    // every day at 00:00(UTC) => 09:00(JST)
     if (cron === "0 0 * * *") {
       // Sweep jobs older than 3 days with statuses COMPLETED, CANCELLED
       await this.sweep({ olderThan: 1000 * 60 * 60 * 24 * 3 });
@@ -50,7 +50,10 @@ export default class extends Kiribi<Performers, Bindings> {
     if (cron === "5 * * * *") {
       // Check CMS
       await this.enqueue("CMSChecker", {}, { maxRetries: 1 });
+    }
 
+    // every hour at 55 minutes
+    if (cron === "55 * * * *") {
       // UpdateSkuOnFulfillment
       // TODO: 適切な時間に実行されるように変更(UpdateOrderInventory)との競合も注意する
       // あと時差にも注意
