@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import { Layout } from "../../components/Layout";
 import { ShopifyOrderSyncBQ } from "../../libs/models/shopify/ShopifyOrderSyncBQ";
 import { Bindings } from "../../../bindings";
+import { Inventory } from "../../libs/models/cms/Inventory";
+import { DB } from "../../libs/db";
 
 const app = new Hono<{ Bindings: Bindings & { DEV?: string } }>();
 
@@ -94,6 +96,20 @@ app.get("/shopify/:id", async (c) => {
     lineItems: order.createBQLineItemsTableData(),
     orderSKUs: order.createBQOrderSKUsTableData(),
   });
+});
+
+app.get("/inventory/:code", async (c) => {
+  const code = c.req.param("code");
+  const db = new DB(c.env);
+  const res = await db.useTransaction(async (transactedDB) => {
+    const inventory = new Inventory(transactedDB, code, c.env);
+    await inventory.prepare();
+    const sku = inventory.sku;
+    const updateQuery = await inventory.update();
+    return { sku, updateQuery };
+  });
+
+  return c.json(res);
 });
 
 export default app;
