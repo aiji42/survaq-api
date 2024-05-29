@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { Layout } from "../../components/Layout";
 import { ShopifyOrderSyncBQ } from "../../libs/models/shopify/ShopifyOrderSyncBQ";
 import { Bindings } from "../../../bindings";
-import { Inventory } from "../../libs/models/cms/Inventory";
+import { InventoryOperator } from "../../libs/models/cms/Inventory";
 import { DB } from "../../libs/db";
 
 const app = new Hono<{ Bindings: Bindings & { DEV?: string } }>();
@@ -29,27 +29,6 @@ app.get("/delivery-schedules/:id", (c) => {
   );
 });
 
-app.get("/orders/cancel", (c) => {
-  return c.html(
-    <Layout isDev={!!c.env.DEV}>
-      <div className="border rounded-md w-full p-4 my-3">
-        <survaq-order-cancel orderId={5946083901645} />
-      </div>
-    </Layout>,
-  );
-});
-
-app.get("/orders/schedule", (c) => {
-  const id = c.req.param("id");
-  return c.html(
-    <Layout isDev={!!c.env.DEV}>
-      <div className="border rounded-md w-full p-4 my-3">
-        <survaq-delivery-schedule-order orderId="5946083901645" />
-      </div>
-    </Layout>,
-  );
-});
-
 app.get("/orders/:id", (c) => {
   const id = c.req.param("id");
   return c.html(
@@ -57,28 +36,6 @@ app.get("/orders/:id", (c) => {
       <div className="border rounded-md w-full p-4 my-3">
         <survaq-delivery-schedule-order orderId={id} />
       </div>
-      <div className="border rounded-md w-full p-4 my-3">
-        <survaq-order-cancel orderId={id} />
-      </div>
-    </Layout>,
-  );
-});
-
-app.get("/orders/:id/schedule", (c) => {
-  const id = c.req.param("id");
-  return c.html(
-    <Layout isDev={!!c.env.DEV}>
-      <div className="border rounded-md w-full p-4 my-3">
-        <survaq-delivery-schedule-order orderId={id} />
-      </div>
-    </Layout>,
-  );
-});
-
-app.get("/orders/:id/cancel", (c) => {
-  const id = c.req.param("id");
-  return c.html(
-    <Layout isDev={!!c.env.DEV}>
       <div className="border rounded-md w-full p-4 my-3">
         <survaq-order-cancel orderId={id} />
       </div>
@@ -102,7 +59,7 @@ app.get("/inventory/:code", async (c) => {
   const code = c.req.param("code");
   const db = new DB(c.env);
   const res = await db.useTransaction(async (transactedDB) => {
-    const inventory = new Inventory(transactedDB, code, c.env);
+    const inventory = new InventoryOperator(transactedDB, code, c.env);
     await inventory.prepare();
     const sku = inventory.sku;
     const updateQuery = await inventory.update();

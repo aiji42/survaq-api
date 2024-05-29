@@ -1,5 +1,6 @@
 import { ShopifyOrderForNoteAttrs } from "./ShopifyOrderForNoteAttrs";
 import { BigQuery } from "cfw-bq";
+import { BQ_PROJECT_ID } from "../../../constants";
 
 export class ShopifyOrderSyncBQ extends ShopifyOrderForNoteAttrs {
   private _graphqlOrder: OrderGraphQLResponse | undefined;
@@ -11,7 +12,7 @@ export class ShopifyOrderSyncBQ extends ShopifyOrderForNoteAttrs {
     GCP_SERVICE_ACCOUNT: string;
   }) {
     super(env);
-    this.bq = new BigQuery(JSON.parse(env.GCP_SERVICE_ACCOUNT), "shopify-322306");
+    this.bq = new BigQuery(JSON.parse(env.GCP_SERVICE_ACCOUNT), BQ_PROJECT_ID);
   }
 
   get graphqlOrder(): OrderGraphQLResponse {

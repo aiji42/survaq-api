@@ -3,6 +3,7 @@ import { Bindings } from "../../bindings";
 import { DB } from "../libs/db";
 import { SlackNotifier } from "../libs/slack";
 import { sanitizeSkuGroupsJSON, sanitizeSkusJSON } from "../libs/models/cms/Product";
+import { SLACK_CHANNEL } from "../constants";
 
 type ValidationResult = {
   products: {
@@ -31,8 +32,6 @@ type ValidationResult = {
   }[];
 };
 
-const channel = "notify-cms";
-
 /**
  * CMSの設定値に問題がないか確認するタスク
  */
@@ -55,7 +54,7 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
           text: `${result.products.length}件の問題が発生中`,
           color: "danger",
         },
-        channel,
+        SLACK_CHANNEL.ALERT,
       );
     if (result.variations.length)
       this.slack.append(
@@ -64,7 +63,7 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
           text: `${result.variations.length}件の問題が発生中`,
           color: "danger",
         },
-        channel,
+        SLACK_CHANNEL.ALERT,
       );
     if (result.skus.length)
       this.slack.append(
@@ -73,7 +72,7 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
           text: `${result.skus.length}件の問題が発生中`,
           color: "danger",
         },
-        channel,
+        SLACK_CHANNEL.ALERT,
       );
     if (result.inventories.length)
       this.slack.append(
@@ -82,7 +81,7 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
           text: `${result.inventories.length}件の問題が発生中`,
           color: "danger",
         },
-        channel,
+        SLACK_CHANNEL.ALERT,
       );
 
     await this.slack.notify(

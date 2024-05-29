@@ -3,6 +3,7 @@ import { BigQuery } from "cfw-bq";
 import { SlackNotifier } from "../../slack";
 import { SlackEdgeAppEnv } from "slack-edge/dist/app-env";
 import { makeSchedule } from "../../makeSchedule";
+import { BQ_PROJECT_ID } from "../../../constants";
 
 type SKU = {
   inventory: number;
@@ -21,29 +22,93 @@ type SKU = {
   }[];
 };
 
-// TODO: BQのprojectIdとかSlackのチャンネルとか共通の固定値にしておきたい
 export class Inventory {
+  constructor(private _sku?: undefined | SKU) {}
+
+  get sku() {
+    if (!this._sku) throw new Error("Sku not prepared");
+    return this._sku;
+  }
+
+  set sku(sku: SKU) {
+    this._sku = sku;
+  }
+
+  get availableInventories() {
+    // FIXME: リアルタイムで在庫を差し押さえるのであればbufferの概念はいらなくなる？(なくならなくても数の変更はあるはず)
+    const buffer = this.sku.stockBuffer ?? 0;
+
+    return [
+      // MEMO: 計算上実在庫を仮想の発注データとして扱う
+      {
+        id: null,
+        limit:
+          this.sku.inventory -
+          Math.max(buffer, Math.ceil(this.sku.inventory * this.sku.faultyRate)),
+        deliverySchedule: null,
+      },
+      ...this.sku.inventoryOrderSKUs.map(
+        ({ id, quantity, ShopifyInventoryOrders: { deliverySchedule } }) => ({
+          id,
+          limit: quantity - Math.ceil(quantity * this.sku.faultyRate),
+          deliverySchedule,
+        }),
+      ),
+    ] as const;
+  }
+
+  protected holdInventories(waitingQty: number) {
+    const list = this.availableInventories.reduce<
+      {
+        id: number | null;
+        heldQuantity: number;
+        isFull: boolean;
+        deliverySchedule: null | string;
+      }[]
+    >((acc, { id, limit, deliverySchedule }) => {
+      const allocatedQty = acc.reduce((sum, { heldQuantity }) => sum + heldQuantity, 0);
+      const unAllocatedQty = waitingQty - allocatedQty;
+      const heldQuantity = Math.min(unAllocatedQty, limit);
+      return [
+        ...acc,
+        {
+          id,
+          heldQuantity,
+          isFull: heldQuantity >= limit,
+          deliverySchedule,
+        },
+      ];
+    }, []);
+
+    return list as [
+      { id: null; heldQuantity: number; isFull: boolean; deliverySchedule: null },
+      ...{ id: number; heldQuantity: number; isFull: boolean; deliverySchedule: string | null }[],
+    ];
+  }
+
+  availableInventoryOrderSKU(waitingQty: number) {
+    return this.holdInventories(waitingQty).find(({ isFull }) => !isFull);
+  }
+}
+
+export class InventoryOperator extends Inventory {
   private bq: BigQuery;
-  private _sku: undefined | SKU;
   private _waitingShipmentQuantity: number | undefined;
   private slack: SlackNotifier;
+
   constructor(
     private db: DB,
     private code: string,
     env: { GCP_SERVICE_ACCOUNT: string } & SlackEdgeAppEnv,
   ) {
-    this.bq = new BigQuery(JSON.parse(env.GCP_SERVICE_ACCOUNT), "shopify-322306");
+    super();
+    this.bq = new BigQuery(JSON.parse(env.GCP_SERVICE_ACCOUNT), BQ_PROJECT_ID);
     this.slack = new SlackNotifier(env);
   }
 
   async prepare() {
-    this._sku = await this.getSku();
-    this._waitingShipmentQuantity = await this.getWaitingShipmentQuantity();
-  }
-
-  get sku() {
-    if (!this._sku) throw new Error("Sku not prepared");
-    return this._sku;
+    this.sku = await this.fetchSku();
+    this._waitingShipmentQuantity = await this.fetchWaitingShipmentQuantity();
   }
 
   get waitingShipmentQuantity() {
@@ -53,15 +118,17 @@ export class Inventory {
   }
 
   async update() {
-    const held = this.hold();
-    let availableInventoryOrderSKU = held.find(({ isFull }) => !isFull);
-    if (!availableInventoryOrderSKU) {
-      await this.notifyAlertForFullInventoryOrderSKU();
-      availableInventoryOrderSKU = held.at(-1)!;
-    }
+    const held = this.holdInventories(this.waitingShipmentQuantity);
+    let availableInventoryOrderSKU = this.availableInventoryOrderSKU(this.waitingShipmentQuantity);
+
+    // 販売枠がこれ以上ない旨をアラートとして通知
+    if (!availableInventoryOrderSKU) await this.notifyAlertForFullInventoryOrderSKU();
 
     // 販売枠を変更する旨を通知
-    if (this.sku.currentInventoryOrderSKUId !== availableInventoryOrderSKU.id)
+    if (
+      availableInventoryOrderSKU &&
+      this.sku.currentInventoryOrderSKUId !== availableInventoryOrderSKU.id
+    )
       await this.notifyForChangeCurrentInventoryOrderSKUId(availableInventoryOrderSKU.id);
 
     const [, ...inventoryOrderSKUs] = held;
@@ -70,7 +137,7 @@ export class Inventory {
     return {
       where: { code: this.code },
       data: {
-        currentInventoryOrderSKUId: availableInventoryOrderSKU.id,
+        currentInventoryOrderSKUId: availableInventoryOrderSKU?.id,
         unshippedOrderCount: this.waitingShipmentQuantity,
         inventoryOrderSKUs: {
           update: inventoryOrderSKUs.map(({ id, heldQuantity }) => ({
@@ -83,7 +150,7 @@ export class Inventory {
     // await this.db.prisma.shopifyCustomSKUs.update({
     //   where: { code: this.code },
     //   data: {
-    //     currentInventoryOrderSKUId: availableInventoryOrderSKU.id,
+    //     currentInventoryOrderSKUId: availableInventoryOrderSKU?.id,
     //     unshippedOrderCount: this.waitingShipmentQuantity,
     //     inventoryOrderSKUs: {
     //       update: inventoryOrderSKUs.map(({ id, heldQuantity }) => ({
@@ -95,7 +162,7 @@ export class Inventory {
     // });
   }
 
-  // FIXME: 一旦テストのためにチャンネルはデフォルトにしておく(最終的には"#notify-cms-info"にする)
+  // FIXME: 一旦テストのためにチャンネルはデフォルトにしておく(最終的にはSLACK_CHANNEL.INFOにする)
   private async notifyForChangeCurrentInventoryOrderSKUId(
     newCurrentInventoryOrderSKUId: null | number,
   ) {
@@ -124,7 +191,7 @@ export class Inventory {
     await this.slack.notify("SKUの販売枠を変更しました");
   }
 
-  // FIXME: 一旦テストのためにチャンネルはデフォルトにしておく(最終的には"#notify-cms"にする)
+  // FIXME: 一旦テストのためにチャンネルはデフォルトにしておく(最終的にはSLACK_CHANNEL.ALERTにする)
   private async notifyAlertForFullInventoryOrderSKU() {
     this.slack.append({
       title: this.code,
@@ -135,47 +202,7 @@ export class Inventory {
     await this.slack.notify("SKUの販売枠を変更できませんでした");
   }
 
-  private hold() {
-    // FIXME: リアルタイムで在庫を差し押さえるのであればbufferの概念はいらなくなる？(なくならなくても数の変更はあるはず)
-    const buffer = this.sku.stockBuffer ?? 0;
-
-    // 現在の出荷待ち件数を、実在庫 > 発注1 > 発注2 ... の順番に差押件数として振っていく
-    const list = [
-      // MEMO: 計算上実在庫を仮想の発注データとして扱う
-      {
-        id: null,
-        limit:
-          this.sku.inventory -
-          Math.max(buffer, Math.ceil(this.sku.inventory * this.sku.faultyRate)),
-      },
-      ...this.sku.inventoryOrderSKUs.map(({ id, quantity }) => ({
-        id,
-        limit: quantity - Math.ceil(quantity * this.sku.faultyRate),
-      })),
-    ].reduce<{ id: number | null; heldQuantity: number; isFull: boolean }[]>(
-      (acc, { id, limit }) => {
-        const allocatedQty = acc.reduce((sum, { heldQuantity }) => sum + heldQuantity, 0);
-        const unAllocatedQty = this.waitingShipmentQuantity - allocatedQty;
-        const heldQuantity = Math.min(unAllocatedQty, limit);
-        return [
-          ...acc,
-          {
-            id,
-            heldQuantity,
-            isFull: heldQuantity >= limit,
-          },
-        ];
-      },
-      [],
-    );
-
-    return list as [
-      { id: null; heldQuantity: number; isFull: boolean },
-      ...{ id: number; heldQuantity: number; isFull: boolean }[],
-    ];
-  }
-
-  private async getSku() {
+  private async fetchSku() {
     return this.db.prisma.shopifyCustomSKUs.findUniqueOrThrow({
       where: { code: this.code },
       select: {
@@ -218,7 +245,7 @@ export class Inventory {
     });
   }
 
-  private async getWaitingShipmentQuantity() {
+  private async fetchWaitingShipmentQuantity() {
     // 未キャンセル・未クローズ・未フルフィル・注文より180日以内のSKUを未出荷として件数を取得
     const query = `
         SELECT SUM(quantity) as quantity

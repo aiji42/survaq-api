@@ -2,6 +2,8 @@ import { ShopifyOrder } from "./ShopifyOrder";
 import { BigQuery } from "cfw-bq";
 import { DB } from "../../db";
 import { latest, makeSchedule } from "../../makeSchedule";
+import { BQ_PROJECT_ID } from "../../../constants";
+import { Inventory } from "../cms/Inventory";
 
 export class ShopifyOrderDeliverySchedule extends ShopifyOrder {
   private bq: BigQuery;
@@ -12,7 +14,7 @@ export class ShopifyOrderDeliverySchedule extends ShopifyOrder {
     DATABASE_URL: string;
   }) {
     super(env);
-    this.bq = new BigQuery(JSON.parse(env.GCP_SERVICE_ACCOUNT), "shopify-322306");
+    this.bq = new BigQuery(JSON.parse(env.GCP_SERVICE_ACCOUNT), BQ_PROJECT_ID);
     this.db = new DB(env);
   }
 
@@ -24,43 +26,53 @@ export class ShopifyOrderDeliverySchedule extends ShopifyOrder {
     return this.bq.query<{ code: string; quantity: number }>(waitingQuantitiesBySkuQuery(this.gid));
   }
 
-  // TODO: Inventoryモデルと共通化
-  private async getInventories(codes: string[]) {
-    const res = await this.db.getSKUsWithWaitingInventoryOrders(codes);
+  private async getSkuByCode(codes: string[]) {
+    if (codes.length < 1) return {};
 
-    return Object.fromEntries(
-      res.map(({ code, ...sku }) => {
-        // スケジュール計算しなくて良いSKUは在庫数無限の即時出荷可能として扱う
-        if (sku.skipDeliveryCalc)
-          return [
-            code,
-            [
-              {
-                availableQuantity: Number.POSITIVE_INFINITY,
-                schedule: null,
+    const skus = await this.db.prisma.shopifyCustomSKUs.findMany({
+      where: { code: { in: codes } },
+      select: {
+        code: true,
+        inventory: true,
+        stockBuffer: true,
+        faultyRate: true,
+        unshippedOrderCount: true,
+        currentInventoryOrderSKUId: true,
+        skipDeliveryCalc: true,
+        inventoryOrderSKUs: {
+          select: {
+            id: true,
+            quantity: true,
+            heldQuantity: true,
+            ShopifyInventoryOrders: {
+              select: {
+                name: true,
+                deliverySchedule: true,
               },
-            ],
-          ] as const;
-
-        return [
-          code,
-          [
-            // 対象SKUの実在庫(不良想定数およびバッファ分確保を加味した数)
-            {
-              availableQuantity:
-                sku.inventory -
-                Math.max(sku.stockBuffer ?? 0, Math.ceil(sku.inventory * sku.faultyRate)),
-              schedule: null,
             },
-            // 入庫待ちの枠(不良想定数を加味した数)
-            ...sku.inventoryOrderSKUs.map(({ quantity, ShopifyInventoryOrders }) => ({
-              availableQuantity: quantity - Math.ceil(quantity * sku.faultyRate),
-              schedule: ShopifyInventoryOrders.deliverySchedule,
-            })),
-          ] as const,
-        ];
-      }),
-    );
+          },
+          where: {
+            ShopifyInventoryOrders: {
+              status: { in: ["waitingShipping", "waitingReceiving"] },
+            },
+          },
+          orderBy: [
+            {
+              ShopifyInventoryOrders: {
+                deliveryDate: "asc",
+              },
+            },
+            {
+              ShopifyInventoryOrders: {
+                id: "asc",
+              },
+            },
+          ],
+        },
+      },
+    });
+
+    return Object.fromEntries(skus.map((sku) => [sku.code, sku]));
   }
 
   async getSchedule() {
@@ -86,22 +98,21 @@ export class ShopifyOrderDeliverySchedule extends ShopifyOrder {
     }
 
     const codes = waitingQuantityBySku.map(({ code }) => code);
-    const inventoriesBySku = await this.getInventories(codes);
-    const schedules = waitingQuantityBySku.map(({ code, quantity }) => {
-      let cumulativeSum = 0;
-      const inventories = inventoriesBySku[code];
-      // BigQuery側で獲得できるデータのSKUがCMS用のDBに存在していない場合、データ不整合が疑われる。
-      if (!inventories) throw new Error(`SKU not found on CMS (code: ${code})`);
+    const skusByCode = await this.getSkuByCode(codes);
 
-      // TODO: Inventoryモデルと共通化したい(ここではx番目の配送予定を求めているので若干異なるが、うまく共通化できるはず)
-      for (const { availableQuantity, schedule } of inventories) {
-        cumulativeSum += availableQuantity;
-        if (cumulativeSum >= quantity) return makeSchedule(schedule, this.locale);
-      }
+    const schedules = waitingQuantityBySku.map(({ code, quantity }) => {
+      const sku = skusByCode[code];
+      if (!sku) throw new Error(`SKU not found on CMS (code: ${code})`);
+
+      if (sku.skipDeliveryCalc) return makeSchedule(null, this.locale);
+
+      const inventory = new Inventory(sku);
+      const available = inventory.availableInventoryOrderSKU(quantity);
 
       // ここに到達するということは販売可能枠が最終に到達し枯渇している状態。
-      // MEMO: 商品ページ用のAPIでは、同様のケースは最終枠のスケジュールを代わりに出すが、このAPIは注文確認ページで使用されより正確性が求められる。
-      throw new Error(`SKU ${code} is out of stock`);
+      if (!available) throw new Error(`SKU ${code} is out of stock`);
+
+      return makeSchedule(available.deliverySchedule, this.locale);
     });
 
     return latest([...schedules, makeSchedule(null, this.locale)]);

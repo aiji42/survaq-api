@@ -1,17 +1,16 @@
 import { MessageAttachment, SlackApp, SlackEdgeAppEnv } from "slack-cloudflare-workers";
 import { ChatPostMessageRequest } from "slack-web-api-client/dist/client/request";
-
-const CHANNEL = "notify-test";
+import { SLACK_CHANNEL } from "../constants";
 
 export class SlackNotifier {
   private readonly slack: SlackApp<SlackEdgeAppEnv>;
-  private attachments: Map<string, MessageAttachment[]> = new Map([[CHANNEL, []]]);
+  private attachments: Map<string, MessageAttachment[]> = new Map([[SLACK_CHANNEL.DEBUG, []]]);
 
   constructor(env: SlackEdgeAppEnv) {
     this.slack = new SlackApp({ env });
   }
 
-  append(attachment: MessageAttachment, channel = CHANNEL) {
+  append(attachment: MessageAttachment, channel = SLACK_CHANNEL.DEBUG) {
     const attachments = [...(this.attachments.get(channel) ?? []), attachment];
     this.attachments.set(channel, attachments);
   }

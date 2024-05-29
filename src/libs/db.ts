@@ -62,51 +62,6 @@ export class DB {
     });
   }
 
-  getSKUsWithWaitingInventoryOrders(codes: string[]) {
-    if (codes.length < 1) return [];
-    return this.prisma.shopifyCustomSKUs.findMany({
-      where: { code: { in: codes } },
-      select: {
-        id: true,
-        code: true,
-        name: true,
-        inventory: true,
-        faultyRate: true,
-        stockBuffer: true,
-        skipDeliveryCalc: true,
-        inventoryOrderSKUs: {
-          select: {
-            quantity: true,
-            ShopifyInventoryOrders: {
-              select: {
-                id: true,
-                name: true,
-                deliverySchedule: true,
-              },
-            },
-          },
-          where: {
-            ShopifyInventoryOrders: {
-              status: { in: ["waitingShipping", "waitingReceiving"] },
-            },
-          },
-          orderBy: [
-            {
-              ShopifyInventoryOrders: {
-                deliveryDate: "asc",
-              },
-            },
-            {
-              ShopifyInventoryOrders: {
-                id: "asc",
-              },
-            },
-          ],
-        },
-      },
-    });
-  }
-
   getAllPages() {
     return this.prisma.shopifyPages.findMany({
       select: {
