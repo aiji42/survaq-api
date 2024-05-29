@@ -73,5 +73,11 @@ binding = "UpdateOrderInventory"
 service = "kiribi-survaq-api"
 entrypoint = "UpdateOrderInventory"
 
+[[services]]
+binding = "UpdateSkuOnFulfillment"
+service = "kiribi-survaq-api"
+entrypoint = "UpdateSkuOnFulfillment"
+
+
 [site]
 bucket = "./node_modules/kiribi/client"

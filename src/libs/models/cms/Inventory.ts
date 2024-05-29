@@ -30,7 +30,6 @@ export class Inventory {
   }
 
   get availableInventories() {
-    // FIXME: リアルタイムで在庫を差し押さえるのであればbufferの概念はいらなくなる？(なくならなくても数の変更はあるはず)
     const buffer = this.sku.stockBuffer ?? 0;
 
     return [

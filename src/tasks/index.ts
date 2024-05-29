@@ -1,7 +1,7 @@
 import { Kiribi } from "kiribi";
 import { client } from "kiribi/client";
 import { rest } from "kiribi/rest";
-import { inlineCode, SlackNotifier } from "../libs/slack";
+import { codeBlock, inlineCode, SlackNotifier } from "../libs/slack";
 import { Bindings } from "../../bindings";
 import { Cancel } from "./Cancel";
 export { Cancel } from "./Cancel";
@@ -19,6 +19,8 @@ import { SyncShopifyOrderToBigQuery } from "./SyncShopifyOrderToBigQuery";
 export { SyncShopifyOrderToBigQuery } from "./SyncShopifyOrderToBigQuery";
 import { UpdateOrderInventory } from "./UpdateOrderInventory";
 export { UpdateOrderInventory } from "./UpdateOrderInventory";
+import { UpdateSkuOnFulfillment } from "./UpdateSkuOnFulfillment";
+export { UpdateSkuOnFulfillment } from "./UpdateSkuOnFulfillment";
 
 type Performers = {
   Cancel: Cancel;
@@ -29,6 +31,7 @@ type Performers = {
   CMSChecker: CMSChecker;
   SyncShopifyOrderToBigQuery: SyncShopifyOrderToBigQuery;
   UpdateOrderInventory: UpdateOrderInventory;
+  UpdateSkuOnFulfillment: UpdateSkuOnFulfillment;
 };
 type BindingKeys = keyof Performers;
 
@@ -47,6 +50,10 @@ export default class extends Kiribi<Performers, Bindings> {
     if (cron === "5 * * * *") {
       // Check CMS
       await this.enqueue("CMSChecker", {}, { maxRetries: 1 });
+
+      // UpdateSkuOnFulfillment
+      // TODO: 適切な時間に実行されるように変更(UpdateOrderInventory)との競合も注意する
+      await this.enqueue("UpdateSkuOnFulfillment", {}, { maxRetries: 1 });
     }
 
     // every 10 minutes
@@ -56,7 +63,7 @@ export default class extends Kiribi<Performers, Bindings> {
     }
   }
 
-  async onSuccess(binding: BindingKeys, payload: any) {
+  async onSuccess(binding: BindingKeys, payload: any, result: any) {
     if (
       [
         "ProductSync",
@@ -78,6 +85,14 @@ export default class extends Kiribi<Performers, Bindings> {
           title: "payload",
           value: inlineCode(JSON.stringify(payload)),
         },
+        ...(result
+          ? [
+              {
+                title: "result",
+                value: codeBlock(JSON.stringify(result, null, 2)),
+              },
+            ]
+          : []),
       ],
     });
     await slack.notify(`Successfully`);
