@@ -32,15 +32,12 @@ app.post("/product", async (c) => {
   console.log(c.get("label"));
 
   // MEMO: shopify上で、productが更新されるときは大抵webhookが複数同時に起動するため、いくつかの対策を行っている
-  // - firstDelayでタイミングを遅らせる(20秒+キューのデフォルトの待ち秒数(最大10秒))ことで、他のwebhook終わってから処理を開始する
-  // - blockReRunで60秒間重複実行を防ぐことで、この処理で発生したupdateによるwebhookを無視する
-  // - payloadにidだけを渡して、タスク側で最新の情報を取得してから処理するようにする
+  // - Queueの実行を60秒後に遅らせる & 60秒間は重複エンキューを禁止
   await blockReRun(`ProductSync-${data.id}`, c.env.CACHE, async () => {
-    console.log("enqueue ProductSync:", data.id);
     await c.env.KIRIBI.enqueue(
       "ProductSync",
       { productId: data.id },
-      { maxRetries: 1, firstDelay: 20 },
+      { maxRetries: 1, firstDelay: 60 },
     );
   });
 

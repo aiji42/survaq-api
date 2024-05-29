@@ -31,18 +31,13 @@ export class SyncShopifyOrderToBigQuery extends KiribiPerformer<
       this.order.createBQOrderSKUsTableData().map(async ({ code }) => {
         // ロジレスの発送処理などで一斉に発注情報が更新されるので、重複実行を防ぐ
         // - Queueの実行を60秒後に遅らせる & 60秒間は重複エンキューを禁止
-        await blockReRun(
-          `UpdateOrderInventory-${code}`,
-          this.env.CACHE,
-          async () => {
-            await this.env.KIRIBI.enqueue(
-              "UpdateOrderInventory",
-              { skuCode: code },
-              { maxRetries: 1, firstDelay: 60 },
-            );
-          },
-          { boundarySeconds: 60 },
-        );
+        await blockReRun(`UpdateOrderInventory-${code}`, this.env.CACHE, async () => {
+          await this.env.KIRIBI.enqueue(
+            "UpdateOrderInventory",
+            { skuCode: code },
+            { maxRetries: 1, firstDelay: 60 },
+          );
+        });
       }),
     );
   }
