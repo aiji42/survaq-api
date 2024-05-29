@@ -4,6 +4,8 @@ import { ShopifyOrderSyncBQ } from "../../libs/models/shopify/ShopifyOrderSyncBQ
 import { Bindings } from "../../../bindings";
 import { InventoryOperator } from "../../libs/models/cms/Inventory";
 import { DB } from "../../libs/db";
+import { BigQuery } from "cfw-bq";
+import { BQ_PROJECT_ID } from "../../constants";
 
 const app = new Hono<{ Bindings: Bindings & { DEV?: string } }>();
 
@@ -58,11 +60,13 @@ app.get("/shopify/:id", async (c) => {
 app.get("/inventory/:code", async (c) => {
   const code = c.req.param("code");
   const db = new DB(c.env);
+  const bq = new BigQuery(JSON.parse(c.env.GCP_SERVICE_ACCOUNT), BQ_PROJECT_ID);
+  const waitingShipmentQuantity = await InventoryOperator.fetchWaitingShipmentQuantity(bq, code);
+
   const res = await db.useTransaction(async (transactedDB) => {
-    const inventory = new InventoryOperator(transactedDB, code, c.env);
-    await inventory.prepare();
-    const sku = inventory.sku;
-    const updateQuery = await inventory.update();
+    const sku = await InventoryOperator.fetchSku(transactedDB, code);
+    const inventory = new InventoryOperator(sku, waitingShipmentQuantity, c.env);
+    const updateQuery = await inventory.update(transactedDB);
     return { sku, updateQuery };
   });
 

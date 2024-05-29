@@ -3,9 +3,9 @@ import { BigQuery } from "cfw-bq";
 import { SlackNotifier } from "../../slack";
 import { SlackEdgeAppEnv } from "slack-edge/dist/app-env";
 import { makeSchedule } from "../../makeSchedule";
-import { BQ_PROJECT_ID } from "../../../constants";
 
 type SKU = {
+  code: string;
   inventory: number;
   stockBuffer: number | null;
   faultyRate: number;
@@ -23,15 +23,10 @@ type SKU = {
 };
 
 export class Inventory {
-  constructor(private _sku?: undefined | SKU) {}
+  constructor(protected sku: SKU) {}
 
-  get sku() {
-    if (!this._sku) throw new Error("Sku not prepared");
-    return this._sku;
-  }
-
-  set sku(sku: SKU) {
-    this._sku = sku;
+  get code() {
+    return this.sku.code;
   }
 
   get availableInventories() {
@@ -92,32 +87,17 @@ export class Inventory {
 }
 
 export class InventoryOperator extends Inventory {
-  private bq: BigQuery;
-  private _waitingShipmentQuantity: number | undefined;
   private slack: SlackNotifier;
-
   constructor(
-    private db: DB,
-    private code: string,
-    env: { GCP_SERVICE_ACCOUNT: string } & SlackEdgeAppEnv,
+    sku: SKU,
+    private waitingShipmentQuantity: number,
+    env: SlackEdgeAppEnv,
   ) {
-    super();
-    this.bq = new BigQuery(JSON.parse(env.GCP_SERVICE_ACCOUNT), BQ_PROJECT_ID);
+    super(sku);
     this.slack = new SlackNotifier(env);
   }
 
-  async prepare() {
-    this.sku = await this.fetchSku();
-    this._waitingShipmentQuantity = await this.fetchWaitingShipmentQuantity();
-  }
-
-  get waitingShipmentQuantity() {
-    if (this._waitingShipmentQuantity === undefined)
-      throw new Error("waitingShipmentQuantity not prepared");
-    return this._waitingShipmentQuantity;
-  }
-
-  async update() {
+  async update(db: DB) {
     const held = this.holdInventories(this.waitingShipmentQuantity);
     let availableInventoryOrderSKU = this.availableInventoryOrderSKU(this.waitingShipmentQuantity);
 
@@ -147,7 +127,7 @@ export class InventoryOperator extends Inventory {
         },
       },
     };
-    // await this.db.prisma.shopifyCustomSKUs.update({
+    // await db.prisma.shopifyCustomSKUs.update({
     //   where: { code: this.code },
     //   data: {
     //     currentInventoryOrderSKUId: availableInventoryOrderSKU?.id,
@@ -202,10 +182,13 @@ export class InventoryOperator extends Inventory {
     await this.slack.notify("SKUの販売枠を変更できませんでした");
   }
 
-  private async fetchSku() {
-    return this.db.prisma.shopifyCustomSKUs.findUniqueOrThrow({
-      where: { code: this.code },
+  // SKUの取得+BQへのクエリ => CMSのアップデートという処理の流れになるので、インスタンス内で完結させるとトランザクションが長くなってしまう。
+  // なので、「SKUの取得」と「BQへのクエリ」はstaticにして、利用側でBQへのクエリをトランザクション外で実行してもらう
+  static async fetchSku(db: DB, code: string) {
+    return db.prisma.shopifyCustomSKUs.findUniqueOrThrow({
+      where: { code },
       select: {
+        code: true,
         inventory: true,
         stockBuffer: true,
         faultyRate: true,
@@ -245,7 +228,7 @@ export class InventoryOperator extends Inventory {
     });
   }
 
-  private async fetchWaitingShipmentQuantity() {
+  static async fetchWaitingShipmentQuantity(bq: BigQuery, code: string) {
     // 未キャンセル・未クローズ・未フルフィル・注文より180日以内のSKUを未出荷として件数を取得
     const query = `
         SELECT SUM(quantity) as quantity
@@ -254,10 +237,10 @@ export class InventoryOperator extends Inventory {
           AND closed_at IS NULL
           AND fulfilled_at IS NULL
           AND DATE_DIFF(CURRENT_TIMESTAMP(), ordered_at, DAY) < 180
-          AND code = '${this.code}'
+          AND code = '${code}'
         GROUP BY code
     `;
-    const [res] = await this.bq.query<{ quantity: number }>(query);
+    const [res] = await bq.query<{ quantity: number }>(query);
 
     return res?.quantity ?? 0;
   }
