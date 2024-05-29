@@ -64,6 +64,7 @@ export default class extends Kiribi<Performers, Bindings> {
         "CMSChecker",
         "PurchaseMeasurementProtocol",
         "SyncShopifyOrderToBigQuery",
+        "UpdateOrderInventory",
       ].includes(binding)
     )
       return;

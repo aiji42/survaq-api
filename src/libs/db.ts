@@ -20,7 +20,10 @@ export class DB {
     }
   }
 
-  async useTransaction<T>(transactionalProcess: (db: DB) => Promise<T>): Promise<T> {
+  async useTransaction<T>(
+    transactionalProcess: (db: DB) => Promise<T>,
+    timeout = 15000,
+  ): Promise<T> {
     return (this.prisma as PrismaClient).$transaction(
       async (prisma) => {
         const db = new DB(prisma);
@@ -28,7 +31,7 @@ export class DB {
       },
       {
         // 「Transaction API error: Transaction already closed: Could not perform operation.」を防ぐためタイムアウトを延長
-        timeout: 15000, // default: 5000
+        timeout, // default: 5000
       },
     );
   }

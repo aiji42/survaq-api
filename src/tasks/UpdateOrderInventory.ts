@@ -11,6 +11,7 @@ export class UpdateOrderInventory extends KiribiPerformer<{ skuCode: string }, v
       await inventory.prepare();
 
       await inventory.update();
-    });
+      // FIXME: トランザクションのタイムアウトを長めに取っているが、BQのクエリが長いだけなので、BQへの通信はトランザクションの外で行うようにしたい。
+    }, 40000);
   }
 }
