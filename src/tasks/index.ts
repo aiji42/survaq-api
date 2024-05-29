@@ -1,7 +1,7 @@
 import { Kiribi } from "kiribi";
 import { client } from "kiribi/client";
 import { rest } from "kiribi/rest";
-import { codeBlock, inlineCode, SlackNotifier } from "../libs/slack";
+import { inlineCode, SlackNotifier } from "../libs/slack";
 import { Bindings } from "../../bindings";
 import { Cancel } from "./Cancel";
 export { Cancel } from "./Cancel";
@@ -40,7 +40,7 @@ export default class extends Kiribi<Performers, Bindings> {
   rest = rest;
 
   async scheduled({ cron }: ScheduledEvent) {
-    // every day at 00:00
+    // every day at 00:00(UTC)
     if (cron === "0 0 * * *") {
       // Sweep jobs older than 3 days with statuses COMPLETED, CANCELLED
       await this.sweep({ olderThan: 1000 * 60 * 60 * 24 * 3 });
@@ -53,6 +53,7 @@ export default class extends Kiribi<Performers, Bindings> {
 
       // UpdateSkuOnFulfillment
       // TODO: 適切な時間に実行されるように変更(UpdateOrderInventory)との競合も注意する
+      // あと時差にも注意
       await this.enqueue("UpdateSkuOnFulfillment", {}, { maxRetries: 1 });
     }
 
@@ -89,7 +90,8 @@ export default class extends Kiribi<Performers, Bindings> {
           ? [
               {
                 title: "result",
-                value: codeBlock(JSON.stringify(result, null, 2)),
+                // FIXME: なぜかcodeBlockだとうまく表示されない
+                value: inlineCode(JSON.stringify(result)),
               },
             ]
           : []),
