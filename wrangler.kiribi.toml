@@ -68,5 +68,10 @@ binding = "SyncShopifyOrderToBigQuery"
 service = "kiribi-survaq-api"
 entrypoint = "SyncShopifyOrderToBigQuery"
 
+[[services]]
+binding = "UpdateOrderInventory"
+service = "kiribi-survaq-api"
+entrypoint = "UpdateOrderInventory"
+
 [site]
 bucket = "./node_modules/kiribi/client"

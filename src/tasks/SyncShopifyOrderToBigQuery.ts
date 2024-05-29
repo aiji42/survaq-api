@@ -24,5 +24,18 @@ export class SyncShopifyOrderToBigQuery extends KiribiPerformer<
       await this.order.upsertBQLineItemsTableData(),
       await this.order.upsertBQOrdersTableData(),
     ]);
+
+    // SUK毎に販売枠(発注情報)を更新
+    await Promise.all(
+      this.order.createBQOrderSKUsTableData().map(async ({ code }) => {
+        return this.env.KIRIBI.enqueue(
+          "UpdateOrderInventory",
+          { skuCode: code },
+          {
+            maxRetries: 1,
+          },
+        );
+      }),
+    );
   }
 }

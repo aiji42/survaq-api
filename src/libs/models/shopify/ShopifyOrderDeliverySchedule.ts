@@ -24,6 +24,7 @@ export class ShopifyOrderDeliverySchedule extends ShopifyOrder {
     return this.bq.query<{ code: string; quantity: number }>(waitingQuantitiesBySkuQuery(this.gid));
   }
 
+  // TODO: Inventoryモデルと共通化
   private async getInventories(codes: string[]) {
     const res = await this.db.getSKUsWithWaitingInventoryOrders(codes);
 
@@ -92,6 +93,7 @@ export class ShopifyOrderDeliverySchedule extends ShopifyOrder {
       // BigQuery側で獲得できるデータのSKUがCMS用のDBに存在していない場合、データ不整合が疑われる。
       if (!inventories) throw new Error(`SKU not found on CMS (code: ${code})`);
 
+      // TODO: Inventoryモデルと共通化したい(ここではx番目の配送予定を求めているので若干異なるが、うまく共通化できるはず)
       for (const { availableQuantity, schedule } of inventories) {
         cumulativeSum += availableQuantity;
         if (cumulativeSum >= quantity) return makeSchedule(schedule, this.locale);
