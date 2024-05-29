@@ -53,17 +53,22 @@ app.post("/order", async (c) => {
   console.log(c.get("label"));
 
   // MEMO: shopify上で、orderが生成された時点で複数のwebhookが同時に起動するためいくつかの対策を行っている
-  // - firstDelayでタイミングを遅らせる(20秒+キューのデフォルトの待ち秒数(最大10秒))ことで、他のwebhook終わってから処理を開始する
-  // - blockReRunで60秒間重複実行を防ぐことで、この処理で発生したupdateによるwebhookを無視する
+  // - firstDelayでタイミングを遅らせる(30秒+キューのデフォルトの待ち秒数(最大10秒))ことで、他のwebhook終わってから処理を開始する
+  // - blockReRunで90秒間重複実行を防ぐことで、この処理で発生したupdateによるwebhookを無視する
+  //    (※おおよそ60秒間程度(90s-30s)は、本来必要なエンキューも弾かれてしまうので注意)
   // - payloadにidだけを渡して、タスク側で最新の情報を取得してから処理するようにする
-  await blockReRun(`CompleteOrder-${data.id}`, c.env.CACHE, async () => {
-    console.log("enqueue CompleteOrder:", data.id);
-    await c.env.KIRIBI.enqueue(
-      "CompleteOrder",
-      { orderId: data.id },
-      { maxRetries: 1, firstDelay: 20 },
-    );
-  });
+  await blockReRun(
+    `CompleteOrder-${data.id}`,
+    c.env.CACHE,
+    async () => {
+      await c.env.KIRIBI.enqueue(
+        "CompleteOrder",
+        { orderId: data.id },
+        { maxRetries: 1, firstDelay: 30 },
+      );
+    },
+    { boundarySeconds: 90 },
+  );
 
   // MEMO: 注文が作成された時点で、Google AnalyticsのPurchase Measurement Protocolを送信する(サテライトサイト連携用)
   if (c.get("topic") === "orders/create") {
