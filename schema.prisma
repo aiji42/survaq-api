@@ -185,7 +185,7 @@ model ShopifyVariants {
   variantId       String                              @unique(map: "shopifyvariants_variantid_unique") @db.VarChar(255)
   skuLabel        String?                             @db.VarChar(255)
   skusJSON        String?                             @db.VarChar(255)
-  skuGroupsJSON   String?                             @db.VarChar(255)
+  skuGroupsJSON   String?                             @db.VarChar(3000)
   ShopifyProducts ShopifyProducts?                    @relation(fields: [product], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "shopifyvariants_product_foreign")
   skus            ShopifyVariants_ShopifyCustomSKUs[]
 }
@@ -494,6 +494,7 @@ model directus_roles {
   app_access           Boolean                @default(true)
   directus_permissions directus_permissions[]
   directus_presets     directus_presets[]
+  directus_settings    directus_settings[]
   directus_shares      directus_shares[]
   directus_users       directus_users[]
 }
@@ -506,6 +507,7 @@ model directus_sessions {
   user_agent      String?
   share           String?          @db.Uuid
   origin          String?          @db.VarChar(255)
+  next_token      String?          @db.VarChar(64)
   directus_shares directus_shares? @relation(fields: [share], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "directus_sessions_share_foreign")
   directus_users  directus_users?  @relation(fields: [user], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "directus_sessions_user_foreign")
 }
@@ -540,10 +542,15 @@ model directus_settings {
   report_error_url                                                   String?           @db.VarChar(255)
   report_bug_url                                                     String?           @db.VarChar(255)
   report_feature_url                                                 String?           @db.VarChar(255)
+  public_registration                                                Boolean           @default(false)
+  public_registration_verify_email                                   Boolean           @default(true)
+  public_registration_role                                           String?           @db.Uuid
+  public_registration_email_filter                                   Json?             @db.Json
   directus_files_directus_settings_project_logoTodirectus_files      directus_files?   @relation("directus_settings_project_logoTodirectus_files", fields: [project_logo], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "directus_settings_project_logo_foreign")
   directus_files_directus_settings_public_backgroundTodirectus_files directus_files?   @relation("directus_settings_public_backgroundTodirectus_files", fields: [public_background], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "directus_settings_public_background_foreign")
   directus_files_directus_settings_public_faviconTodirectus_files    directus_files?   @relation("directus_settings_public_faviconTodirectus_files", fields: [public_favicon], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "directus_settings_public_favicon_foreign")
   directus_files_directus_settings_public_foregroundTodirectus_files directus_files?   @relation("directus_settings_public_foregroundTodirectus_files", fields: [public_foreground], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "directus_settings_public_foreground_foreign")
+  directus_roles                                                     directus_roles?   @relation(fields: [public_registration_role], references: [id], onUpdate: NoAction, map: "directus_settings_public_registration_role_foreign")
   directus_folders                                                   directus_folders? @relation(fields: [storage_default_folder], references: [id], onUpdate: NoAction, map: "directus_settings_storage_default_folder_foreign")
 }
 
