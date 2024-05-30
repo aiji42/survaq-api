@@ -58,10 +58,13 @@ export class CompleteOrder extends KiribiPerformer<{ orderId: number }, void, Bi
     }
 
     // BigQueryへ注文データを同期する
-    // 最大1回のリトライを許容し、リトライの際には120秒待機
     await this.env.KIRIBI.enqueue("SyncShopifyOrderToBigQuery", data, {
-      maxRetries: 2,
-      retryDelay: 120,
+      // 配送処理などで一斉に呼ばれると Too many DML statements outstanding against table が発生する(Limitは20)
+      // そのため、firstDelayにランダム性(0~180秒)を持たせる
+      firstDelay: Math.floor(Math.random() * 180),
+      // 最大2回のリトライを許容し、さらにリトライ間隔にもランダム性(120秒~300秒)を持たせる
+      maxRetries: 3,
+      retryDelay: Math.floor(Math.random() * 180) + 120,
     });
   }
 

@@ -1,4 +1,4 @@
-import { Kiribi } from "kiribi";
+import { FailureHandlerMeta, Kiribi } from "kiribi";
 import { client } from "kiribi/client";
 import { rest } from "kiribi/rest";
 import { inlineCode, SlackNotifier } from "../libs/slack";
@@ -103,7 +103,10 @@ export default class extends Kiribi<Performers, Bindings> {
     await slack.notify(`Successfully`);
   }
 
-  async onFailure(binding: BindingKeys, payload: any, error: Error) {
+  async onFailure(binding: BindingKeys, payload: any, error: Error, meta: FailureHandlerMeta) {
+    // SyncShopifyOrderToBigQueryはToo many DML statements outstanding against tableが発生することがよくあるので、最終リトライ時のみ通知する
+    if (binding === "SyncShopifyOrderToBigQuery" && !meta.isFinal) return;
+
     const slack = new SlackNotifier(this.env);
     slack.appendErrorMessage(error);
     slack.append({
@@ -114,6 +117,10 @@ export default class extends Kiribi<Performers, Bindings> {
         {
           title: "payload",
           value: inlineCode(JSON.stringify(payload)),
+        },
+        {
+          title: "attempt",
+          value: `${meta.attempts.toString()}${meta.isFinal ? " (final)" : ""}`,
         },
       ],
     });
