@@ -20,11 +20,7 @@ export class SyncShopifyOrderToBigQuery extends KiribiPerformer<
   async perform(data: { orderId: number }) {
     await this.order.prepare(data.orderId);
 
-    await Promise.all([
-      await this.order.upsertBQOrderSKUsTableData(),
-      await this.order.upsertBQLineItemsTableData(),
-      await this.order.upsertBQOrdersTableData(),
-    ]);
+    await this.order.bulkUpsertBQTables();
 
     // SUK毎に販売枠(発注情報)を更新
     await Promise.all(

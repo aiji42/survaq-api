@@ -158,15 +158,18 @@ export class ShopifyOrderSyncBQ extends ShopifyOrderForNoteAttrs {
     });
   }
 
-  async upsertBQOrdersTableData() {
+  get upsertBQOrdersTableDataQuery() {
     const data = this.createBQOrdersTableData();
-    const query = `DELETE FROM \`shopify.orders\` WHERE id = '${this.gid}';
+    return `DELETE FROM \`shopify.orders\` WHERE id = '${this.gid}';
         INSERT INTO \`shopify.orders\` (${Object.keys(data).join(", ")})
         VALUES (${Object.values(data).map(valueToSQL).join(", ")});`;
-    await this.bq.query(query);
   }
 
-  async upsertBQLineItemsTableData() {
+  async upsertBQOrdersTableData() {
+    await this.bq.query(this.upsertBQOrdersTableDataQuery);
+  }
+
+  get upsertBQLineItemsTableDataQuery() {
     const data = this.createBQLineItemsTableData();
     let query = `DELETE FROM \`shopify.line_items\` WHERE order_id = '${this.gid}';`;
     if (data.length) {
@@ -174,10 +177,14 @@ export class ShopifyOrderSyncBQ extends ShopifyOrderForNoteAttrs {
           INSERT INTO \`shopify.line_items\` (${Object.keys(data[0]!).join(", ")})
           VALUES ${data.map((d) => `(${Object.values(d).map(valueToSQL).join(", ")})`).join(", ")};`;
     }
-    await this.bq.query(query);
+    return query;
   }
 
-  async upsertBQOrderSKUsTableData() {
+  async upsertBQLineItemsTableData() {
+    await this.bq.query(this.upsertBQLineItemsTableDataQuery);
+  }
+
+  get upsertBQOrderSKUsTableDataQuery() {
     const data = this.createBQOrderSKUsTableData();
     let query = `DELETE FROM \`shopify.order_skus\` WHERE order_id = '${this.gid}';`;
     if (data.length) {
@@ -185,6 +192,20 @@ export class ShopifyOrderSyncBQ extends ShopifyOrderForNoteAttrs {
           INSERT INTO \`shopify.order_skus\` (${Object.keys(data[0]!).join(", ")})
           VALUES ${data.map((d) => `(${Object.values(d).map(valueToSQL).join(", ")})`).join(", ")};`;
     }
+    return query;
+  }
+
+  async upsertBQOrderSKUsTableData() {
+    await this.bq.query(this.upsertBQOrderSKUsTableDataQuery);
+  }
+
+  async bulkUpsertBQTables() {
+    const query = [
+      this.upsertBQOrdersTableDataQuery,
+      this.upsertBQLineItemsTableDataQuery,
+      this.upsertBQOrderSKUsTableDataQuery,
+    ].join("\n");
+
     await this.bq.query(query);
   }
 
