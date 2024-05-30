@@ -14,6 +14,8 @@ export class UpdateOrderInventory extends KiribiPerformer<{ skuCode: string }, v
     this.db = new DB(env);
   }
 
+  // FIXME: ほぼほぼリアルタイムにスケジュールシフトできるようになったのはいいが、ということはつまり、スプレッドシートの手動データ更新との衝突確率が上がるということである
+  // なので、DBをアップデートせずにKVで完結するような方法を取ったほうが良さそうかもしれない。
   async perform(data: { skuCode: string }) {
     const db = new DB(this.env);
     const waitingShipmentQuantity = await InventoryOperator.fetchWaitingShipmentQuantity(
