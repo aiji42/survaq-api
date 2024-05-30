@@ -18,8 +18,9 @@ export class ProductSync extends KiribiPerformer<{ productId: number }, void, Bi
     const product = new ShopifyProduct(this.env);
     await product.setProductById(productId);
 
-    let productRecord: null | { id: number } = await this.db.prisma.shopifyProducts.findFirst({
+    let productRecord: null | { id: number } = await this.db.prisma.shopifyProducts.findUnique({
       select: { id: true },
+      where: { productId: product.id },
     });
 
     // activeかつ、CMS上にまだ商品がないなら商品を追加
