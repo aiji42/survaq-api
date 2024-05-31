@@ -9,6 +9,9 @@ type Payload = {
   attachments?: MessageAttachment[];
 };
 
+/**
+ * Slackに通知を送るタスク
+ */
 export class NotifyToSlack extends KiribiPerformer<Payload, void, Bindings> {
   constructor(ctx: ExecutionContext, env: Bindings) {
     super(ctx, env);

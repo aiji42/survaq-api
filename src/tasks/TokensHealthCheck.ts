@@ -3,6 +3,9 @@ import { Bindings } from "../../bindings";
 import { LogilessClient } from "../libs/models/logiless/LogilessClient";
 import { SlackNotifier } from "../libs/slack";
 
+/**
+ * 各種トークンの有効期限を確認し、Slack通知するタスク
+ */
 export class TokensHealthCheck extends KiribiPerformer<{}, void, Bindings> {
   private slack: SlackNotifier;
   private logiless: LogilessClient;
