@@ -4,10 +4,13 @@ import { ShopifyOrderDeliverySchedule } from "../../libs/models/shopify/ShopifyO
 import { SlackNotifier } from "../../libs/slack";
 import { HTTPException } from "hono/http-exception";
 import { makeNotifiableErrorHandler } from "../../libs/utils";
+import { timeout } from "hono/timeout";
 
 type Env = { Bindings: Bindings; Variables: { notifier: SlackNotifier; label: string } };
 
 const app = new Hono<Env>();
+
+app.use("*", timeout(15000));
 
 app.onError(makeNotifiableErrorHandler());
 

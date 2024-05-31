@@ -9,6 +9,7 @@ import { z } from "zod";
 import { Product } from "../../libs/models/cms/Product";
 import { makeNotifiableErrorHandler } from "../../libs/utils";
 import { inlineCode } from "../../libs/slack";
+import { timeout } from "hono/timeout";
 
 type Variables = {
   locale: Locale;
@@ -22,6 +23,8 @@ app.use("*", async (c, next) => {
 
   await next();
 });
+
+app.use("*", timeout(10000));
 
 app.onError(makeNotifiableErrorHandler());
 
