@@ -20,15 +20,6 @@ describe("no custom schedules", () => {
       termIndex: 0,
       numeric: 2022120,
       text: "2022年12月上旬",
-      texts: [
-        "2022年12月上旬",
-        "2022年11月下旬",
-        "2022年11月中旬",
-        "2022年11月上旬",
-        "2022年10月下旬",
-        "2022年10月中旬",
-        "2022年10月上旬",
-      ],
     });
 
     vi.setSystemTime(new Date(2022, 11, 7));
@@ -40,15 +31,6 @@ describe("no custom schedules", () => {
       termIndex: 0,
       numeric: 2022120,
       text: "2022年12月上旬",
-      texts: [
-        "2022年12月上旬",
-        "2022年11月下旬",
-        "2022年11月中旬",
-        "2022年11月上旬",
-        "2022年10月下旬",
-        "2022年10月中旬",
-        "2022年10月上旬",
-      ],
     });
   });
 
@@ -62,15 +44,6 @@ describe("no custom schedules", () => {
       termIndex: 1,
       numeric: 2022121,
       text: "2022年12月中旬",
-      texts: [
-        "2022年12月中旬",
-        "2022年12月上旬",
-        "2022年11月下旬",
-        "2022年11月中旬",
-        "2022年11月上旬",
-        "2022年10月下旬",
-        "2022年10月中旬",
-      ],
     });
 
     vi.setSystemTime(new Date(2022, 11, 17));
@@ -82,15 +55,6 @@ describe("no custom schedules", () => {
       termIndex: 1,
       numeric: 2022121,
       text: "2022年12月中旬",
-      texts: [
-        "2022年12月中旬",
-        "2022年12月上旬",
-        "2022年11月下旬",
-        "2022年11月中旬",
-        "2022年11月上旬",
-        "2022年10月下旬",
-        "2022年10月中旬",
-      ],
     });
   });
 
@@ -104,15 +68,6 @@ describe("no custom schedules", () => {
       termIndex: 2,
       numeric: 2022122,
       text: "2022年12月下旬",
-      texts: [
-        "2022年12月下旬",
-        "2022年12月中旬",
-        "2022年12月上旬",
-        "2022年11月下旬",
-        "2022年11月中旬",
-        "2022年11月上旬",
-        "2022年10月下旬",
-      ],
     });
 
     vi.setSystemTime(new Date(2022, 11, 27));
@@ -124,15 +79,6 @@ describe("no custom schedules", () => {
       termIndex: 2,
       numeric: 2022122,
       text: "2022年12月下旬",
-      texts: [
-        "2022年12月下旬",
-        "2022年12月中旬",
-        "2022年12月上旬",
-        "2022年11月下旬",
-        "2022年11月中旬",
-        "2022年11月上旬",
-        "2022年10月下旬",
-      ],
     });
   });
 
@@ -146,15 +92,6 @@ describe("no custom schedules", () => {
       termIndex: 0,
       numeric: 2023010,
       text: "2023年1月上旬",
-      texts: [
-        "2023年1月上旬",
-        "2022年12月下旬",
-        "2022年12月中旬",
-        "2022年12月上旬",
-        "2022年11月下旬",
-        "2022年11月中旬",
-        "2022年11月上旬",
-      ],
     });
   });
 });
@@ -170,15 +107,6 @@ describe("custom schedule", () => {
       termIndex: 0,
       numeric: 2023010,
       text: "2023年1月上旬",
-      texts: [
-        "2023年1月上旬",
-        "2022年12月下旬",
-        "2022年12月中旬",
-        "2022年12月上旬",
-        "2022年11月下旬",
-        "2022年11月中旬",
-        "2022年11月上旬",
-      ],
     });
 
     expect(makeSchedule("2023-01-middle")).toEqual({
@@ -189,15 +117,6 @@ describe("custom schedule", () => {
       termIndex: 1,
       numeric: 2023011,
       text: "2023年1月中旬",
-      texts: [
-        "2023年1月中旬",
-        "2023年1月上旬",
-        "2022年12月下旬",
-        "2022年12月中旬",
-        "2022年12月上旬",
-        "2022年11月下旬",
-        "2022年11月中旬",
-      ],
     });
 
     expect(makeSchedule("2023-01-late")).toEqual({
@@ -208,15 +127,6 @@ describe("custom schedule", () => {
       termIndex: 2,
       numeric: 2023012,
       text: "2023年1月下旬",
-      texts: [
-        "2023年1月下旬",
-        "2023年1月中旬",
-        "2023年1月上旬",
-        "2022年12月下旬",
-        "2022年12月中旬",
-        "2022年12月上旬",
-        "2022年11月下旬",
-      ],
     });
   });
 
@@ -230,15 +140,6 @@ describe("custom schedule", () => {
       termIndex: 1,
       numeric: 2023011,
       text: "2023年1月中旬",
-      texts: [
-        "2023年1月中旬",
-        "2023年1月上旬",
-        "2022年12月下旬",
-        "2022年12月中旬",
-        "2022年12月上旬",
-        "2022年11月下旬",
-        "2022年11月中旬",
-      ],
     });
   });
 });
@@ -254,15 +155,6 @@ describe("locale en", () => {
       termIndex: 0,
       numeric: 2022120,
       text: "early Dec. 2022",
-      texts: [
-        "early Dec. 2022",
-        "late Nov. 2022",
-        "mid Nov. 2022",
-        "early Nov. 2022",
-        "late Oct. 2022",
-        "mid Oct. 2022",
-        "early Oct. 2022",
-      ],
     });
 
     vi.setSystemTime(new Date(2022, 11, 7));
@@ -274,15 +166,6 @@ describe("locale en", () => {
       termIndex: 0,
       numeric: 2022120,
       text: "early Dec. 2022",
-      texts: [
-        "early Dec. 2022",
-        "late Nov. 2022",
-        "mid Nov. 2022",
-        "early Nov. 2022",
-        "late Oct. 2022",
-        "mid Oct. 2022",
-        "early Oct. 2022",
-      ],
     });
   });
 
@@ -296,15 +179,6 @@ describe("locale en", () => {
       termIndex: 1,
       numeric: 2022121,
       text: "mid Dec. 2022",
-      texts: [
-        "mid Dec. 2022",
-        "early Dec. 2022",
-        "late Nov. 2022",
-        "mid Nov. 2022",
-        "early Nov. 2022",
-        "late Oct. 2022",
-        "mid Oct. 2022",
-      ],
     });
 
     vi.setSystemTime(new Date(2022, 11, 17));
@@ -316,15 +190,6 @@ describe("locale en", () => {
       termIndex: 1,
       numeric: 2022121,
       text: "mid Dec. 2022",
-      texts: [
-        "mid Dec. 2022",
-        "early Dec. 2022",
-        "late Nov. 2022",
-        "mid Nov. 2022",
-        "early Nov. 2022",
-        "late Oct. 2022",
-        "mid Oct. 2022",
-      ],
     });
   });
 
@@ -338,15 +203,6 @@ describe("locale en", () => {
       termIndex: 2,
       numeric: 2022122,
       text: "late Dec. 2022",
-      texts: [
-        "late Dec. 2022",
-        "mid Dec. 2022",
-        "early Dec. 2022",
-        "late Nov. 2022",
-        "mid Nov. 2022",
-        "early Nov. 2022",
-        "late Oct. 2022",
-      ],
     });
 
     vi.setSystemTime(new Date(2022, 11, 27));
@@ -358,15 +214,6 @@ describe("locale en", () => {
       termIndex: 2,
       numeric: 2022122,
       text: "late Dec. 2022",
-      texts: [
-        "late Dec. 2022",
-        "mid Dec. 2022",
-        "early Dec. 2022",
-        "late Nov. 2022",
-        "mid Nov. 2022",
-        "early Nov. 2022",
-        "late Oct. 2022",
-      ],
     });
   });
 
@@ -380,15 +227,6 @@ describe("locale en", () => {
       termIndex: 0,
       numeric: 2023010,
       text: "early Jan. 2023",
-      texts: [
-        "early Jan. 2023",
-        "late Dec. 2022",
-        "mid Dec. 2022",
-        "early Dec. 2022",
-        "late Nov. 2022",
-        "mid Nov. 2022",
-        "early Nov. 2022",
-      ],
     });
   });
 
@@ -403,15 +241,6 @@ describe("locale en", () => {
         termIndex: 0,
         numeric: 2023010,
         text: "early Jan. 2023",
-        texts: [
-          "early Jan. 2023",
-          "late Dec. 2022",
-          "mid Dec. 2022",
-          "early Dec. 2022",
-          "late Nov. 2022",
-          "mid Nov. 2022",
-          "early Nov. 2022",
-        ],
       });
     });
 
@@ -424,15 +253,6 @@ describe("locale en", () => {
         termIndex: 1,
         numeric: 2023011,
         text: "mid Jan. 2023",
-        texts: [
-          "mid Jan. 2023",
-          "early Jan. 2023",
-          "late Dec. 2022",
-          "mid Dec. 2022",
-          "early Dec. 2022",
-          "late Nov. 2022",
-          "mid Nov. 2022",
-        ],
         year: 2023,
       });
     });
