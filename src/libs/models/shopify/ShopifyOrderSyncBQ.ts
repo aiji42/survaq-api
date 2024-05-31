@@ -139,9 +139,8 @@ export class ShopifyOrderSyncBQ extends ShopifyOrderForNoteAttrs {
         return { ...acc, [sku]: (acc[sku] ?? 0) + 1 };
       }, {});
       const fulfilledAt =
-        this.fulfillments.find(({ line_items }) => {
-          line_items.some(({ id }) => id === lineItem.id);
-        })?.created_at ?? null;
+        this.fulfillments.find(({ line_items }) => line_items.some(({ id }) => id === lineItem.id))
+          ?.created_at ?? null;
 
       return Object.entries(quantityBySku).map(([code, quantity]) => ({
         code,
