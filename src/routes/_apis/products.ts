@@ -7,6 +7,7 @@ import { HTTPException } from "hono/http-exception";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { Product } from "../../libs/models/cms/Product";
+import { makeNotifiableErrorHandler } from "../../libs/utils";
 
 type Variables = {
   locale: Locale;
@@ -21,8 +22,11 @@ app.use("*", async (c, next) => {
   await next();
 });
 
+app.onError(makeNotifiableErrorHandler());
+
 app.get("*", async (c, next) => {
   const url = new URL(c.req.url);
+  // FIXME: 発生したらSlackに通知するなどして一定期間計測したあとに、実績がなければ削除する
   if (url.pathname.endsWith("/supabase")) {
     url.pathname = url.pathname.replace(/\/supabase$/, "");
     return c.redirect(url.toString(), 301);
@@ -41,7 +45,6 @@ app.get("/", async (c) => {
 app.get("/pages", async (c) => {
   const db = new DB(c.env);
   const data = await db.getAllPages();
-  if (!data) return c.notFound();
 
   return c.json(data);
 });
@@ -110,7 +113,7 @@ app.get("/page-data/:code", async (c) => {
 app.get("/page-data/by-domain/:domain", async (c) => {
   const db = new DB(c.env);
   const data = await db.getPage(c.req.param("domain"));
-  if (!data) return c.notFound();
+  if (!data) throw new HTTPException(404);
 
   return c.json({ pathname: data.pathname });
 });

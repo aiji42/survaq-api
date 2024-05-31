@@ -34,20 +34,21 @@ export class SlackNotifier {
     if (!(e instanceof Error)) return;
     console.error(e);
 
-    this.append(
-      {
-        color: "danger",
-        title: e.name,
-        text: e.message,
-        fields: [
-          {
-            title: "stack",
-            value: e.stack ? codeBlock(e.stack) : "",
-          },
-        ],
-      },
-      channel,
-    );
+    this.append(SlackNotifier.makeErrorAttachment(e), channel);
+  }
+
+  static makeErrorAttachment(e: Error): MessageAttachment {
+    return {
+      color: "danger",
+      title: e.name,
+      text: e.message,
+      fields: [
+        {
+          title: "stack",
+          value: e.stack ? codeBlock(e.stack) : "",
+        },
+      ],
+    };
   }
 }
 

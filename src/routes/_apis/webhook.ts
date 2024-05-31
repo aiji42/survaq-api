@@ -1,10 +1,9 @@
 import { Hono } from "hono";
 import { Bindings } from "../../../bindings";
-import { SlackNotifier } from "../../libs/slack";
 import { ShopifyOrderData, ShopifyProductData } from "../../types/shopify";
-import { blockReRun } from "../../libs/utils";
+import { blockReRun, makeNotifiableErrorHandler } from "../../libs/utils";
 
-type Variables = { label: string; topic: string; notifier: SlackNotifier };
+type Variables = { topic: string };
 
 type Env = { Bindings: Bindings; Variables: Variables };
 
@@ -12,24 +11,18 @@ const app = new Hono<Env>();
 
 app.use("*", async (c, next) => {
   c.set("topic", c.req.header("x-shopify-topic") ?? "unknown");
-  const notifier = new SlackNotifier(c.env);
-  c.set("notifier", notifier);
 
   await next();
-
-  c.executionCtx.waitUntil(notifier.notify(c.get("label") ?? c.get("topic")));
 });
 
-app.onError(async (err, c) => {
-  c.get("notifier").appendErrorMessage(err);
-
-  return c.text("webhook received");
-});
+app.onError(
+  makeNotifiableErrorHandler({
+    alwaysReturn: (c) => c.text("webhook received"),
+  }),
+);
 
 app.post("/product", async (c) => {
   const data = await c.req.json<ShopifyProductData>();
-  c.set("label", `${c.get("topic")}: ${data.id}, ${data.handle}, ${data.status}`);
-  console.log(c.get("label"));
 
   // MEMO: shopify上で、productが更新されるときは大抵webhookが複数同時に起動するため、いくつかの対策を行っている
   // - Queueの実行を60秒後に遅らせる & 60秒間は重複エンキューを禁止
@@ -46,8 +39,6 @@ app.post("/product", async (c) => {
 
 app.post("/order", async (c) => {
   const data = await c.req.json<ShopifyOrderData>();
-  c.set("label", `${c.get("topic")}: ${data.id}`);
-  console.log(c.get("label"));
 
   // MEMO: shopify上で、orderが生成された時点で複数のwebhookが同時に起動するためいくつかの対策を行っている
   // - firstDelayでタイミングを遅らせる(30秒+キューのデフォルトの待ち秒数(最大10秒))ことで、他のwebhook終わってから処理を開始する
@@ -79,19 +70,20 @@ app.post("/order", async (c) => {
   return c.json({ message: "enqueue CompleteOrder" });
 });
 
+type TransactionMailPayload =
+  | {
+      event: "items.create";
+      collection: "TransactionMails";
+      key: number;
+    }
+  | {
+      event: "items.update";
+      collection: "TransactionMails";
+      keys: string[];
+    };
+
 app.post("transaction-mail", async (c) => {
-  const body = await c.req.json<
-    | {
-        event: "items.create";
-        collection: "TransactionMails";
-        key: number;
-      }
-    | {
-        event: "items.update";
-        collection: "TransactionMails";
-        keys: string[];
-      }
-  >();
+  const body = await c.req.json<TransactionMailPayload>();
 
   const key = "key" in body ? body.key : Number(body.keys[0]);
   await c.env.KIRIBI.enqueue("TransactionMailSend", { id: key }, { maxRetries: 1 });

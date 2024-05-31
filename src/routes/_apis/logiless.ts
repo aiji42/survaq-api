@@ -1,12 +1,15 @@
 import { Hono } from "hono";
 import { Bindings } from "../../../bindings";
 import { LogilessClient } from "../../libs/models/logiless/LogilessClient";
+import { makeNotifiableErrorHandler } from "../../libs/utils";
 
 type Env = {
   Bindings: Bindings;
 };
 
 const app = new Hono<Env>();
+
+app.onError(makeNotifiableErrorHandler());
 
 app.get("/login", async (c) => {
   return new Response("", {

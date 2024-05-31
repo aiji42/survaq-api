@@ -21,6 +21,8 @@ import { UpdateOrderInventory } from "./UpdateOrderInventory";
 export { UpdateOrderInventory } from "./UpdateOrderInventory";
 import { UpdateSkuOnFulfillment } from "./UpdateSkuOnFulfillment";
 export { UpdateSkuOnFulfillment } from "./UpdateSkuOnFulfillment";
+import { NotifyToSlack } from "./NotifyToSlack";
+export { NotifyToSlack } from "./NotifyToSlack";
 
 type Performers = {
   Cancel: Cancel;
@@ -32,6 +34,7 @@ type Performers = {
   SyncShopifyOrderToBigQuery: SyncShopifyOrderToBigQuery;
   UpdateOrderInventory: UpdateOrderInventory;
   UpdateSkuOnFulfillment: UpdateSkuOnFulfillment;
+  NotifyToSlack: NotifyToSlack;
 };
 type BindingKeys = keyof Performers;
 
@@ -76,6 +79,7 @@ export default class extends Kiribi<Performers, Bindings> {
         "PurchaseMeasurementProtocol",
         "SyncShopifyOrderToBigQuery",
         "UpdateOrderInventory",
+        "NotifyToSlack",
       ].includes(binding)
     )
       return;

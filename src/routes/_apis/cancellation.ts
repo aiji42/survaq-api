@@ -7,12 +7,15 @@ import { DB } from "../../libs/db";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { ShopifyOrderMailSender } from "../../libs/sendgrid";
+import { makeNotifiableErrorHandler } from "../../libs/utils";
 
 type Env = {
   Bindings: Bindings;
 };
 
 const app = new Hono<Env>();
+
+app.onError(makeNotifiableErrorHandler());
 
 const cancellationRoute = app
   .get("/cancelable/:id", async (c) => {

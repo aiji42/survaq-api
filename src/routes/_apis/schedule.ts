@@ -3,10 +3,13 @@ import { Bindings } from "../../../bindings";
 import { ShopifyOrderDeliverySchedule } from "../../libs/models/shopify/ShopifyOrderDeliverySchedule";
 import { SlackNotifier } from "../../libs/slack";
 import { HTTPException } from "hono/http-exception";
+import { makeNotifiableErrorHandler } from "../../libs/utils";
 
 type Env = { Bindings: Bindings; Variables: { notifier: SlackNotifier; label: string } };
 
 const app = new Hono<Env>();
+
+app.onError(makeNotifiableErrorHandler());
 
 const route = app.get("/:id", async (c) => {
   const id = c.req.param("id");

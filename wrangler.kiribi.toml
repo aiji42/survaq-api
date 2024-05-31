@@ -78,6 +78,10 @@ binding = "UpdateSkuOnFulfillment"
 service = "kiribi-survaq-api"
 entrypoint = "UpdateSkuOnFulfillment"
 
+[[services]]
+binding = "NotifyToSlack"
+service = "kiribi-survaq-api"
+entrypoint = "NotifyToSlack"
 
 [site]
 bucket = "./node_modules/kiribi/client"
