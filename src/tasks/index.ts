@@ -23,6 +23,8 @@ import { UpdateSkuOnFulfillment } from "./UpdateSkuOnFulfillment";
 export { UpdateSkuOnFulfillment } from "./UpdateSkuOnFulfillment";
 import { NotifyToSlack } from "./NotifyToSlack";
 export { NotifyToSlack } from "./NotifyToSlack";
+import { TokensHealthCheck } from "./TokensHealthCheck";
+export { TokensHealthCheck } from "./TokensHealthCheck";
 
 type Performers = {
   Cancel: Cancel;
@@ -35,6 +37,7 @@ type Performers = {
   UpdateOrderInventory: UpdateOrderInventory;
   UpdateSkuOnFulfillment: UpdateSkuOnFulfillment;
   NotifyToSlack: NotifyToSlack;
+  TokensHealthCheck: TokensHealthCheck;
 };
 type BindingKeys = keyof Performers;
 
@@ -47,12 +50,15 @@ export default class extends Kiribi<Performers, Bindings> {
     if (cron === "0 0 * * *") {
       // Sweep jobs older than 3 days with statuses COMPLETED, CANCELLED
       await this.sweep({ olderThan: 1000 * 60 * 60 * 24 * 3 });
+
+      // 各種トークンの有効期限をチェック
+      await this.enqueue("TokensHealthCheck", {});
     }
 
     // every hour at 5 minutes (毎時00分のCloud Run側のJOBが終わる頃を狙って実行する)
     if (cron === "5 * * * *") {
       // Check CMS
-      await this.enqueue("CMSChecker", {}, { maxRetries: 1 });
+      await this.enqueue("CMSChecker", {});
     }
 
     // every hour at 55 minutes
@@ -73,13 +79,14 @@ export default class extends Kiribi<Performers, Bindings> {
   async onSuccess(binding: BindingKeys, payload: any, result: any) {
     if (
       [
-        "ProductSync",
-        "CompleteOrder",
         "CMSChecker",
+        "CompleteOrder",
+        "NotifyToSlack",
+        "ProductSync",
         "PurchaseMeasurementProtocol",
         "SyncShopifyOrderToBigQuery",
+        "TokensHealthCheck",
         "UpdateOrderInventory",
-        "NotifyToSlack",
       ].includes(binding)
     )
       return;
@@ -97,7 +104,7 @@ export default class extends Kiribi<Performers, Bindings> {
           ? [
               {
                 title: "result",
-                // FIXME: なぜかcodeBlockだとうまく表示されない
+                // FIXME: なぜかcodeBlockだとうまく表示されない(attachmentだと起きるようなのでblockに変更)
                 value: inlineCode(JSON.stringify(result)),
               },
             ]

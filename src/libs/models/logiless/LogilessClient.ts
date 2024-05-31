@@ -21,6 +21,8 @@ type Tokens = {
 };
 
 export class LogilessClient {
+  static expireBufferDays = 3;
+
   constructor(private readonly env: Env) {}
 
   async loginCallback(code: string) {
@@ -42,7 +44,6 @@ export class LogilessClient {
     return tokens;
   }
 
-  // TODO: もしリフレッシュトークンの更新が何度も失敗するようなら、isExpiredの判定にもっと余裕を持たせて、強制的にリフレッシュをリクエストさせて検証してみる。
   private async refreshTokens(refreshToken: string): Promise<Tokens> {
     const res = await fetch(
       `https://app2.logiless.com/oauth2/token?client_id=${this.env.LOGILESS_CLIENT_ID}&client_secret=${this.env.LOGILESS_CLIENT_SECRET}&refresh_token=${refreshToken}&grant_type=refresh_token`,
@@ -58,12 +59,6 @@ export class LogilessClient {
     // FIXME: ある程度実績が確認できたら消す
     await this.env.KIRIBI.enqueue("NotifyToSlack", {
       text: "Logilessのトークンがリフレッシュされました",
-      attachments: [
-        {
-          title: "info",
-          fields: [{ title: "有効期限", value: expireAt.toISOString() }],
-        },
-      ],
     });
 
     return {
@@ -87,8 +82,10 @@ export class LogilessClient {
     >("LOGILESS_TOKEN", "json");
     if (!value || !metadata) return null;
 
-    // 24時間前に期限切れとみなす
-    const isExpired = new Date(metadata.expire) < new Date(Date.now() + 24 * 60 * 60 * 1000);
+    // {expireBufferDays}日前に期限が切れると判断する
+    const isExpired =
+      new Date(metadata.expire) <
+      new Date(Date.now() + 24 * 60 * 60 * 1000 * LogilessClient.expireBufferDays);
 
     return {
       accessToken: value.access_token,

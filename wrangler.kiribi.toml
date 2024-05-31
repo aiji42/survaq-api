@@ -83,5 +83,10 @@ binding = "NotifyToSlack"
 service = "kiribi-survaq-api"
 entrypoint = "NotifyToSlack"
 
+[[services]]
+binding = "TokensHealthCheck"
+service = "kiribi-survaq-api"
+entrypoint = "TokensHealthCheck"
+
 [site]
 bucket = "./node_modules/kiribi/client"

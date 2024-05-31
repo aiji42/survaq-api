@@ -30,24 +30,4 @@ app.get("/callback", async (c) => {
   return c.text("Logged in");
 });
 
-app.get("/token/show", async (c) => {
-  const logiless = new LogilessClient(c.env);
-  const tokens = await logiless.getTokens();
-  await c.env.KIRIBI.enqueue("NotifyToSlack", {
-    text: "Logilessのトークン情報",
-    attachments: [
-      {
-        fields: [
-          { title: "accessToken", value: tokens.accessToken },
-          { title: "refreshToken", value: tokens.refreshToken },
-          { title: "expireAt", value: tokens.expireAt.toISOString() },
-          { title: "isExpired", value: tokens.isExpired.toString() },
-        ],
-      },
-    ],
-  });
-
-  return c.json({ message: "See slack" });
-});
-
 export default app;
