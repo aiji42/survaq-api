@@ -7,7 +7,7 @@ import { HTTPException } from "hono/http-exception";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { Product } from "../../libs/models/cms/Product";
-import { makeNotifiableErrorHandler } from "../../libs/utils";
+import { asyncCache, makeNotifiableErrorHandler } from "../../libs/utils";
 import { inlineCode } from "../../libs/slack";
 import { timeout } from "hono/timeout";
 
@@ -24,7 +24,7 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-app.use("*", timeout(15000));
+app.use("*", timeout(10000));
 
 app.onError(makeNotifiableErrorHandler());
 
@@ -69,11 +69,20 @@ const productDeliveryRoute = app.get(
     const filterDelaying = c.req.valid("query")?.filter !== "false";
 
     const db = new DB(c.env);
-    const product = await db.useTransaction(async (transactedDb) => {
-      const product = new Product(transactedDb, c.get("locale"));
-      return product.getProductByShopifyId(c.req.param("id"));
-    });
-    if (!product) throw new HTTPException(404);
+    const product = await asyncCache(
+      `${c.req.url}-${c.get("locale")}`,
+      c,
+      c.env.CACHE,
+      60 * 60,
+      () =>
+        db.useTransaction(async (transactedDb) => {
+          const product = await new Product(transactedDb, c.get("locale")).getProductByShopifyId(
+            c.req.param("id"),
+          );
+          if (!product) throw new HTTPException(404);
+          return product;
+        }),
+    );
 
     const skus = makeSKUsForDelivery(Object.values(product.skus), filterDelaying);
 
@@ -86,11 +95,16 @@ export type ProductDeliveryRoute = typeof productDeliveryRoute;
 
 app.get("/:id", async (c) => {
   const db = new DB(c.env);
-  const product = await db.useTransaction(async (transactedDb) => {
-    const product = new Product(transactedDb, c.get("locale"));
-    return product.getProductByShopifyId(c.req.param("id"));
-  });
-  if (!product) throw new HTTPException(404);
+
+  const product = await asyncCache(`${c.req.url}-${c.get("locale")}`, c, c.env.CACHE, 60 * 60, () =>
+    db.useTransaction(async (transactedDb) => {
+      const product = await new Product(transactedDb, c.get("locale")).getProductByShopifyId(
+        c.req.param("id"),
+      );
+      if (!product) throw new HTTPException(404);
+      return product;
+    }),
+  );
 
   return c.json(product);
 });

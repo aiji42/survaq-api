@@ -44,3 +44,34 @@ export const makeNotifiableErrorHandler =
     if (alwaysReturn) return alwaysReturn(c);
     throw err;
   };
+
+/**
+ * KVにキャッシュがあればキャッシュを返しつつ、waitUntilでキャッシュを更新する
+ * KVにキャッシュがなければそのまま返却してwaitUntilでキャッシュを作成する
+ */
+export const asyncCache = async <T, Env extends { Bindings: { DEV?: string } }>(
+  key: string,
+  c: Context<Env>,
+  kv: KVNamespace,
+  expirationTtl: number, // seconds
+  callback: () => Promise<T>,
+): Promise<T> => {
+  // 開発環境ではキャッシュを使わない
+  if (c.env.DEV) return callback();
+
+  const cached = await kv.get<T>(key, "json");
+
+  if (cached) {
+    const callbackPromise = callback();
+    c.executionCtx.waitUntil(
+      callbackPromise.then((result) => kv.put(key, JSON.stringify(result), { expirationTtl })),
+    );
+
+    return cached;
+  }
+
+  const result = await callback();
+  c.executionCtx.waitUntil(kv.put(key, JSON.stringify(result), { expirationTtl }));
+
+  return result;
+};
