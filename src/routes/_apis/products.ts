@@ -24,7 +24,7 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-app.use("*", timeout(10000));
+app.use("*", timeout(15000));
 
 app.onError(makeNotifiableErrorHandler());
 
