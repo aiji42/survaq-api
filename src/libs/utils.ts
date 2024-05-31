@@ -36,8 +36,17 @@ export const makeNotifiableErrorHandler =
       console.error(err);
       if (!c.env.DEV)
         await c.env.KIRIBI.enqueue("NotifyToSlack", {
-          text: `Occurred error on ${inlineCode(c.req.url)}`,
-          attachments: [SlackNotifier.makeErrorAttachment(err)],
+          text: `Error on ${inlineCode(c.req.url)}`,
+          attachments: [
+            {
+              fields: [
+                { title: "Method", value: c.req.method },
+                { title: "Referer", value: c.req.header("referer") ?? "-" },
+                { title: "UA", value: c.req.header("user-agent") ?? "-" },
+              ],
+            },
+            SlackNotifier.makeErrorAttachment(err),
+          ],
         });
     }
 

@@ -33,8 +33,15 @@ app.get("*", async (c, next) => {
   // FIXME: 一定期間計測したあとに、実績がなければ削除する
   if (url.pathname.endsWith("/supabase")) {
     await c.env.KIRIBI.enqueue("NotifyToSlack", {
-      text: `プレフィックス /subabase 付きURLがアクセスされました(${inlineCode(c.req.url)})`,
-      attachments: [],
+      text: `プレフィックス /subabase 付きURLがアクセスされました ${inlineCode(c.req.url)}`,
+      attachments: [
+        {
+          fields: [
+            { title: "Referer", value: c.req.header("referer") ?? "-" },
+            { title: "UA", value: c.req.header("user-agent") ?? "-" },
+          ],
+        },
+      ],
     });
     url.pathname = url.pathname.replace(/\/supabase$/, "");
     return c.redirect(url.toString(), 301);
