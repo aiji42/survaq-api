@@ -20,4 +20,7 @@ export type Bindings = {
   KIRIBI_DB: D1Database;
   KIRIBI_QUEUE: Queue;
   KIRIBI: Service<Kiribi>;
+
+  // for development
+  DEV?: string;
 };

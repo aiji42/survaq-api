@@ -43,6 +43,7 @@ const cancellationRoute = app
 
     return c.json({ isCancelable: true } satisfies { isCancelable: true; reason?: never });
   })
+  // FIXME: 本人しかキャンセルできないようにする
   .post(
     "/cancel",
     zValidator("json", z.object({ id: z.string(), reason: z.string().trim().min(10).max(500) })),

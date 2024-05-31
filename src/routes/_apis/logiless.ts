@@ -31,13 +31,23 @@ app.get("/callback", async (c) => {
 });
 
 app.get("/token/show", async (c) => {
-  const url = new URL(c.req.url);
-  if (url.hostname !== "localhost") return c.text("Not allowed", 403);
-
   const logiless = new LogilessClient(c.env);
   const tokens = await logiless.getTokens();
+  await c.env.KIRIBI.enqueue("NotifyToSlack", {
+    text: "Logilessのトークン情報",
+    attachments: [
+      {
+        fields: [
+          { title: "accessToken", value: tokens.accessToken },
+          { title: "refreshToken", value: tokens.refreshToken },
+          { title: "expireAt", value: tokens.expireAt.toISOString() },
+          { title: "isExpired", value: tokens.isExpired.toString() },
+        ],
+      },
+    ],
+  });
 
-  return c.json(tokens);
+  return c.json({ message: "See slack" });
 });
 
 export default app;

@@ -34,12 +34,13 @@ export const makeNotifiableErrorHandler =
   async (err, c) => {
     if (!(err instanceof HTTPException && err.status === 404)) {
       console.error(err);
-      await c.env.KIRIBI.enqueue("NotifyToSlack", {
-        text: `Occurred error on ${inlineCode(c.req.url)}`,
-        attachments: [SlackNotifier.makeErrorAttachment(err)],
-      });
+      if (!c.env.DEV)
+        await c.env.KIRIBI.enqueue("NotifyToSlack", {
+          text: `Occurred error on ${inlineCode(c.req.url)}`,
+          attachments: [SlackNotifier.makeErrorAttachment(err)],
+        });
     }
 
     if (alwaysReturn) return alwaysReturn(c);
-    return c.res;
+    throw err;
   };

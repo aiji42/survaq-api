@@ -6,7 +6,7 @@ import { MessageAttachment } from "slack-cloudflare-workers";
 type Payload = {
   text: string;
   channel?: string;
-  attachments: MessageAttachment[];
+  attachments?: MessageAttachment[];
 };
 
 export class NotifyToSlack extends KiribiPerformer<Payload, void, Bindings> {
@@ -16,7 +16,11 @@ export class NotifyToSlack extends KiribiPerformer<Payload, void, Bindings> {
 
   async perform(data: Payload) {
     const slack = new SlackNotifier(this.env);
-    data.attachments.forEach((attachment) => {
+
+    // attachments が0件だと送られないので、空のattachmentsを追加しておく
+    slack.append({}, data.channel);
+
+    data.attachments?.forEach((attachment) => {
       slack.append(attachment, data.channel);
     });
 
