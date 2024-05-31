@@ -6,8 +6,9 @@ import { InventoryOperator } from "../../libs/models/cms/Inventory";
 import { DB } from "../../libs/db";
 import { BigQuery } from "cfw-bq";
 import { BQ_PROJECT_ID } from "../../constants";
+import { RakutenOrder, SEARCH_DATE_TYPE } from "../../libs/models/rakuten/RakutenOrder";
 
-const app = new Hono<{ Bindings: Bindings & { DEV?: string } }>();
+const app = new Hono<{ Bindings: Bindings }>();
 
 app.get("/delivery-schedules", (c) => {
   return c.html(
@@ -71,6 +72,18 @@ app.get("/inventory/:code", async (c) => {
   });
 
   return c.json(res);
+});
+
+app.get("/rakuten", async (c) => {
+  const rakutenOrder = new RakutenOrder(c.env.RMS_SERVICE_SECRET, c.env.RMS_LICENSE_KEY);
+
+  const orders = await rakutenOrder.search({
+    dateType: SEARCH_DATE_TYPE.ORDER_DATE,
+    beginDate: "2024-04-01",
+    endDate: "2024-06-01",
+  });
+
+  return c.json(orders);
 });
 
 export default app;

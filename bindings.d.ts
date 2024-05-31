@@ -23,4 +23,8 @@ export type Bindings = {
 
   // for development
   DEV?: string;
+
+  // FIXME: 最終的にKVに移行する
+  RMS_SERVICE_SECRET: string;
+  RMS_LICENSE_KEY: string;
 };
