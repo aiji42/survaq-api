@@ -21,7 +21,7 @@ export class TokensHealthCheck extends KiribiPerformer<{}, void, Bindings> {
 
     // TODO: 通知がうるさいようなら、残り日数が一定以上の場合は通知しないようにする
     this.slack.append({
-      title: "Logiless",
+      title: "ロジレス",
       color: getColor(logilessExpireAt, { good: LogilessClient.expireBufferDays }),
       footer: `実際にはExpireの${LogilessClient.expireBufferDays}日前を内部的な有効期限とし、リフレッシュを行います`,
       fields: [
