@@ -79,8 +79,9 @@ app.get("/rakuten", async (c) => {
 
   const orders = await rakutenOrder.search({
     dateType: SEARCH_DATE_TYPE.ORDER_DATE,
-    beginDate: "2024-04-01",
+    beginDate: "2024-05-20",
     endDate: "2024-06-01",
+    limit: 10,
   });
 
   return c.json(orders);

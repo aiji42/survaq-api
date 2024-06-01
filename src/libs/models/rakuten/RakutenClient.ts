@@ -18,7 +18,8 @@ export class RakutenClient {
       },
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.statusText}`);
+    if (!res.ok)
+      throw new Error(`Failed to fetch ${url}: ${JSON.stringify(await res.json(), null, 2)}`);
     return (await res.json()) as T;
   }
 }
