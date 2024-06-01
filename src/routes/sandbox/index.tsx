@@ -7,6 +7,7 @@ import { DB } from "../../libs/db";
 import { BigQuery } from "cfw-bq";
 import { BQ_PROJECT_ID } from "../../constants";
 import { RakutenOrder, SEARCH_DATE_TYPE } from "../../libs/models/rakuten/RakutenOrder";
+import { AmazonOrder } from "../../libs/models/amazon/AmazonOrder";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -85,6 +86,19 @@ app.get("/rakuten", async (c) => {
   });
 
   return c.json(orders);
+});
+
+app.get("/amazon", async (c) => {
+  const amazon = new AmazonOrder(
+    c.env.SP_API_CLIENT_ID,
+    c.env.SP_API_CLIENT_SECRET,
+    c.env.SP_API_REFRESH_TOKEN,
+  );
+
+  const [order] = await amazon.getOrders();
+  const items = await amazon.getOrderItems(order!.AmazonOrderId);
+
+  return c.json({ order, items });
 });
 
 export default app;
