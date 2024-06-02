@@ -95,10 +95,18 @@ app.get("/amazon", async (c) => {
     c.env.SP_API_REFRESH_TOKEN,
   );
 
-  const [order] = await amazon.getOrders();
-  const items = await amazon.getOrderItems(order!.AmazonOrderId);
+  const { data } = await amazon.getOrders({
+    limit: 10,
+    createdAfter: "2024-05-20",
+  });
+  const items = await amazon.getOrderItemsBulk(data.map((order) => order.AmazonOrderId));
 
-  return c.json({ order, items });
+  return c.json(
+    data.map((order) => ({
+      ...order,
+      items: items.find(([id, items]) => id === order.AmazonOrderId)?.[1] ?? [],
+    })),
+  );
 });
 
 export default app;

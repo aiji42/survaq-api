@@ -42,6 +42,7 @@ export class AmazonClient {
         "x-amz-date": new Date().toISOString(),
       },
     });
+    console.log("x-amzn-RateLimit-Limit", res.headers.get("x-amzn-RateLimit-Limit"));
 
     if (!res.ok) throw new Error(JSON.stringify(await res.json(), null, 2));
     return res.json();

@@ -110,7 +110,8 @@ type GetOrderResponse = {
   payload: {
     Orders: Order[];
     NextToken?: string;
-    CreatedBefore: string;
+    CreatedBefore?: string;
+    LastUpdatedBefore?: string;
   };
 };
 
@@ -205,15 +206,30 @@ export class AmazonOrder extends AmazonClient {
     "https://sellingpartnerapi-fe.amazon.com/orders/v0/orders/{amazonOrderId}/orderItems";
 
   // https://developer-docs.amazon.com/sp-api/lang-ja_JP/docs/orders-api-v0-reference
-  async getOrders(): Promise<Order[]> {
+  async getOrders(params: {
+    limit?: number;
+    createdAfter?: string | Date;
+    lastUpdatedAfter?: string | Date;
+    nextToken?: string;
+  }) {
     const url = new URL(AmazonOrder.ordersEndpoint);
-    url.searchParams.append("MarketplaceIds", "A1VC38T7YXB528"); // JP (https://docs.developer.amazonservices.com/ja_JP/dev_guide/DG_Endpoints.html)
-    url.searchParams.append("MaxResultsPerPage", "10");
+    url.searchParams.append("MarketplaceIds", this.marketplaceId);
+    // MaxResultsPerPageは最大100まで指定可能
+    url.searchParams.append("MaxResultsPerPage", String(Math.min(params.limit ?? 100, 100)));
     // CreatedAfterかLastUpdatedAfterのどちらかを指定する必要がある
-    url.searchParams.append("CreatedAfter", new Date("2024-04-01").toISOString());
+    if (params.createdAfter)
+      url.searchParams.append("CreatedAfter", new Date(params.createdAfter).toISOString());
+    if (params.lastUpdatedAfter)
+      url.searchParams.append("LastUpdatedAfter", new Date(params.lastUpdatedAfter).toISOString());
+    if (params.nextToken) url.searchParams.append("NextToken", params.nextToken);
 
     const res = await this.request<GetOrderResponse>(url);
-    return res.payload.Orders;
+    return {
+      data: res.payload.Orders,
+      next: res.payload.NextToken
+        ? () => this.getOrders({ ...params, nextToken: res.payload.NextToken })
+        : undefined,
+    };
   }
 
   async getOrderItems(amazonOrderId: string) {
@@ -221,5 +237,11 @@ export class AmazonOrder extends AmazonClient {
     const res = await this.request<GetOrderItemsResponse>(url);
 
     return res.payload.OrderItems;
+  }
+
+  async getOrderItemsBulk(amazonOrderIds: string[]) {
+    return Promise.all(
+      amazonOrderIds.map(async (id) => [id, await this.getOrderItems(id)] as const),
+    );
   }
 }
