@@ -25,6 +25,10 @@ export class LogilessClient {
 
   constructor(private readonly env: Env) {}
 
+  get loginUrl() {
+    return `https://app2.logiless.com/oauth/v2/auth?client_id=${this.env.LOGILESS_CLIENT_ID}&response_type=code&redirect_uri=${this.env.LOGILESS_REDIRECT_URI}`;
+  }
+
   async loginCallback(code: string) {
     const res = await fetch(
       `https://app2.logiless.com/oauth2/token?client_id=${this.env.LOGILESS_CLIENT_ID}&client_secret=${this.env.LOGILESS_CLIENT_SECRET}&code=${code}&grant_type=authorization_code&redirect_uri=${this.env.LOGILESS_REDIRECT_URI}`,
@@ -71,13 +75,14 @@ export class LogilessClient {
 
   private async storeTokens(token: AuthResult) {
     await this.env.CACHE.put("LOGILESS_TOKEN", JSON.stringify(token), {
+      expirationTtl: token.expires_in,
       metadata: { expire: new Date(Date.now() + token.expires_in * 1000) },
     });
   }
 
   private async getTokensViaStore(): Promise<Tokens | null> {
     const { value, metadata } = await this.env.CACHE.getWithMetadata<
-      { access_token: string; refresh_token: string },
+      AuthResult,
       { expire: string }
     >("LOGILESS_TOKEN", "json");
     if (!value || !metadata) return null;

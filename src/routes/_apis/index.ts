@@ -3,3 +3,4 @@ export { default as webhook } from "./webhook";
 export { default as logiless } from "./logiless";
 export { default as cancellation } from "./cancellation";
 export { default as schedule } from "./schedule";
+export { default as amazonAds } from "./amazon-ads";

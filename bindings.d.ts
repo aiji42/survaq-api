@@ -14,6 +14,9 @@ export type Bindings = {
   GCP_SERVICE_ACCOUNT: string;
   MEASUREMENT_PROTOCOL_API_SECRET: string;
   MEASUREMENT_PROTOCOL_MEASUREMENT_ID: string;
+  AMAZON_ADS_API_CLIENT_ID: string;
+  AMAZON_ADS_API_CLIENT_SECRET: string;
+  AMAZON_ADS_API_REDIRECT_URI: string;
 
   // Kiribi
   KIRIBI_DB: D1Database;

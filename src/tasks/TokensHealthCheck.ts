@@ -35,6 +35,7 @@ export class TokensHealthCheck extends KiribiPerformer<{}, void, Bindings> {
         },
       ],
     });
+    // MEMO: AmazonAdsは有効期限が1時間なので通知しない
 
     // TODO: slackのblock-kitを使ってアクションボタンを追加し、手動でリフレッシュできるようにする
 

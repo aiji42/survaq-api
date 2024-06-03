@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/cloudflare-workers";
 import { cors } from "hono/cors";
-import { logiless, products, webhook, cancellation, schedule } from "./routes/_apis";
+import { logiless, products, webhook, cancellation, schedule, amazonAds } from "./routes/_apis";
 import sandbox from "./routes/sandbox";
 import status from "./routes/status";
 import manifest from "__STATIC_CONTENT_MANIFEST";
@@ -17,6 +17,7 @@ app.route("/webhook", webhook);
 app.route("/logiless", logiless);
 app.route("/cancellation", cancellation);
 app.route("/schedule", schedule);
+app.route("/amazon-ads", amazonAds);
 
 app.route("/status", status);
 
