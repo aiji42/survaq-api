@@ -1,8 +1,11 @@
 import { Hono } from "hono";
 import { Layout } from "../../components/Layout";
 import { CMSChecker } from "../../tasks";
+import { needLogin } from "../../libs/utils";
 
 const app = new Hono<{ Bindings: { DEV?: string; CMSChecker: CMSChecker } }>();
+
+app.use("*", needLogin);
 
 app.get("/data", async (c) => {
   const res = await c.env.CMSChecker.validate();

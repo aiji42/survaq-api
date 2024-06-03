@@ -24,6 +24,7 @@ export default defineConfig({
       '^/logiless/.*': 'http://localhost:8787',
       '^/schedule/.*': 'http://localhost:8787',
       '^/webhook/.*': 'http://localhost:8787',
+      '^/oauth/.*': 'http://localhost:8787',
     },
   },
 });

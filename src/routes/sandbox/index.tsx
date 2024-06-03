@@ -8,8 +8,11 @@ import { BigQuery } from "cfw-bq";
 import { BQ_PROJECT_ID } from "../../constants";
 import { RakutenOrder, SEARCH_DATE_TYPE } from "../../libs/models/rakuten/RakutenOrder";
 import { AmazonOrder } from "../../libs/models/amazon/AmazonOrder";
+import { needLogin } from "../../libs/utils";
 
 const app = new Hono<{ Bindings: Bindings }>();
+
+app.use("*", needLogin);
 
 app.get("/delivery-schedules", (c) => {
   return c.html(

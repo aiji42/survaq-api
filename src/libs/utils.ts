@@ -1,8 +1,9 @@
-import type { ErrorHandler } from "hono/dist/types/types";
+import type { ErrorHandler, Next } from "hono/dist/types/types";
 import { HTTPException } from "hono/http-exception";
 import { Bindings } from "../../bindings";
 import { inlineCode, SlackNotifier } from "./slack";
 import { Context } from "hono";
+import { getCookie, setCookie } from "hono/cookie";
 
 export const chunks = <T>(a: T[], size: number): T[][] =>
   Array.from({ length: Math.ceil(a.length / size) }, (_, i) => a.slice(i * size, i * size + size));
@@ -83,4 +84,21 @@ export const asyncCache = async <T, Env extends { Bindings: { DEV?: string } }>(
   c.executionCtx.waitUntil(kv.put(key, JSON.stringify(result), { expirationTtl }));
 
   return result;
+};
+
+export const needLogin = async (c: Context, next: Next) => {
+  if (!(await verify(c))) {
+    const url = new URL(c.req.url);
+    setCookie(c, "redirect", url.pathname + url.search);
+    return c.redirect("/oauth/login", 302);
+  }
+
+  await next();
+};
+
+const verify = async (c: Context) => {
+  const token = getCookie(c, "Authorization");
+  if (!token) return false;
+  const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${token}`);
+  return res.ok;
 };
