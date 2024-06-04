@@ -1,3 +1,4 @@
+/* @jsxImportSource hono/jsx */
 import { Hono } from "hono";
 import { Layout } from "../../components/Layout";
 import { ShopifyOrderSyncBQ } from "../../libs/models/shopify/ShopifyOrderSyncBQ";
@@ -116,6 +117,19 @@ app.get("/amazon", async (c) => {
 app.get("amazon/ads", async (c) => {
   const amazon = new AmazonAdsClient(c.env);
   return c.json(await amazon.getAccounts());
+});
+
+app.get("/shopify", async (c) => {
+  return c.html(
+    <Layout isDev={!!c.env.DEV}>
+      <div id="additionalProperties"></div>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `window.customScriptSurvaq('7266231255245', '41820029124813')`,
+        }}
+      />
+    </Layout>,
+  );
 });
 
 export default app;
