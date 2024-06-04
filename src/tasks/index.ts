@@ -88,7 +88,7 @@ export default class extends Kiribi<Performers, Bindings> {
         "TokensHealthCheck",
         "UpdateOrderInventory",
       ].includes(binding) ||
-      !(binding === "UpdateSkuOnFulfillment" && Array.isArray(result) && result.length > 0)
+      (binding === "UpdateSkuOnFulfillment" && !(Array.isArray(result) && result.length > 0))
     )
       return;
     const slack = new SlackNotifier(this.env);
