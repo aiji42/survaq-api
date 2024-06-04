@@ -9,6 +9,7 @@ import { BQ_PROJECT_ID } from "../../constants";
 import { RakutenOrder, SEARCH_DATE_TYPE } from "../../libs/models/rakuten/RakutenOrder";
 import { AmazonOrder } from "../../libs/models/amazon/AmazonOrder";
 import { needLogin } from "../../libs/utils";
+import { AmazonAdsClient } from "../../libs/models/amazon/AmazonAdsClient";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -110,6 +111,11 @@ app.get("/amazon", async (c) => {
       items: items.find(([id, items]) => id === order.AmazonOrderId)?.[1] ?? [],
     })),
   );
+});
+
+app.get("amazon/ads", async (c) => {
+  const amazon = new AmazonAdsClient(c.env);
+  return c.json(await amazon.getAccounts());
 });
 
 export default app;

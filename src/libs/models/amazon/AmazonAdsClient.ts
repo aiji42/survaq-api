@@ -122,4 +122,17 @@ export class AmazonAdsClient {
       isExpired,
     };
   }
+
+  async getAccounts() {
+    const tokens = await this.getTokens();
+    const res = await fetch("https://advertising-api-fe.amazon.com/v2/profiles", {
+      headers: {
+        Authorization: `Bearer ${tokens.accessToken}`,
+        "Amazon-Advertising-API-ClientId": this.env.AMAZON_ADS_API_CLIENT_ID,
+        "content-type": "application/json",
+      },
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return (await res.json()) as { profiles: { profileId: number }[] };
+  }
 }
