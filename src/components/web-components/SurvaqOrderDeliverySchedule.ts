@@ -2,7 +2,7 @@ import { html } from "lit";
 import { Task } from "@lit/task";
 import { customElement, property } from "lit/decorators.js";
 import { BaseLitElement } from "./BaseLitElement";
-import { ScheduleRoute } from "../routes/_apis/schedule";
+import { ScheduleRoute } from "../../routes/_apis/schedule";
 import { hc } from "hono/client";
 
 @customElement("survaq-delivery-schedule-order")

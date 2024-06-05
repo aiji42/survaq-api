@@ -26,8 +26,8 @@ export const Layout: FC<{
           </>
         ) : (
           <>
-            <script type="module" src="/src/web-components/index.ts" />
-            <script type="module" src="/src/shopify-entry.tsx" />
+            <script type="module" src="/src/entries/web-components.ts" />
+            <script type="module" src="/src/entries/shopify.tsx" />
             <link type="text/css" rel="stylesheet" href="/src/globals.css" />
           </>
         )}

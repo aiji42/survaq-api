@@ -9,9 +9,9 @@ import {
   schedule,
   amazonAds,
   oauth,
-} from "./routes/_apis";
-import sandbox from "./routes/sandbox";
-import status from "./routes/status";
+} from "../routes/_apis";
+import sandbox from "../routes/sandbox";
+import status from "../routes/status";
 import manifest from "__STATIC_CONTENT_MANIFEST";
 
 const app = new Hono();

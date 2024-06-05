@@ -14,11 +14,13 @@ export const SkuSelector: FC<Props> = ({ label, code, onChange, options, index }
     <p className="product-form__item">
       <label htmlFor={id}>{label}</label>
       <select
-        name={`properties[${label}]`}
         value={code}
         className="product-form__input"
         id={id}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          e.stopPropagation();
+          onChange(e.target.value);
+        }}
       >
         {options.map((option) => (
           <option key={option.code} value={option.code}>
@@ -26,6 +28,11 @@ export const SkuSelector: FC<Props> = ({ label, code, onChange, options, index }
           </option>
         ))}
       </select>
+      <input
+        type="hidden"
+        name={`properties[${label}]`}
+        value={options.find((o) => o.code === code)?.name}
+      />
       <input type="hidden" name={`properties[_sku[${index + 1}]]`} value={code} />
     </p>
   );

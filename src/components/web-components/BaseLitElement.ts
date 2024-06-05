@@ -1,5 +1,5 @@
 import { LitElement, css, unsafeCSS } from "lit";
-import style from "../globals.css?inline";
+import style from "../../globals.css?inline";
 
 const baseStyle = css`
   :host {

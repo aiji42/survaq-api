@@ -2,7 +2,7 @@ import { html } from "lit";
 import { Task } from "@lit/task";
 import { customElement, property } from "lit/decorators.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
-import { ProductDeliveryRoute } from "../routes/_apis/products";
+import { ProductDeliveryRoute } from "../../routes/_apis/products";
 import { BaseLitElement } from "./BaseLitElement";
 import { hc } from "hono/client";
 
