@@ -133,11 +133,15 @@ app.get("/shopify/product/:id", async (c) => {
     <Layout isDev={!!c.env.DEV}>
       <div className="delivery-schedule"></div>
       <div className="delivery-schedule" data-short="true"></div>
-      <select name="variant" id="variant" defaultValue={variantId}>
-        {product.variants.map((variant) => (
-          <option value={variant.variantId}>{variant.variantName}</option>
-        ))}
-      </select>
+      <form id="form">
+        <select name="variant" id="variant" defaultValue={variantId}>
+          {product.variants.map((variant) => (
+            <option value={variant.variantId}>{variant.variantName}</option>
+          ))}
+        </select>
+        <div id="additionalProperties"></div>
+      </form>
+      <pre id="preview" />
       <script
         dangerouslySetInnerHTML={{
           __html: `
@@ -151,10 +155,20 @@ app.get("/shopify/product/:id", async (c) => {
       `,
         }}
       />
-      <div id="additionalProperties"></div>
       <script
         dangerouslySetInnerHTML={{
-          __html: `addEventListener("load", () => { customScriptSurvaq("${id}", "${variantId}") })`,
+          __html: `
+          const form = document.getElementById("form");
+          const preview = () => {
+            const preview = document.getElementById("preview");
+            const values = Object.fromEntries(new FormData(form).entries().flatMap(([k, v]) => (k.includes('properties') ? [[k.replace('properties[', '').replace(']', ''), v]] : [])));
+            const json = JSON.stringify(values, null, 2)
+            if (preview.innerText !== json) preview.innerText = json;
+          }
+          setInterval(preview, 50);
+          
+          addEventListener("load", () => { customScriptSurvaq("${id}", "${variantId}"); });
+          `,
         }}
       />
     </Layout>,
