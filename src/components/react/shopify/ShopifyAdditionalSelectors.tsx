@@ -28,7 +28,7 @@ export const ShopifyAdditionalSelectors: FC<Props> = ({ productId, initialVarian
   const schedule = latest([
     product.schedule,
     variant.schedule,
-    ...selectedSkus.map((code) => product.skus[code]?.schedule ?? null),
+    ...selectedSkus.map((code) => getSkuByCode(product, code).schedule),
   ]);
 
   return (
@@ -39,7 +39,7 @@ export const ShopifyAdditionalSelectors: FC<Props> = ({ productId, initialVarian
           name: string;
         }>((code) => ({
           code,
-          name: product.skus[code]!.name,
+          name: getSkuByCode(product, code).name,
         }));
         return (
           <SkuSelector
@@ -80,20 +80,29 @@ const getSKUsByGroupCode = (product: Product, code: string) => {
 };
 
 const getVariantByVariantId = (product: Product, variantId: string) => {
-  return product.variants.find((v) => v.variantId === variantId)!;
+  const variant = product.variants.find((v) => v.variantId === variantId);
+  if (!variant) throw new Error("variant not found");
+  return variant;
+};
+
+const getSkuByCode = (product: Product, code: string) => {
+  const sku = product.skus[code];
+  if (!sku) throw new Error("sku not found");
+  return sku;
 };
 
 type Actions =
   | { type: "selectedSKU"; payload: { index: number; value: string } }
   | { type: "changeVariant"; payload: { variantId: string } };
+
 type State = { selectedSkus: string[]; baseSkus: string[] };
 
 const initialReducer = (product: Product, variantId: string): State => {
   const variant = getVariantByVariantId(product, variantId);
   return {
-    selectedSkus: variant.skuGroups.map(({ skuGroupCode }) => {
+    selectedSkus: variant.skuGroups.flatMap(({ skuGroupCode }) => {
       const skus = getSKUsByGroupCode(product, skuGroupCode);
-      return skus[0]!;
+      return skus[0] ?? [];
     }),
     baseSkus: variant.skus,
   };
@@ -106,12 +115,12 @@ const makeReducer = (product: Product) => (state: State, action: Actions) => {
     return { ...state, selectedSkus };
   } else {
     const variant = getVariantByVariantId(product, action.payload.variantId);
-    const selectedSkus = variant.skuGroups.map(({ skuGroupCode }, index) => {
+    const selectedSkus = variant.skuGroups.flatMap(({ skuGroupCode }, index) => {
       const skus = getSKUsByGroupCode(product, skuGroupCode);
       const selectedCode = state.selectedSkus[index];
       // すでに選択されているSKUが新しいバリアントのSKUに含まれている場合はそのSKUを維持する
       if (selectedCode && skus.includes(selectedCode)) return selectedCode;
-      return skus[0]!;
+      return skus[0] ?? [];
     });
     return { selectedSkus, baseSkus: variant.skus };
   }
