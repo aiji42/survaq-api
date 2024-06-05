@@ -2,7 +2,7 @@ import React, { FC, useEffect, useReducer } from "react";
 import { SkuSelector } from "./SkuSelector";
 import { Product, useProductData } from "./hooks/useProductData";
 import { useVariantId } from "./hooks/useVariantId";
-import { latest, Schedule } from "../../../libs/makeSchedule";
+import { latest } from "../../../libs/makeSchedule";
 import { ScheduleCaution } from "./ScheduleCaution";
 
 type Props = {
