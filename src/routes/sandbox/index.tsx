@@ -141,14 +141,13 @@ app.get("/shopify/product/:id", async (c) => {
       <script
         dangerouslySetInnerHTML={{
           __html: `
-        window.ShopifyAnalytics ||= { meta: { selectedVariantId: null } };
+        window.ShopifyAnalytics ||= { meta: { selectedVariantId: '${variantId}' } };
         document.getElementById("variant").addEventListener("change", (e) => {
           window.ShopifyAnalytics.meta.selectedVariantId = e.target.value;
           const url = new URL(window.location.href);
           url.searchParams.set("variantId", e.target.value);
           history.pushState({}, '', url);
         });
-        document.dispatchEvent(new Event("change"));
       `,
         }}
       />

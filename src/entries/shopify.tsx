@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { ShopifyAdditionalSelectors } from "../components/react/shopify/ShopifyAdditionalSelectors";
 import { FuncReplaceScheduleText } from "../components/react/shopify/FuncReplaceScheduleText";
 
+// FIXME: ErrorBoundaryを使ってエラーをキャッチし、Slackに通知するような処理を追加する
 const main = (productId: string, initialVariantId: string) => {
   const domNode = document.getElementById("additionalProperties");
   if (domNode) {
