@@ -30,7 +30,7 @@ export const SkuSelector: FC<Props> = ({ label, code, onChange, options, index }
         name={`properties[${label}]`}
         value={options.find((o) => o.code === code)?.name ?? ""}
       />
-      <input type="hidden" name={`properties[_sku[${index + 1}]]`} value={code} />
+      <input type="hidden" name={`properties[_sku${index + 1}]`} value={code} />
     </p>
   );
 };
