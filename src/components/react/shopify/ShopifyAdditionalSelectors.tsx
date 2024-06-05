@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useReducer } from "react";
+import React, { FC, useMemo, useReducer } from "react";
 import { SkuSelector } from "./SkuSelector";
 import { Product, useProductData } from "./hooks/useProductData";
 import { useVariantId } from "./hooks/useVariantId";
@@ -19,9 +19,7 @@ export const ShopifyAdditionalSelectors: FC<Props> = ({ productId, initialVarian
     initialReducer(product, variantId),
   );
 
-  useEffect(() => {
-    dispatch({ type: "changeVariant", payload: { variantId } });
-  }, [variantId]);
+  useMemo(() => dispatch({ type: "changeVariant", payload: { variantId } }), [variantId]);
 
   const variant = getVariantByVariantId(product, variantId);
 

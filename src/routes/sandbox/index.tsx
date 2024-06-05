@@ -128,9 +128,10 @@ app.get("/shopify/product/:id", async (c) => {
   if (!product) throw new HTTPException(404);
 
   const variantId = c.req.query("variantId") ?? product.variants[0]!.variantId;
+  const lang = c.req.query("lang") === "en" ? "en" : "ja";
 
   return c.html(
-    <Layout isDev={!!c.env.DEV}>
+    <Layout isDev={!!c.env.DEV} lang={lang}>
       <div className="delivery-schedule"></div>
       <div className="delivery-schedule" data-short="true"></div>
       <form id="form">
