@@ -3,7 +3,7 @@ import { Task } from "@lit/task";
 import { customElement, property, state } from "lit/decorators.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { BaseLitElement } from "./BaseLitElement";
-import { CancellationRoute } from "../routes/_apis/cancellation";
+import { CancellationRoute } from "../../routes/_apis/cancellation";
 import { hc } from "hono/client";
 
 const initialFormState = {

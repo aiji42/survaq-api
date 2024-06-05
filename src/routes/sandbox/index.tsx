@@ -1,5 +1,6 @@
+/* @jsxImportSource hono/jsx */
 import { Hono } from "hono";
-import { Layout } from "../../components/Layout";
+import { Layout } from "../../components/hono/Layout";
 import { ShopifyOrderSyncBQ } from "../../libs/models/shopify/ShopifyOrderSyncBQ";
 import { Bindings } from "../../../bindings";
 import { InventoryOperator } from "../../libs/models/cms/Inventory";
@@ -10,6 +11,8 @@ import { RakutenOrder, SEARCH_DATE_TYPE } from "../../libs/models/rakuten/Rakute
 import { AmazonOrder } from "../../libs/models/amazon/AmazonOrder";
 import { needLogin } from "../../libs/utils";
 import { AmazonAdsClient } from "../../libs/models/amazon/AmazonAdsClient";
+import { Product } from "../../libs/models/cms/Product";
+import { HTTPException } from "hono/http-exception";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -116,6 +119,47 @@ app.get("/amazon", async (c) => {
 app.get("amazon/ads", async (c) => {
   const amazon = new AmazonAdsClient(c.env);
   return c.json(await amazon.getAccounts());
+});
+
+app.get("/shopify/product/:id", async (c) => {
+  const id = c.req.param("id");
+  const db = new DB(c.env);
+  const product = await new Product(db, "ja").getProductByShopifyId(id);
+  if (!product) throw new HTTPException(404);
+
+  const variantId = c.req.query("variantId") ?? product.variants[0]!.variantId;
+
+  return c.html(
+    <Layout isDev={!!c.env.DEV}>
+      <div className="delivery-schedule"></div>
+      <div className="delivery-schedule" data-short="true"></div>
+      <select name="variant" id="variant" defaultValue={variantId}>
+        {product.variants.map((variant) => (
+          <option value={variant.variantId}>{variant.variantName}</option>
+        ))}
+      </select>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+        window.ShopifyAnalytics ||= { meta: { selectedVariantId: null } };
+        document.getElementById("variant").addEventListener("change", (e) => {
+          window.ShopifyAnalytics.meta.selectedVariantId = e.target.value;
+          const url = new URL(window.location.href);
+          url.searchParams.set("variantId", e.target.value);
+          history.pushState({}, '', url);
+        });
+        document.dispatchEvent(new Event("change"));
+      `,
+        }}
+      />
+      <div id="additionalProperties"></div>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `addEventListener("load", () => { customScriptSurvaq("${id}", "${variantId}") })`,
+        }}
+      />
+    </Layout>,
+  );
 });
 
 export default app;

@@ -1,5 +1,6 @@
+/* @jsxImportSource hono/jsx */
 import { Hono } from "hono";
-import { Layout } from "../../components/Layout";
+import { Layout } from "../../components/hono/Layout";
 import { CMSChecker } from "../../tasks";
 import { needLogin } from "../../libs/utils";
 

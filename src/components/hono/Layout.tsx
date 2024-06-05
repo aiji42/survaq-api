@@ -1,3 +1,4 @@
+/* @jsxImportSource hono/jsx */
 import type { Child, FC } from "hono/jsx";
 
 export type LayoutProps = {
@@ -20,11 +21,13 @@ export const Layout: FC<{
         {!isDev ? (
           <>
             <script type="module" src="/static/web-components.js" />
+            <script type="module" src="/static/shopify-entry.js" />
             <link type="text/css" rel="stylesheet" href="/static/style.css" />
           </>
         ) : (
           <>
-            <script type="module" src="/src/web-components/index.ts" />
+            <script type="module" src="/src/entries/web-components.ts" />
+            <script type="module" src="/src/entries/shopify.tsx" />
             <link type="text/css" rel="stylesheet" href="/src/globals.css" />
           </>
         )}

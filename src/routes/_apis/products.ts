@@ -100,7 +100,7 @@ const productDeliveryRoute = app.get(
 
 export type ProductDeliveryRoute = typeof productDeliveryRoute;
 
-app.get("/:id", async (c) => {
+const productDetailsRoute = app.get("/:id", async (c) => {
   const db = new DB(c.env);
 
   const product = await asyncCache(`${c.req.url}-${c.get("locale")}`, c, c.env.CACHE, 60 * 60, () =>
@@ -115,6 +115,8 @@ app.get("/:id", async (c) => {
 
   return c.json(product);
 });
+
+export type ProductDetailsRoute = typeof productDetailsRoute;
 
 app.get("/page-data/:code", async (c) => {
   const db = new DB(c.env);
