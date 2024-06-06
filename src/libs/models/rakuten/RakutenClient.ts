@@ -1,12 +1,25 @@
-export class RakutenClient {
-  constructor(
-    private serviceSecret: string,
-    private licenseKey: string,
-  ) {}
+import { Bindings } from "../../../../bindings";
+import { DB } from "../../db";
 
-  get bearerToken() {
+export class RakutenClient {
+  private db: DB;
+  private tokenCache: string | null = null;
+  constructor(env: Bindings) {
+    this.db = new DB(env);
+  }
+
+  async getBearerToken() {
+    if (this.tokenCache) return this.tokenCache;
+    const { rakutenServiceSecret, rakutenLicenseKey } =
+      await this.db.prisma.tokens.findFirstOrThrow();
+    if (!rakutenServiceSecret || !rakutenLicenseKey)
+      throw new Error("Rakuten API credentials not found");
+
     // https://webservice.rms.rakuten.co.jp/merchant-portal/view/ja/common/1-1_service_index/rmsWebServiceAuthentication
-    return `ESA ${Buffer.from(`${this.serviceSecret}:${this.licenseKey}`).toString("base64")}`;
+    const bearerToken = `ESA ${Buffer.from(`${rakutenServiceSecret}:${rakutenLicenseKey}`).toString("base64")}`;
+    this.tokenCache = bearerToken;
+
+    return bearerToken;
   }
 
   protected async jsonPost<T>(url: string, body: Record<string, unknown>) {
@@ -14,7 +27,7 @@ export class RakutenClient {
       method: "POST",
       headers: {
         "Content-Type": "application/json;charset=utf-8",
-        Authorization: this.bearerToken,
+        Authorization: await this.getBearerToken(),
       },
       body: JSON.stringify(body),
     });

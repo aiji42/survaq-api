@@ -1,3 +1,6 @@
+import { DB } from "../../db";
+import { Bindings } from "../../../../bindings";
+
 type AuthResult = {
   access_token: string;
   refresh_token: string;
@@ -7,19 +10,23 @@ type AuthResult = {
 export class AmazonClient {
   protected marketplaceId = "A1VC38T7YXB528"; // JP (https://docs.developer.amazonservices.com/ja_JP/dev_guide/DG_Endpoints.html)
   private tokenCache: AuthResult | null = null;
+  private db: DB;
 
-  constructor(
-    private clientId: string,
-    private clientSecret: string,
-    private refreshToken: string,
-  ) {}
+  constructor(env: Bindings) {
+    this.db = new DB(env);
+  }
 
   // FIXME: KVに保存して取得の頻度を減らす
   async getAccessToken(): Promise<AuthResult> {
     if (this.tokenCache && Date.now() < this.tokenCache.expires_in) return this.tokenCache;
 
+    const { amazonSpApiClientId, amazonSpApiClientSecret, amazonSpApiRefreshToken } =
+      await this.db.prisma.tokens.findFirstOrThrow();
+    if (!amazonSpApiClientId || !amazonSpApiClientSecret || !amazonSpApiRefreshToken)
+      throw new Error("Amazon SP API credentials not found");
+
     const res = await fetch(
-      `https://api.amazon.com/auth/o2/token?grant_type=refresh_token&refresh_token=${this.refreshToken}&client_id=${this.clientId}&client_secret=${this.clientSecret}`,
+      `https://api.amazon.com/auth/o2/token?grant_type=refresh_token&refresh_token=${amazonSpApiRefreshToken}&client_id=${amazonSpApiClientId}&client_secret=${amazonSpApiClientSecret}`,
       {
         method: "POST",
         headers: {

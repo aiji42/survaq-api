@@ -83,7 +83,7 @@ app.get("/inventory/:code", async (c) => {
 });
 
 app.get("/rakuten", async (c) => {
-  const rakutenOrder = new RakutenOrder(c.env.RMS_SERVICE_SECRET, c.env.RMS_LICENSE_KEY);
+  const rakutenOrder = new RakutenOrder(c.env);
 
   const orders = await rakutenOrder.search({
     dateType: SEARCH_DATE_TYPE.ORDER_DATE,
@@ -96,11 +96,7 @@ app.get("/rakuten", async (c) => {
 });
 
 app.get("/amazon", async (c) => {
-  const amazon = new AmazonOrder(
-    c.env.SP_API_CLIENT_ID,
-    c.env.SP_API_CLIENT_SECRET,
-    c.env.SP_API_REFRESH_TOKEN,
-  );
+  const amazon = new AmazonOrder(c.env);
 
   const { data } = await amazon.getOrders({
     limit: 10,
