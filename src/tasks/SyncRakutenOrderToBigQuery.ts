@@ -26,10 +26,18 @@ export class SyncRakutenOrderToBigQuery extends KiribiPerformer<
 
   async perform(data: { type?: SyncType; begin?: string; end?: string }) {
     const type = data.type ?? SyncType.orderedAt;
-    if (type === SyncType.orderedAt) await this.order.syncNewOrders(data.begin, data.end);
-    if (type === SyncType.fulfilledAt)
+    if (type === SyncType.orderedAt) {
+      await this.order.syncNewOrders(data.begin, data.end);
+      return;
+    }
+    if (type === SyncType.fulfilledAt) {
       await this.order.syncNewFulfilledOrders(data.begin, data.end);
-    if (type === SyncType.cancelledAt) await this.order.syncNewCancelledOrders(data.begin);
+      return;
+    }
+    if (type === SyncType.cancelledAt) {
+      await this.order.syncNewCancelledOrders(data.begin);
+      return;
+    }
 
     throw new Error(`Invalid type: ${type}`);
   }
