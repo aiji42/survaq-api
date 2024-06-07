@@ -99,6 +99,7 @@ export default class extends Kiribi<Performers, Bindings> {
         "NotifyToSlack",
         "ProductSync",
         "PurchaseMeasurementProtocol",
+        "SyncRakutenOrderToBigQuery",
         "SyncShopifyOrderToBigQuery",
         "TokensHealthCheck",
         "UpdateOrderInventory",
