@@ -35,4 +35,17 @@ export class RakutenClient {
       throw new Error(`Failed to fetch ${url}: ${JSON.stringify(await res.json(), null, 2)}`);
     return (await res.json()) as T;
   }
+
+  protected async jsonGet<T>(_url: string, params?: URLSearchParams) {
+    const url = params ? `${_url}?${params.toString()}` : _url;
+    const res = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json;charset=utf-8",
+        Authorization: await this.getBearerToken(),
+      },
+    });
+    if (!res.ok)
+      throw new Error(`Failed to fetch ${url}: ${JSON.stringify(await res.json(), null, 2)}`);
+    return (await res.json()) as T;
+  }
 }

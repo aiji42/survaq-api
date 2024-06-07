@@ -13,6 +13,7 @@ import { needLogin } from "../../libs/utils";
 import { AmazonAdsClient } from "../../libs/models/amazon/AmazonAdsClient";
 import { Product } from "../../libs/models/cms/Product";
 import { HTTPException } from "hono/http-exception";
+import { RakutenItem } from "../../libs/models/rakuten/RakutenItem";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -82,7 +83,7 @@ app.get("/inventory/:code", async (c) => {
   return c.json(res);
 });
 
-app.get("/rakuten", async (c) => {
+app.get("/rakuten/orders", async (c) => {
   const rakutenOrder = new RakutenOrder(c.env);
 
   const orders = await rakutenOrder.search({
@@ -93,6 +94,16 @@ app.get("/rakuten", async (c) => {
   });
 
   return c.json(orders);
+});
+
+app.get("/rakuten/items", async (c) => {
+  const rakutenItem = new RakutenItem(c.env);
+
+  const items = await rakutenItem.search({
+    limit: 10,
+  });
+
+  return c.json(items);
 });
 
 app.get("/amazon", async (c) => {

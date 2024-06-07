@@ -47,6 +47,34 @@ export const SEARCH_DATE_TYPE = {
 
 type SearchDateType = (typeof SEARCH_DATE_TYPE)[keyof typeof SEARCH_DATE_TYPE];
 
+/**
+ * 変更理由
+ * 0: キャンセル申請
+ * 1: キャンセル確定
+ * 2: キャンセル完了
+ * 3: キャンセル取消
+ * 4: 変更申請
+ * 5: 変更確定
+ * 6: 変更完了
+ * 7: 変更取消
+ * 8: 注文確認
+ * 9: 再決済手続き
+ */
+const CHANGE_REASON = {
+  CANCEL_REQUEST: 0,
+  CANCEL_CONFIRMATION: 1,
+  CANCEL_COMPLETED: 2,
+  CANCEL_CANCEL: 3,
+  CHANGE_REQUEST: 4,
+  CHANGE_CONFIRMATION: 5,
+  CHANGE_COMPLETED: 6,
+  CHANGE_CANCEL: 7,
+  ORDER_CONFIRMATION: 8,
+  RE_PAYMENT: 9,
+} as const;
+
+type ChangeReason = (typeof CHANGE_REASON)[keyof typeof CHANGE_REASON];
+
 type MessageModel = {
   messageType: "INFO" | "ERROR" | "WARNING";
   messageCode: string; // https://webservice.rms.rakuten.co.jp/merchant-portal/view/ja/common/1-1_service_index/rakutenpayorderapi/rakutenpaymsgcodereference
@@ -96,7 +124,17 @@ type ItemModel = {
   includeTaxFlag: 0 | 1; // 税込フラグ
   includeCashOnDeliveryPostageFlag: 0 | 1; // 代引き手数料込フラグ
   SkuModelList: SkuModel[];
-  TaxSummaryModelList: TaxSummaryModel[];
+};
+
+type ChangeReasonModel = {
+  changeId: number; // 変更ID
+  changeType: ChangeReason | null; // 変更種別
+  changeTypeDetail: number | null; // 変更種別詳細
+  changeReason: 0 | 1 | null; // 変更理由 (0: 店舗都合, 1: 顧客都合)
+  changeReasonDetail: number | null; // 変更理由詳細
+  changeApplyDatetime: string | null; // 変更申請日時
+  changeFixDatetime: string | null; // 変更確定日時
+  changeCmplDatetime: string | null; // 変更完了日時
 };
 
 // https://webservice.rms.rakuten.co.jp/merchant-portal/view/ja/common/1-1_service_index/rakutenpayorderapi/getorder
@@ -116,7 +154,10 @@ type OrderModel = {
   paymentCharge: number; // 決済手数料
   totalPrice: number; // 合計金額 (商品金額 + 送料 + ラッピング料)
   requestPrice: number; // 請求金額 (商品金額 + 送料 + ラッピング料 + 決済手数料 + 注文者負担金 - クーポン利用総額 - ポイント利用額)
+  couponAllTotalPrice: number; // クーポン利用総額
   PackageModelList: PackageModel[];
+  TaxSummaryModelList: TaxSummaryModel[] | null;
+  ChangeReasonModelList: ChangeReasonModel[] | null;
 };
 
 type RakutenOrderDetailResponse = {
@@ -141,7 +182,7 @@ export class RakutenOrder extends RakutenClient {
     limit?: number;
   }) {
     const page = params.page ?? 1;
-    const limit = Math.max(params.limit ?? 100, 100); // 仕様上は1000件まで指定可能だが、detailEndpointは100件までしか取得できないので100件に制限
+    const limit = Math.min(params.limit ?? 100, 100); // 仕様上は1000件まで指定可能だが、detailEndpointは100件までしか取得できないので100件に制限
     const body = {
       orderProgressList: params.statuses,
       dateType: params.dateType,
