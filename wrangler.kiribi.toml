@@ -88,5 +88,10 @@ binding = "TokensHealthCheck"
 service = "kiribi-survaq-api"
 entrypoint = "TokensHealthCheck"
 
+[[services]]
+binding = "SyncRakutenOrderToBigQuery"
+service = "kiribi-survaq-api"
+entrypoint = "SyncRakutenOrderToBigQuery"
+
 [site]
 bucket = "./node_modules/kiribi/client"

@@ -25,6 +25,8 @@ import { NotifyToSlack } from "./NotifyToSlack";
 export { NotifyToSlack } from "./NotifyToSlack";
 import { TokensHealthCheck } from "./TokensHealthCheck";
 export { TokensHealthCheck } from "./TokensHealthCheck";
+import { SyncRakutenOrderToBigQuery } from "./SyncRakutenOrderToBigQuery";
+export { SyncRakutenOrderToBigQuery } from "./SyncRakutenOrderToBigQuery";
 
 type Performers = {
   Cancel: Cancel;
@@ -38,6 +40,7 @@ type Performers = {
   UpdateSkuOnFulfillment: UpdateSkuOnFulfillment;
   NotifyToSlack: NotifyToSlack;
   TokensHealthCheck: TokensHealthCheck;
+  SyncRakutenOrderToBigQuery: SyncRakutenOrderToBigQuery;
 };
 type BindingKeys = keyof Performers;
 
@@ -73,6 +76,18 @@ export default class extends Kiribi<Performers, Bindings> {
     if (cron === "*/10 * * * *") {
       // re-enqueue zombie jobs
       await this.recover();
+
+      const retryStrategy = { maxRetries: 2, retryDelay: 120 };
+      const min = new Date().getMinutes();
+      // 00-09分、30-39分ならRakutenの注文情報をBigQueryに同期する
+      if ((min >= 0 && min < 10) || (min >= 30 && min < 40))
+        await this.enqueue("SyncRakutenOrderToBigQuery", { type: "orderedAt" }, retryStrategy);
+      // 10-19分、40-49分ならRakutenの発送済みの注文情報をBigQueryに同期する
+      if ((min >= 10 && min < 20) || (min >= 40 && min < 50))
+        await this.enqueue("SyncRakutenOrderToBigQuery", { type: "fulfilledAt" }, retryStrategy);
+      // 20-29分、50-59分ならRakutenのキャンセル済みの注文情報をBigQueryに同期する
+      if ((min >= 20 && min < 30) || (min >= 50 && min < 60))
+        await this.enqueue("SyncRakutenOrderToBigQuery", { type: "cancelledAt" }, retryStrategy);
     }
   }
 

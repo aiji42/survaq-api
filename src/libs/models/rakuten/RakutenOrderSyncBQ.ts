@@ -46,11 +46,40 @@ export class RakutenOrderSyncBQ extends RakutenOrder {
     this.bq = new BigQueryClient(env);
   }
 
-  async syncNewOrders(after: string) {
+  async lastOrderedAt() {
+    const [lastOrderedAt] = await this.bq.query<{ ordered_at: string }>(
+      `SELECT CAST(MAX(ordered_at) AS STRING) AS ordered_at FROM ${this.bq.table("rakuten", "orders")}`,
+    );
+    return lastOrderedAt?.ordered_at;
+  }
+
+  async lastFulfilledAt() {
+    const [lastFulfilledAt] = await this.bq.query<{ fulfilled_at: string }>(
+      `SELECT CAST(MAX(fulfilled_at) AS STRING) AS fulfilled_at FROM ${this.bq.table("rakuten", "orders")}`,
+    );
+    return lastFulfilledAt?.fulfilled_at;
+  }
+
+  async lastCancelledAt() {
+    const [lastCancelledAt] = await this.bq.query<{ cancelled_at: string }>(
+      `SELECT CAST(MAX(cancelled_at) AS STRING) AS cancelled_at FROM ${this.bq.table("rakuten", "orders")}`,
+    );
+    return lastCancelledAt?.cancelled_at;
+  }
+
+  async syncNewOrders(beginDate?: string, endDate?: string) {
+    let begin = beginDate;
+    if (!begin) {
+      const lastOrderedAt = await this.lastOrderedAt();
+      if (!lastOrderedAt) throw new Error("No last ordered date found");
+      begin = getRakutenDatetimeFormat(lastOrderedAt);
+      console.log(`Last ordered date: ${begin}(JST)`);
+    }
+
     const { data, pagination } = await this.search({
       dateType: SEARCH_DATE_TYPE.ORDER_DATE,
-      beginDate: after,
-      endDate: new Date().toISOString().split("T")[0]!,
+      begin,
+      end: endDate ?? getRakutenDatetimeFormat(new Date()),
     });
 
     let next = pagination.next;
@@ -74,11 +103,19 @@ export class RakutenOrderSyncBQ extends RakutenOrder {
     ]);
   }
 
-  async syncNewFulfilledOrders(after: string) {
+  async syncNewFulfilledOrders(beginDate?: string, endDate?: string) {
+    let begin = beginDate;
+    if (!begin) {
+      const lastFulfilledAt = await this.lastFulfilledAt();
+      if (!lastFulfilledAt) throw new Error("No last fulfilled date found");
+      begin = getRakutenDatetimeFormat(lastFulfilledAt);
+      console.log(`Last fulfilled date: ${begin}(JST)`);
+    }
+
     const { data, pagination } = await this.search({
       dateType: SEARCH_DATE_TYPE.SHIPMENT_REPORT_DATE,
-      beginDate: after,
-      endDate: new Date().toISOString().split("T")[0]!,
+      begin,
+      end: endDate ?? getRakutenDatetimeFormat(new Date()),
     });
 
     let next = pagination.next;
@@ -104,15 +141,26 @@ export class RakutenOrderSyncBQ extends RakutenOrder {
 
   // MEMO: dateTypeが注文日基準でしか計算できないので、afterを一番最後の日付にしてしまうと本来取りたいデータが取れない。
   // そのため、全てのキャンセル済みの注文を取得して、その中からafter以降のものを取得する。
-  async syncNewCancelledOrders(after: string) {
+  async syncNewCancelledOrders(beginDate?: string) {
+    let after = beginDate;
+    if (!after) {
+      const lastCancelledAt = await this.lastCancelledAt();
+      if (!lastCancelledAt) throw new Error("No last cancelled date found");
+      after = getRakutenDatetimeFormat(lastCancelledAt);
+      console.log(`Last cancelled date: ${after}(JST)`);
+    }
+
+    // 60日前から今日までのデータを取得する
+    const begin = getRakutenDatetimeFormat(
+      new Date(new Date().getTime() - 60 * 24 * 60 * 60 * 1000),
+    );
+    const end = getRakutenDatetimeFormat(new Date());
+    console.log(`Searching cancelled orders from ${begin}(JST) to ${end}(JST)`);
     const { data, pagination } = await this.search({
       dateType: SEARCH_DATE_TYPE.ORDER_DATE,
       statuses: [ORDER_STATUS.CANCEL_CONFIRMED],
-      // 60日前から取得する
-      beginDate: new Date(new Date().getTime() - 60 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0]!,
-      endDate: new Date().toISOString().split("T")[0]!,
+      begin,
+      end,
     });
 
     let next = pagination.next;
@@ -123,12 +171,11 @@ export class RakutenOrderSyncBQ extends RakutenOrder {
       next = nextPagination.next;
     }
 
-    // MEMO: キャンセル済みの注文は全て取得できているので、after以降のものだけを取得する
-    const afterDate = new Date(after);
+    // MEMO: 60日間の注文データの中からafter以降のキャンセル済みの注文を取得する
     const filteredData = data.filter((order) => {
       const cancelledAt = findCancelledAt(order);
-      if (!cancelledAt) return false;
-      return new Date(cancelledAt) >= afterDate;
+      // このcancelledAtは日本時間。beginも日本時間になっているのでそのまま比較してよい
+      return cancelledAt && new Date(cancelledAt) >= new Date(after);
     });
 
     console.log(`Found ${filteredData.length} cancelled orders`);
@@ -144,6 +191,15 @@ export class RakutenOrderSyncBQ extends RakutenOrder {
     ]);
   }
 }
+
+const getRakutenDatetimeFormat = (utc: string | Date) => {
+  // +9時間してYYYY-MM-DDTHH:MM:SSに変換する
+  return new Date(
+    (typeof utc === "string" ? new Date(`${utc}Z`) : utc).getTime() + 9 * 60 * 60 * 1000,
+  )
+    .toISOString()
+    .slice(0, 19);
+};
 
 const parseForBQTable = (order: OrderModel): BQOrdersTableData => {
   const totalPrice = order.totalPrice - order.couponAllTotalPrice + order.deliveryPrice;
@@ -166,13 +222,7 @@ const parseForBQTable = (order: OrderModel): BQOrdersTableData => {
 const parseForBQOrderItemsTable = (order: OrderModel): BQOrderItemsTableData[] => {
   return order.PackageModelList.flatMap((pkg) => {
     return pkg.ItemModelList.map<BQOrderItemsTableData>((item) => {
-      const sku = item.SkuModelList[0];
-      if (!sku) throw new Error(`SKU not found: ${item.manageNumber}`);
-      if (item.SkuModelList.length > 1)
-        throw new Error(`Multiple SKUs found: ${item.manageNumber}`);
-      if (!sku.merchantDefinedSkuId)
-        throw new Error(`SKU merchantDefinedSkuId not found: ${item.manageNumber}`);
-
+      const sku = skuValid(item);
       const totalPrice = item.priceTaxIncl * item.units;
       const totalTax = Math.ceil(totalPrice * item.taxRate);
 
@@ -214,6 +264,7 @@ const skuValid = (item: ItemModel) => {
   const sku = item.SkuModelList[0];
   if (!sku) throw new Error(`SKU not found: ${item.manageNumber}`);
   if (item.SkuModelList.length > 1) throw new Error(`Multiple SKUs found: ${item.manageNumber}`);
+  // MEMO: 2024年2月01日以前のデータはmerchantDefinedSkuIdがないケースも有るので、古いデータを取り込むとエラーになる
   if (!sku.merchantDefinedSkuId)
     throw new Error(`SKU merchantDefinedSkuId not found: ${item.manageNumber}`);
 

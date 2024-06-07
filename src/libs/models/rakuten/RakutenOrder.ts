@@ -178,18 +178,25 @@ export class RakutenOrder extends RakutenClient {
   async search(params: {
     statuses?: OrderStatus[];
     dateType: SearchDateType;
-    beginDate: string; // YYYY-MM-DD
-    endDate: string; //  // YYYY-MM-DD
+    begin: string; // YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
+    end: string; // YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
     page?: number;
     limit?: number;
   }) {
     const page = params.page ?? 1;
     const limit = Math.min(params.limit ?? 100, 100); // 仕様上は1000件まで指定可能だが、detailEndpointは100件までしか取得できないので100件に制限
+    const startDatetime = params.begin.includes("T")
+      ? `${params.begin}+0900`
+      : `${params.begin}T00:00:00+0900`;
+    const endDatetime = params.end.includes("T")
+      ? `${params.end}+0900`
+      : `${params.end}T23:59:59+0900`;
+
     const body = {
       orderProgressList: params.statuses,
       dateType: params.dateType,
-      startDatetime: `${params.beginDate}T00:00:00+0900`,
-      endDatetime: `${params.endDate}T23:59:59+0900`,
+      startDatetime,
+      endDatetime,
       PaginationRequestModel: {
         requestRecordsAmount: limit,
         requestPage: page,

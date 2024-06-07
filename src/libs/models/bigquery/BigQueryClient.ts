@@ -11,6 +11,10 @@ export class BigQueryClient {
     return this.bq.query<T>(query);
   }
 
+  table(dataset: string, table: string) {
+    return `${dataset}.${table}`;
+  }
+
   makeInsertQuery(
     dataset: string,
     table: string,
@@ -22,7 +26,7 @@ export class BigQueryClient {
     const columns = Object.keys(firstRow);
 
     return `
-      INSERT INTO \`${dataset}.${table}\`
+      INSERT INTO \`${this.table(dataset, table)}\`
       (${columns.map((column) => `\`${column}\``).join(", ")})
       VALUES
       ${rows.map((row) => `(${columns.map((column) => this.formatValue(row[column]!)).join(", ")})`).join(", ")}
@@ -42,7 +46,7 @@ export class BigQueryClient {
 
   makeDeleteQuery(dataset: string, table: string, key: string, values: (string | number)[]) {
     return `
-      DELETE FROM \`${dataset}.${table}\`
+      DELETE FROM \`${this.table(dataset, table)}\`
       WHERE \`${key}\` IN (${values.map((value) => this.formatValue(value)).join(", ")})
     `;
   }

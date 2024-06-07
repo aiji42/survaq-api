@@ -77,6 +77,7 @@ const getShippedQuantity = async (
   bq: BigQueryClient,
   targets: { code: string; shippedAt: string }[],
 ) => {
+  // FIXME: ここのlastShippedAtはタイムゾーンあってないかも
   const query = `
     SELECT code, SUM(quantity) as quantity, MAX(fulfilled_at) as lastShippedAt
       FROM shopify.order_skus

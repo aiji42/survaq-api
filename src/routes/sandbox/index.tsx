@@ -15,9 +15,7 @@ import { needLogin } from "../../libs/utils";
 import { AmazonAdsClient } from "../../libs/models/amazon/AmazonAdsClient";
 import { Product } from "../../libs/models/cms/Product";
 import { HTTPException } from "hono/http-exception";
-import { RakutenItem } from "../../libs/models/rakuten/RakutenItem";
 import { BigQueryClient } from "../../libs/models/bigquery/BigQueryClient";
-import { RakutenOrderSyncBQ } from "../../libs/models/rakuten/RakutenOrderSyncBQ";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -93,30 +91,12 @@ app.get("/rakuten/orders", async (c) => {
   const orders = await rakutenOrder.search({
     dateType: SEARCH_DATE_TYPE.ORDER_DATE,
     statuses: [ORDER_STATUS.CANCEL_CONFIRMED],
-    beginDate: "2024-04-10",
-    endDate: "2024-06-07",
+    begin: "2024-04-10",
+    end: "2024-06-07",
     limit: 10,
   });
 
   return c.json(orders);
-});
-
-app.get("/rakuten/orders/sync", async (c) => {
-  const rakutenOrder = new RakutenOrderSyncBQ(c.env);
-
-  await rakutenOrder.syncNewOrders("2024-06-01");
-
-  return c.json({ message: "success" });
-});
-
-app.get("/rakuten/items", async (c) => {
-  const rakutenItem = new RakutenItem(c.env);
-
-  const items = await rakutenItem.search({
-    limit: 10,
-  });
-
-  return c.json(items);
 });
 
 app.get("/amazon", async (c) => {
