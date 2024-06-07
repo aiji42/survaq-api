@@ -1,7 +1,7 @@
 import { KiribiPerformer } from "kiribi/performer";
 import { Bindings } from "../../bindings";
 import { DB } from "../libs/db";
-import { SlackNotifier } from "../libs/slack";
+import { SlackNotifier } from "../libs/models/slack/SlackNotifier";
 import { sanitizeSkuGroupsJSON, sanitizeSkusJSON } from "../libs/models/cms/Product";
 import { SLACK_CHANNEL } from "../constants";
 

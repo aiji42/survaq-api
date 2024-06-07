@@ -13,7 +13,7 @@ import { RakutenClient } from "./RakutenClient";
  * 800: キャンセル確定待ち
  * 900: キャンセル確定
  */
-const ORDER_STATUS = {
+export const ORDER_STATUS = {
   WAITING_CONFIRMATION: 100,
   RAKUTEN_PROCESSING: 200,
   WAITING_SHIPMENT: 300,
@@ -25,7 +25,7 @@ const ORDER_STATUS = {
   CANCEL_CONFIRMED: 900,
 } as const;
 
-type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS];
+export type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS];
 
 /**
  * 期間検索種別
@@ -60,7 +60,7 @@ type SearchDateType = (typeof SEARCH_DATE_TYPE)[keyof typeof SEARCH_DATE_TYPE];
  * 8: 注文確認
  * 9: 再決済手続き
  */
-const CHANGE_REASON = {
+export const CHANGE_REASON = {
   CANCEL_REQUEST: 0,
   CANCEL_CONFIRMATION: 1,
   CANCEL_COMPLETED: 2,
@@ -97,7 +97,7 @@ type PackageModel = {
   ItemModelList: ItemModel[];
 };
 
-type SkuModel = {
+export type SkuModel = {
   variantId: string; // 管理番号
   merchantDefinedSkuId: string | null; // システム連携用SKU番号
   skuInfo: string | null; // SKU情報
@@ -113,12 +113,14 @@ type TaxSummaryModel = {
   point: number; // 利用ポイント数
 };
 
-type ItemModel = {
+export type ItemModel = {
   itemDetailId: number; // 商品明細ID
   itemName: string; // 商品名
   itemId: number; // 商品ID
   manageNumber: string; // 管理番号
   price: number; // 単価
+  priceTaxIncl: number; // 商品毎税込価格
+  taxRate: number; // 商品税率
   units: number; // 数量
   includePostageFlag: 0 | 1; // 送料込フラグ
   includeTaxFlag: 0 | 1; // 税込フラグ
@@ -138,7 +140,7 @@ type ChangeReasonModel = {
 };
 
 // https://webservice.rms.rakuten.co.jp/merchant-portal/view/ja/common/1-1_service_index/rakutenpayorderapi/getorder
-type OrderModel = {
+export type OrderModel = {
   orderNumber: string;
   orderProgress: OrderStatus;
   orderDatetime: string; // 注文日時

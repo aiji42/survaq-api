@@ -1,7 +1,7 @@
 import { KiribiPerformer } from "kiribi/performer";
 import { Bindings } from "../../bindings";
 import { LogilessClient } from "../libs/models/logiless/LogilessClient";
-import { SlackNotifier } from "../libs/slack";
+import { SlackNotifier } from "../libs/models/slack/SlackNotifier";
 
 /**
  * 各種トークンの有効期限を確認し、Slack通知するタスク

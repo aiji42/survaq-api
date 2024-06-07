@@ -1,5 +1,5 @@
 import { DB } from "../../db";
-import { MailSender } from "../../sendgrid";
+import { MailSender } from "../sendgrid/MailSender";
 import { parse } from "csv-parse/browser/esm/sync";
 import { chunks } from "../../utils";
 import { Logger } from "../../logger";

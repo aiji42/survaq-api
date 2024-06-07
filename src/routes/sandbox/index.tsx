@@ -5,15 +5,19 @@ import { ShopifyOrderSyncBQ } from "../../libs/models/shopify/ShopifyOrderSyncBQ
 import { Bindings } from "../../../bindings";
 import { InventoryOperator } from "../../libs/models/cms/Inventory";
 import { DB } from "../../libs/db";
-import { BigQuery } from "cfw-bq";
-import { BQ_PROJECT_ID } from "../../constants";
-import { RakutenOrder, SEARCH_DATE_TYPE } from "../../libs/models/rakuten/RakutenOrder";
+import {
+  ORDER_STATUS,
+  RakutenOrder,
+  SEARCH_DATE_TYPE,
+} from "../../libs/models/rakuten/RakutenOrder";
 import { AmazonOrder } from "../../libs/models/amazon/AmazonOrder";
 import { needLogin } from "../../libs/utils";
 import { AmazonAdsClient } from "../../libs/models/amazon/AmazonAdsClient";
 import { Product } from "../../libs/models/cms/Product";
 import { HTTPException } from "hono/http-exception";
 import { RakutenItem } from "../../libs/models/rakuten/RakutenItem";
+import { BigQueryClient } from "../../libs/models/bigquery/BigQueryClient";
+import { RakutenOrderSyncBQ } from "../../libs/models/rakuten/RakutenOrderSyncBQ";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -70,7 +74,7 @@ app.get("/shopify/:id", async (c) => {
 app.get("/inventory/:code", async (c) => {
   const code = c.req.param("code");
   const db = new DB(c.env);
-  const bq = new BigQuery(JSON.parse(c.env.GCP_SERVICE_ACCOUNT), BQ_PROJECT_ID);
+  const bq = new BigQueryClient(c.env);
   const waitingShipmentQuantity = await InventoryOperator.fetchWaitingShipmentQuantity(bq, code);
 
   const res = await db.useTransaction(async (transactedDB) => {
@@ -88,12 +92,21 @@ app.get("/rakuten/orders", async (c) => {
 
   const orders = await rakutenOrder.search({
     dateType: SEARCH_DATE_TYPE.ORDER_DATE,
-    beginDate: "2024-05-20",
-    endDate: "2024-06-01",
+    statuses: [ORDER_STATUS.CANCEL_CONFIRMED],
+    beginDate: "2024-04-10",
+    endDate: "2024-06-07",
     limit: 10,
   });
 
   return c.json(orders);
+});
+
+app.get("/rakuten/orders/sync", async (c) => {
+  const rakutenOrder = new RakutenOrderSyncBQ(c.env);
+
+  await rakutenOrder.syncNewOrders("2024-06-01");
+
+  return c.json({ message: "success" });
 });
 
 app.get("/rakuten/items", async (c) => {

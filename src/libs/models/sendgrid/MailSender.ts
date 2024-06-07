@@ -1,12 +1,12 @@
-import { ShopifyOrder } from "./models/shopify/ShopifyOrder";
-import { makeSchedule } from "./makeSchedule";
+import { ShopifyOrder } from "../shopify/ShopifyOrder";
+import { makeSchedule } from "../../makeSchedule";
 import {
   ContentMailJSON,
   EmailJSON,
   PersonalizationJSON,
   TemplateMailJSON,
-} from "../types/sendgrid";
-import { JSONSerializableObject } from "../types/utils";
+} from "../../../types/sendgrid";
+import { JSONSerializableObject } from "../../../types/utils";
 
 export class MailSender {
   constructor(private readonly env: { SENDGRID_API_KEY: string }) {}

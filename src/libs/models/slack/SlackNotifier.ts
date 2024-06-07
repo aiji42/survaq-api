@@ -1,6 +1,6 @@
 import { MessageAttachment, SlackApp, SlackEdgeAppEnv } from "slack-cloudflare-workers";
 import { ChatPostMessageRequest } from "slack-web-api-client/dist/client/request";
-import { SLACK_CHANNEL } from "../constants";
+import { SLACK_CHANNEL } from "../../../constants";
 
 export class SlackNotifier {
   private readonly slack: SlackApp<SlackEdgeAppEnv>;

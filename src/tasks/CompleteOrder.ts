@@ -1,10 +1,10 @@
 import { Bindings } from "../../bindings";
 import { KiribiPerformer } from "kiribi/performer";
 import { DB } from "../libs/db";
-import { ShopifyOrderMailSender } from "../libs/sendgrid";
+import { ShopifyOrderMailSender } from "../libs/models/sendgrid/MailSender";
 import { ShopifyOrderForNoteAttrs } from "../libs/models/shopify/ShopifyOrderForNoteAttrs";
 import { blockReRun } from "../libs/utils";
-import { SlackNotifier } from "../libs/slack";
+import { SlackNotifier } from "../libs/models/slack/SlackNotifier";
 
 /**
  * Shopifyの注文情報を更新するタスク

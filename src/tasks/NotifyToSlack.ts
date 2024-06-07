@@ -1,6 +1,6 @@
 import { Bindings } from "../../bindings";
 import { KiribiPerformer } from "kiribi/performer";
-import { SlackNotifier } from "../libs/slack";
+import { SlackNotifier } from "../libs/models/slack/SlackNotifier";
 import { MessageAttachment } from "slack-cloudflare-workers";
 
 type Payload = {

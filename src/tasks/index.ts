@@ -1,7 +1,7 @@
 import { FailureHandlerMeta, Kiribi } from "kiribi";
 import { client } from "kiribi/client";
 import { rest } from "kiribi/rest";
-import { inlineCode, SlackNotifier } from "../libs/slack";
+import { inlineCode, SlackNotifier } from "../libs/models/slack/SlackNotifier";
 import { Bindings } from "../../bindings";
 import { Cancel } from "./Cancel";
 export { Cancel } from "./Cancel";

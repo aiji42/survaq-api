@@ -1,8 +1,7 @@
 import { KiribiPerformer } from "kiribi/performer";
 import { Bindings } from "../../bindings";
 import { DB } from "../libs/db";
-import { BigQuery } from "cfw-bq";
-import { BQ_PROJECT_ID } from "../constants";
+import { BigQueryClient } from "../libs/models/bigquery/BigQueryClient";
 
 type Result = {
   code: string;
@@ -12,10 +11,10 @@ type Result = {
 
 export class UpdateSkuOnFulfillment extends KiribiPerformer<{}, Result[], Bindings> {
   db: DB;
-  bq: BigQuery;
+  bq: BigQueryClient;
   constructor(ctx: ExecutionContext, env: Bindings) {
     super(ctx, env);
-    this.bq = new BigQuery(JSON.parse(env.GCP_SERVICE_ACCOUNT), BQ_PROJECT_ID);
+    this.bq = new BigQueryClient(env);
     this.db = new DB(env);
   }
 
@@ -74,7 +73,10 @@ const getSkus = async (db: DB) => {
   });
 };
 
-const getShippedQuantity = async (bq: BigQuery, targets: { code: string; shippedAt: string }[]) => {
+const getShippedQuantity = async (
+  bq: BigQueryClient,
+  targets: { code: string; shippedAt: string }[],
+) => {
   const query = `
     SELECT code, SUM(quantity) as quantity, MAX(fulfilled_at) as lastShippedAt
       FROM shopify.order_skus

@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { Bindings } from "../../../bindings";
 import { ShopifyOrderDeliverySchedule } from "../../libs/models/shopify/ShopifyOrderDeliverySchedule";
-import { SlackNotifier } from "../../libs/slack";
+import { SlackNotifier } from "../../libs/models/slack/SlackNotifier";
 import { HTTPException } from "hono/http-exception";
 import { makeNotifiableErrorHandler } from "../../libs/utils";
 import { timeout } from "hono/timeout";

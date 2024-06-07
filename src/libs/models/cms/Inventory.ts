@@ -1,6 +1,6 @@
 import { DB } from "../../db";
-import { BigQuery } from "cfw-bq";
-import { SlackNotifier } from "../../slack";
+import { BigQueryClient } from "../bigquery/BigQueryClient";
+import { SlackNotifier } from "../slack/SlackNotifier";
 import { SlackEdgeAppEnv } from "slack-edge/dist/app-env";
 import { makeSchedule } from "../../makeSchedule";
 
@@ -227,7 +227,7 @@ export class InventoryOperator extends Inventory {
     });
   }
 
-  static async fetchWaitingShipmentQuantity(bq: BigQuery, code: string) {
+  static async fetchWaitingShipmentQuantity(bq: BigQueryClient, code: string) {
     // 未キャンセル・未クローズ・未フルフィル・注文より180日以内のSKUを未出荷として件数を取得
     const query = `
         SELECT SUM(quantity) as quantity

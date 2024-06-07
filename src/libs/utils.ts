@@ -1,7 +1,7 @@
 import type { ErrorHandler, Next } from "hono/dist/types/types";
 import { HTTPException } from "hono/http-exception";
 import { Bindings } from "../../bindings";
-import { inlineCode, SlackNotifier } from "./slack";
+import { inlineCode, SlackNotifier } from "./models/slack/SlackNotifier";
 import { Context } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 

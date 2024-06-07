@@ -3,9 +3,9 @@ import { Bindings } from "../../bindings";
 import { DB } from "../libs/db";
 import { ShopifyOrderForCancel } from "../libs/models/shopify/ShopifyOrderForCancel";
 import { LogilessSalesOrder } from "../libs/models/logiless/LogilessSalesOrder";
-import { MailSender, ShopifyOrderMailSender } from "../libs/sendgrid";
+import { MailSender, ShopifyOrderMailSender } from "../libs/models/sendgrid/MailSender";
 import { Logger } from "../libs/logger";
-import { SlackNotifier } from "../libs/slack";
+import { SlackNotifier } from "../libs/models/slack/SlackNotifier";
 
 /**
  * キャンセルリクエストを処理し、ShopifyとLogilessの注文をキャンセルする

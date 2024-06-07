@@ -6,7 +6,7 @@ import { ShopifyOrderForCancel } from "../../libs/models/shopify/ShopifyOrderFor
 import { DB } from "../../libs/db";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { ShopifyOrderMailSender } from "../../libs/sendgrid";
+import { ShopifyOrderMailSender } from "../../libs/models/sendgrid/MailSender";
 import { makeNotifiableErrorHandler } from "../../libs/utils";
 import { timeout } from "hono/timeout";
 

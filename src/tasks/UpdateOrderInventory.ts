@@ -2,16 +2,15 @@ import { KiribiPerformer } from "kiribi/performer";
 import { Bindings } from "../../bindings";
 import { DB } from "../libs/db";
 import { InventoryOperator } from "../libs/models/cms/Inventory";
-import { BigQuery } from "cfw-bq";
-import { BQ_PROJECT_ID } from "../constants";
+import { BigQueryClient } from "../libs/models/bigquery/BigQueryClient";
 
 export class UpdateOrderInventory extends KiribiPerformer<{ skuCode: string }, void, Bindings> {
   db: DB;
-  bq: BigQuery;
+  bq: BigQueryClient;
   constructor(ctx: ExecutionContext, env: Bindings) {
     super(ctx, env);
-    this.bq = new BigQuery(JSON.parse(env.GCP_SERVICE_ACCOUNT), BQ_PROJECT_ID);
     this.db = new DB(env);
+    this.bq = new BigQueryClient(env);
   }
 
   // FIXME: ほぼほぼリアルタイムにスケジュールシフトできるようになったのはいいが、ということはつまり、スプレッドシートの手動データ更新との衝突確率が上がるということである

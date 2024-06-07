@@ -1,12 +1,11 @@
 import { ShopifyOrder } from "./ShopifyOrder";
-import { BigQuery } from "cfw-bq";
 import { DB } from "../../db";
 import { latest, makeSchedule } from "../../makeSchedule";
-import { BQ_PROJECT_ID } from "../../../constants";
 import { Inventory } from "../cms/Inventory";
+import { BigQueryClient } from "../bigquery/BigQueryClient";
 
 export class ShopifyOrderDeliverySchedule extends ShopifyOrder {
-  private bq: BigQuery;
+  private bq: BigQueryClient;
   private db: DB;
   constructor(env: {
     SHOPIFY_ACCESS_TOKEN: string;
@@ -14,7 +13,7 @@ export class ShopifyOrderDeliverySchedule extends ShopifyOrder {
     DATABASE_URL: string;
   }) {
     super(env);
-    this.bq = new BigQuery(JSON.parse(env.GCP_SERVICE_ACCOUNT), BQ_PROJECT_ID);
+    this.bq = new BigQueryClient(env);
     this.db = new DB(env);
   }
 

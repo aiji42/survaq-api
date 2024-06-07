@@ -8,7 +8,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { Product } from "../../libs/models/cms/Product";
 import { asyncCache, makeNotifiableErrorHandler } from "../../libs/utils";
-import { inlineCode } from "../../libs/slack";
+import { inlineCode } from "../../libs/models/slack/SlackNotifier";
 import { timeout } from "hono/timeout";
 
 type Variables = {
