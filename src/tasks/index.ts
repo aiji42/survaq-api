@@ -79,7 +79,7 @@ export default class extends Kiribi<Performers, Bindings> {
 
       const retryStrategy = { maxRetries: 2, retryDelay: 120 };
       const min = new Date().getMinutes();
-      // 00-09分、30-39分ならRakutenの注文情報をBigQueryに同期する
+      // 00-09分、30-39分ならRakutenの新規の注文情報をBigQueryに同期する
       if ((min >= 0 && min < 10) || (min >= 30 && min < 40))
         await this.enqueue("SyncRakutenOrderToBigQuery", { type: "orderedAt" }, retryStrategy);
       // 10-19分、40-49分ならRakutenの発送済みの注文情報をBigQueryに同期する
