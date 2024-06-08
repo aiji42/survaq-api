@@ -21,12 +21,8 @@ app.get("/data", async (c) => {
 
 app.get("/rakuten/ad-import", async (c) => {
   return c.html(
-    <Layout
-      title="楽天広告データインポート"
-      dev={!!c.env.DEV}
-      additionalHead={<script type="module" src="/src/entries/rakuten-ad-import.tsx" />}
-    >
-      <div id="root" />
+    <Layout title="楽天広告データインポート" dev={!!c.env.DEV}>
+      <div id="rakuten-ads-import-root" />
     </Layout>,
   );
 });
@@ -45,9 +41,15 @@ const Layout: FC<{
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>{title}</title>
         {!dev ? (
-          <link type="text/css" rel="stylesheet" href="/static/style.css" />
+          <>
+            <link type="text/css" rel="stylesheet" href="/static/style.css" />
+            <script type="module" src="/static/portal.js" />
+          </>
         ) : (
-          <link type="text/css" rel="stylesheet" href="/src/globals.css" />
+          <>
+            <link type="text/css" rel="stylesheet" href="/src/globals.css" />
+            <script type="module" src="/src/entries/portal.tsx" />
+          </>
         )}
         {additionalHead}
       </head>
