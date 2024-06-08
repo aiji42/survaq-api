@@ -160,6 +160,7 @@ model ShopifyProductGroups {
   updatedAt            DateTime?              @db.Timestamptz(6)
   title                String?                @unique(map: "shopifyproductgroups_title_unique") @db.VarChar(255)
   GoogleMerchantCenter GoogleMerchantCenter[]
+  RakutenItems         RakutenItems[]
   ShopifyProducts      ShopifyProducts[]
 }
 
@@ -693,4 +694,14 @@ model Tokens {
   amazonSpApiClientId     String?   @db.VarChar(255)
   amazonSpApiClientSecret String?   @db.VarChar(255)
   amazonSpApiRefreshToken String?   @db.VarChar(510)
+}
+
+model RakutenItems {
+  id                   Int                   @id @default(autoincrement())
+  createdAt            DateTime?             @db.Timestamptz(6)
+  updatedAt            DateTime?             @db.Timestamptz(6)
+  title                String                @db.VarChar(255)
+  productGroupId       Int?
+  rakutenItemId        String                @unique(map: "rakutenitems_rakutenitemid_unique") @db.VarChar(255)
+  ShopifyProductGroups ShopifyProductGroups? @relation(fields: [productGroupId], references: [id], onUpdate: NoAction, map: "rakutenitems_productgroupid_foreign")
 }

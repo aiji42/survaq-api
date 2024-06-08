@@ -4,15 +4,17 @@ type Variant = {
   merchantDefinedSkuId: string | null; // システム連携用SKU番号
 };
 
+export type ItemModel = {
+  manageNumber: string; // 商品管理番号
+  itemNumber: string | null; // 商品番号
+  title: string;
+  variants: { [variantId: string]: Variant };
+  created: string;
+  updated: string;
+};
+
 type RakutenItemSearchResult = {
-  item: {
-    manageNumber: string; // 商品管理番号
-    itemNumber: string | null; // 商品番号
-    title: string;
-    variants: { [variantId: string]: Variant };
-    created: string;
-    updated: string;
-  } | null;
+  item: ItemModel | null;
 };
 
 type RakutenItemSearchResponse =

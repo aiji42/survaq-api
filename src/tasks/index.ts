@@ -27,6 +27,8 @@ import { TokensHealthCheck } from "./TokensHealthCheck";
 export { TokensHealthCheck } from "./TokensHealthCheck";
 import { SyncRakutenOrderToBigQuery } from "./SyncRakutenOrderToBigQuery";
 export { SyncRakutenOrderToBigQuery } from "./SyncRakutenOrderToBigQuery";
+import { SyncRakutenItem } from "./SyncRakutenItem";
+export { SyncRakutenItem } from "./SyncRakutenItem";
 
 type Performers = {
   Cancel: Cancel;
@@ -41,6 +43,7 @@ type Performers = {
   NotifyToSlack: NotifyToSlack;
   TokensHealthCheck: TokensHealthCheck;
   SyncRakutenOrderToBigQuery: SyncRakutenOrderToBigQuery;
+  SyncRakutenItem: SyncRakutenItem;
 };
 type BindingKeys = keyof Performers;
 
@@ -56,6 +59,9 @@ export default class extends Kiribi<Performers, Bindings> {
 
       // 各種トークンの有効期限をチェック
       await this.enqueue("TokensHealthCheck", {});
+
+      // Rakutenの商品情報をBigQueryとCMSのDBに同期する
+      await this.enqueue("SyncRakutenItem", {}, { maxRetries: 2, retryDelay: 120 });
     }
 
     // every hour at 5 minutes (毎時00分のCloud Run側のJOBが終わる頃を狙って実行する)

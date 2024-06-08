@@ -93,5 +93,10 @@ binding = "SyncRakutenOrderToBigQuery"
 service = "kiribi-survaq-api"
 entrypoint = "SyncRakutenOrderToBigQuery"
 
+[[services]]
+binding = "SyncRakutenItem"
+service = "kiribi-survaq-api"
+entrypoint = "SyncRakutenItem"
+
 [site]
 bucket = "./node_modules/kiribi/client"

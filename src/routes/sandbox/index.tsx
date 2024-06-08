@@ -5,11 +5,6 @@ import { ShopifyOrderSyncBQ } from "../../libs/models/shopify/ShopifyOrderSyncBQ
 import { Bindings } from "../../../bindings";
 import { InventoryOperator } from "../../libs/models/cms/Inventory";
 import { DB } from "../../libs/db";
-import {
-  ORDER_STATUS,
-  RakutenOrder,
-  SEARCH_DATE_TYPE,
-} from "../../libs/models/rakuten/RakutenOrder";
 import { AmazonOrder } from "../../libs/models/amazon/AmazonOrder";
 import { needLogin } from "../../libs/utils";
 import { AmazonAdsClient } from "../../libs/models/amazon/AmazonAdsClient";
@@ -83,20 +78,6 @@ app.get("/inventory/:code", async (c) => {
   });
 
   return c.json(res);
-});
-
-app.get("/rakuten/orders", async (c) => {
-  const rakutenOrder = new RakutenOrder(c.env);
-
-  const orders = await rakutenOrder.search({
-    dateType: SEARCH_DATE_TYPE.ORDER_DATE,
-    statuses: [ORDER_STATUS.CANCEL_CONFIRMED],
-    begin: "2024-04-10",
-    end: "2024-06-07",
-    limit: 10,
-  });
-
-  return c.json(orders);
 });
 
 app.get("/amazon", async (c) => {

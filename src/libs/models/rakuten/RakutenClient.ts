@@ -2,7 +2,7 @@ import { Bindings } from "../../../../bindings";
 import { DB } from "../../db";
 
 export class RakutenClient {
-  private db: DB;
+  protected db: DB;
   private tokenCache: string | null = null;
   constructor(env: Bindings) {
     this.db = new DB(env);
