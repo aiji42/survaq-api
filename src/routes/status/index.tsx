@@ -24,37 +24,44 @@ app.get("/data", async (c) => {
               </p>
             </div>
             {res.products.length > 0 && (
-              <div className="relative overflow-x-auto">
-                <table className="w-full text-sm text-left rtl:text-right text-gray-500">
-                  <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3">プロダクトID</th>
-                      <th className="px-6 py-3">プロダクト名</th>
-                      <th className="px-6 py-3">エラー</th>
-                      <th className="px-6 py-3">管理画面</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {res.products.map((product) => (
-                      <tr key={product.id} className="bg-white border-b">
-                        <th className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                          {product.id}
-                        </th>
-                        <td className="px-6 py-3">{product.name}</td>
-                        <td className="px-6 py-3">{product.message}</td>
-                        <td className="px-6 py-3">
-                          <a
-                            href={product.cmsLink}
-                            target="_blank"
-                            className="text-blue-600 underline"
-                          >
-                            開く
-                          </a>
-                        </td>
+              <div>
+                <p className="text-xs mb-2 text-orange-400">
+                  ※Rakutenの「商品グループの未設定」に関しては、Slackへのアラート通知はしていませんが、エラーを解消していただく分には構いません。
+                </p>
+                <div className="relative overflow-x-auto">
+                  <table className="w-full text-sm text-left rtl:text-right text-gray-500">
+                    <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3">プロダクトID</th>
+                        <th className="px-6 py-3">プロバイダ</th>
+                        <th className="px-6 py-3">プロダクト名</th>
+                        <th className="px-6 py-3">エラー</th>
+                        <th className="px-6 py-3">管理画面</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {res.products.map((product) => (
+                        <tr key={product.id} className="bg-white border-b">
+                          <th className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                            {product.id}
+                          </th>
+                          <th className="px-6 py-4">{product.provider}</th>
+                          <td className="px-6 py-3">{product.name}</td>
+                          <td className="px-6 py-3">{product.message}</td>
+                          <td className="px-6 py-3">
+                            <a
+                              href={product.cmsLink}
+                              target="_blank"
+                              className="text-blue-600 underline"
+                            >
+                              開く
+                            </a>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
