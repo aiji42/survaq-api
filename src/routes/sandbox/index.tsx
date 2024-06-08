@@ -1,16 +1,13 @@
 /* @jsxImportSource hono/jsx */
 import { Hono } from "hono";
 import { Layout } from "../../components/hono/Layout";
-import { ShopifyOrderSyncBQ } from "../../libs/models/shopify/ShopifyOrderSyncBQ";
 import { Bindings } from "../../../bindings";
-import { InventoryOperator } from "../../libs/models/cms/Inventory";
 import { DB } from "../../libs/db";
 import { AmazonOrder } from "../../libs/models/amazon/AmazonOrder";
 import { needLogin } from "../../libs/utils";
 import { AmazonAdsClient } from "../../libs/models/amazon/AmazonAdsClient";
 import { Product } from "../../libs/models/cms/Product";
 import { HTTPException } from "hono/http-exception";
-import { BigQueryClient } from "../../libs/models/bigquery/BigQueryClient";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -50,34 +47,6 @@ app.get("/orders/:id", (c) => {
       </div>
     </Layout>,
   );
-});
-
-app.get("/shopify/:id", async (c) => {
-  const id = c.req.param("id");
-  const order = new ShopifyOrderSyncBQ(c.env);
-  await order.prepare(id);
-
-  return c.json({
-    order: order.createBQOrdersTableData(),
-    lineItems: order.createBQLineItemsTableData(),
-    orderSKUs: order.createBQOrderSKUsTableData(),
-  });
-});
-
-app.get("/inventory/:code", async (c) => {
-  const code = c.req.param("code");
-  const db = new DB(c.env);
-  const bq = new BigQueryClient(c.env);
-  const waitingShipmentQuantity = await InventoryOperator.fetchWaitingShipmentQuantity(bq, code);
-
-  const res = await db.useTransaction(async (transactedDB) => {
-    const sku = await InventoryOperator.fetchSku(transactedDB, code);
-    const inventory = new InventoryOperator(sku, waitingShipmentQuantity, c.env);
-    const updateQuery = await inventory.update(transactedDB);
-    return { sku, updateQuery };
-  });
-
-  return c.json(res);
 });
 
 app.get("/amazon", async (c) => {
