@@ -8,7 +8,6 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { Product } from "../../libs/models/cms/Product";
 import { asyncCache, makeNotifiableErrorHandler } from "../../libs/utils";
-import { inlineCode } from "../../libs/models/slack/SlackNotifier";
 import { timeout } from "hono/timeout";
 
 type Variables = {
@@ -27,28 +26,6 @@ app.use("*", async (c, next) => {
 app.use("*", timeout(10000));
 
 app.onError(makeNotifiableErrorHandler());
-
-app.get("*", async (c, next) => {
-  const url = new URL(c.req.url);
-  // FIXME: 一定期間計測したあとに、実績がなければ削除する
-  if (url.pathname.endsWith("/supabase")) {
-    await c.env.KIRIBI.enqueue("NotifyToSlack", {
-      text: `プレフィックス /subabase 付きURLがアクセスされました ${inlineCode(c.req.url)}`,
-      attachments: [
-        {
-          fields: [
-            { title: "Referer", value: c.req.header("referer") ?? "-" },
-            { title: "UA", value: c.req.header("user-agent") ?? "-" },
-          ],
-        },
-      ],
-    });
-    url.pathname = url.pathname.replace(/\/supabase$/, "");
-    return c.redirect(url.toString(), 301);
-  }
-
-  await next();
-});
 
 app.get("/", async (c) => {
   const db = new DB(c.env);
