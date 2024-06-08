@@ -19,7 +19,7 @@
     "build": "rm -rf assets && $npm_execpath run run-p build:* --print-label",
     "build:web-components": "vite build -c builds/vite.web-components.mts",
     "build:shopify": "vite build -c ./builds/vite.shopify.mts",
-    "build:css": "tailwindcss-cli -o ./assets/static/style.css -i ./src/globals.css",
+    "build:css": "tailwindcss -o ./assets/static/style.css -i ./src/globals.css --minify",
     "typecheck": "tsc --noEmit",
     "postinstall": "yarn prisma generate"
   },
@@ -36,8 +36,7 @@
     "prettier": "^3.2.5",
     "prisma": "^5.14.0",
     "tailwind": "^4.0.0",
-    "tailwindcss": "^3.4.3",
-    "tailwindcss-cli": "^0.1.2",
+    "tailwindcss": "^3.4.4",
     "typescript": "^5.4.5",
     "vite": "^5.2.12",
     "vitest": "1.6.0",
