@@ -26,7 +26,7 @@ app.get("/data", async (c) => {
             {res.products.length > 0 && (
               <div>
                 <p className="text-xs mb-2 text-orange-400">
-                  ※Rakutenの「商品グループの未設定」に関しては、Slackへのアラート通知はしていませんが、エラーを解消していただく分には構いません。
+                  ※Rakutenの「商品グループの未設定」に関しては、まだ準備中のためSlackへのアラート通知はしていません。
                 </p>
                 <div className="relative overflow-x-auto">
                   <table className="w-full text-sm text-left rtl:text-right text-gray-500">
