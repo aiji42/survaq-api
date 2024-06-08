@@ -7,7 +7,7 @@ import { SLACK_CHANNEL } from "../constants";
 
 type Provider = "shopify" | "rakuten";
 
-type ValidationResult = {
+export type ValidationResult = {
   products: {
     id: number | string;
     provider: Provider;
