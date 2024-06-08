@@ -90,7 +90,7 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
       );
 
     await this.slack.notify(
-      "設定値に問題が発生しています。<https://api.survaq.com/status/data|ステータスページ>を確認し、適宜対応してください。",
+      "設定値に問題が発生しています。<https://api.survaq.com/portal/status|ステータスページ>を確認し、適宜対応してください。",
     );
   }
 

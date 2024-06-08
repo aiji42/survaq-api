@@ -1,8 +1,8 @@
-/* @jsxImportSource hono/jsx */
-import type { FC, Child } from "hono/jsx";
-import { ValidationResult } from "../../tasks/CMSChecker";
+import { ValidationResult } from "../../../../tasks/CMSChecker";
+import { FC, ReactNode } from "react";
+import { PortalContainer } from "../PortalContainer/PortalContainer";
 
-const Section: FC<{ children: Child; title: string; problemCount: number }> = ({
+const Section: FC<{ children: ReactNode; title: string; problemCount: number }> = ({
   children,
   problemCount,
   title,
@@ -22,9 +22,8 @@ const Section: FC<{ children: Child; title: string; problemCount: number }> = ({
 
 export const StatusPage: FC<ValidationResult> = ({ products, variations, skus, inventories }) => {
   return (
-    <div className="text-slate-900 p-4">
-      <h1 className="text-xl font-bold mb-8">商品管理システム 整合性チェック</h1>
-      <div className="flex flex-col gap-12">
+    <PortalContainer h1="商品管理システム 整合性チェック">
+      <div className="space-y-12">
         <Section title="プロダクト" problemCount={products.length}>
           {products.length > 0 && (
             <div>
@@ -212,6 +211,6 @@ export const StatusPage: FC<ValidationResult> = ({ products, variations, skus, i
           )}
         </Section>
       </div>
-    </div>
+    </PortalContainer>
   );
 };

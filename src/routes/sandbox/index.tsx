@@ -1,6 +1,6 @@
 /* @jsxImportSource hono/jsx */
 import { Hono } from "hono";
-import { Layout } from "../../components/hono/Layout";
+import { SandboxLayout } from "../../components/hono/Layout";
 import { Bindings } from "../../../bindings";
 import { DB } from "../../libs/db";
 import { AmazonOrder } from "../../libs/models/amazon/AmazonOrder";
@@ -15,37 +15,37 @@ app.use("*", needLogin);
 
 app.get("/delivery-schedules", (c) => {
   return c.html(
-    <Layout isDev={!!c.env.DEV}>
+    <SandboxLayout isDev={!!c.env.DEV}>
       <survaq-delivery-schedule productId="8719571812557" />
       <survaq-delivery-schedule productId="8719571812557" delayedOnly />
       <survaq-delivery-schedule productId="7266231288013" />
       <survaq-delivery-schedule productId="7266231288013" delayedOnly />
       <survaq-delivery-schedule productId="8719571812557a" />
-    </Layout>,
+    </SandboxLayout>,
   );
 });
 
 app.get("/delivery-schedules/:id", (c) => {
   const id = c.req.param("id");
   return c.html(
-    <Layout isDev={!!c.env.DEV}>
+    <SandboxLayout isDev={!!c.env.DEV}>
       <survaq-delivery-schedule productId={id} />
       <survaq-delivery-schedule productId={id} delayedOnly />
-    </Layout>,
+    </SandboxLayout>,
   );
 });
 
 app.get("/orders/:id", (c) => {
   const id = c.req.param("id");
   return c.html(
-    <Layout isDev={!!c.env.DEV}>
+    <SandboxLayout isDev={!!c.env.DEV}>
       <div className="border rounded-md w-full p-4 my-3">
         <survaq-delivery-schedule-order orderId={id} />
       </div>
       <div className="border rounded-md w-full p-4 my-3">
         <survaq-order-cancel orderId={id} />
       </div>
-    </Layout>,
+    </SandboxLayout>,
   );
 });
 
@@ -81,7 +81,7 @@ app.get("/shopify/product/:id", async (c) => {
   const lang = c.req.query("lang") === "en" ? "en" : "ja";
 
   return c.html(
-    <Layout isDev={!!c.env.DEV} lang={lang}>
+    <SandboxLayout isDev={!!c.env.DEV} lang={lang}>
       <div className="delivery-schedule"></div>
       <div className="delivery-schedule" data-short="true"></div>
       <form id="form">
@@ -122,7 +122,7 @@ app.get("/shopify/product/:id", async (c) => {
           `,
         }}
       />
-    </Layout>,
+    </SandboxLayout>,
   );
 });
 
