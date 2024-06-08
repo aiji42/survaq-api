@@ -42,39 +42,36 @@ export const RakutenPage: FC = () => {
           )}
         </div>
         {data.length > 0 && (
-          <div className="max-h-96 overflow-scroll">
-            <table className="w-full text-sm text-left rtl:text-right text-gray-500">
-              <thead className="text-gray-700 uppercase bg-gray-50 sticky top-0">
-                <tr className="whitespace-nowrap">
-                  <th className="py-1">日付</th>
-                  <th className="py-1">商品</th>
-                  <th className="py-1">CLICK</th>
-                  <th className="py-1">
-                    IMP{" "}
-                    <span className="text-xs font-medium align-middle">(CTRとCLICKより計算)</span>
-                  </th>
-                  <th className="py-1">Cost</th>
-                  <th className="py-1">
-                    CPC<span className="text-xs font-medium align-middle">(￥)</span>
-                  </th>
-                  <th className="py-1">CTR</th>
+          <table className="w-full text-sm text-left rtl:text-right text-gray-500">
+            <thead className="text-gray-700 uppercase bg-gray-50">
+              <tr className="whitespace-nowrap">
+                <th className="py-1">日付</th>
+                <th className="py-1">商品</th>
+                <th className="py-1">CLICK</th>
+                <th className="py-1">
+                  IMP <span className="text-xs font-medium align-middle">(CTRとCLICKより計算)</span>
+                </th>
+                <th className="py-1">Cost</th>
+                <th className="py-1">
+                  CPC<span className="text-xs font-medium align-middle">(￥)</span>
+                </th>
+                <th className="py-1">CTR</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.sort().map((row) => (
+                <tr key={row.key}>
+                  <td className="py-1">{row.date}</td>
+                  <td className="py-1">{row.itemId}</td>
+                  <td className="py-1">{row.clicks}</td>
+                  <td className="py-1">{row.impressions}</td>
+                  <td className="py-1">{row.cost}</td>
+                  <td className="py-1">{row.cpc}</td>
+                  <td className="py-1">{row.ctr}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {data.map((row) => (
-                  <tr key={row.key}>
-                    <td className="py-1">{row.date}</td>
-                    <td className="py-1">{row.itemId}</td>
-                    <td className="py-1">{row.clicks}</td>
-                    <td className="py-1">{row.impressions}</td>
-                    <td className="py-1">{row.cost}</td>
-                    <td className="py-1">{row.cpc}</td>
-                    <td className="py-1">{row.ctr}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
     </PortalContainer>

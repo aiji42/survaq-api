@@ -66,7 +66,7 @@ const reducer = (state: State, action: Action): State => {
 
       return {
         ...state,
-        rows: [...state.rows, ...newRows],
+        rows: [...state.rows, ...newRows].sort((a, b) => a.key.localeCompare(b.key)),
       };
 
     case "SET_ERRORS":
