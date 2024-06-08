@@ -59,7 +59,10 @@ export default class extends Kiribi<Performers, Bindings> {
 
       // 各種トークンの有効期限をチェック
       await this.enqueue("TokensHealthCheck", {});
+    }
 
+    // every hour at 0 minutes
+    if (cron === "0 * * * *") {
       // Rakutenの商品情報をBigQueryとCMSのDBに同期する
       await this.enqueue("SyncRakutenItem", {}, { maxRetries: 2, retryDelay: 120 });
     }
