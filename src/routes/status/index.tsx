@@ -21,21 +21,24 @@ app.get("/data", async (c) => {
 
 app.get("/rakuten/ad-import", async (c) => {
   return c.html(
-    <Layout title="楽天広告データインポート" dev={!!c.env.DEV}>
-      <form method="post" action="/rakuten/ad-import">
-        <input type="submit" value="楽天広告データインポート" />
-      </form>
+    <Layout
+      title="楽天広告データインポート"
+      dev={!!c.env.DEV}
+      additionalHead={<script type="module" src="/src/entries/rakuten-ad-import.tsx" />}
+    >
+      <div id="root" />
     </Layout>,
   );
 });
 
 export default app;
 
-const Layout: FC<{ title: string; children: Child; dev?: boolean }> = ({
-  title,
-  children,
-  dev = false,
-}) => {
+const Layout: FC<{
+  title: string;
+  children: Child;
+  dev?: boolean;
+  additionalHead?: Child;
+}> = ({ title, children, dev = false, additionalHead }) => {
   return (
     <html lang="ja">
       <head>
@@ -46,8 +49,9 @@ const Layout: FC<{ title: string; children: Child; dev?: boolean }> = ({
         ) : (
           <link type="text/css" rel="stylesheet" href="/src/globals.css" />
         )}
+        {additionalHead}
       </head>
-      <body className="max-w-7xl mx-auto">{children}</body>
+      <body className="max-w-6xl mx-auto">{children}</body>
     </html>
   );
 };

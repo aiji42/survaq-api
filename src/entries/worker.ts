@@ -9,6 +9,7 @@ import {
   schedule,
   amazonAds,
   oauth,
+  rakuten,
 } from "../routes/_apis";
 import sandbox from "../routes/sandbox";
 import status from "../routes/status";
@@ -26,6 +27,7 @@ app.route("/logiless", logiless);
 app.route("/cancellation", cancellation);
 app.route("/schedule", schedule);
 app.route("/amazon-ads", amazonAds);
+app.route("/rakuten", rakuten);
 app.route("/oauth", oauth);
 
 app.route("/status", status);
