@@ -53,13 +53,25 @@ const reducer = (state: State, action: Action): State => {
       // keyが既存の行と重複している場合はエラーを返す
       const existingKeys = state.rows.map((row) => row.key);
       const keys = newRows.map((row) => row.key);
-      console.log(existingKeys, keys);
       if (existingKeys.some((key) => keys.includes(key))) {
         return {
           ...state,
           errors: {
             ...state.errors,
             [action.payload.fileName]: ["他のファイルと重複する行があります"],
+          },
+        };
+      }
+      // dateが本日以降なら取り込まない
+      const dates = newRows.map((row) => new Date(`${row.date}T23:59:59`));
+      if (dates.some((date) => date > new Date())) {
+        return {
+          ...state,
+          errors: {
+            ...state.errors,
+            [action.payload.fileName]: [
+              "本日以降の日付データはまだ数値が確定していないため取り込めません",
+            ],
           },
         };
       }
@@ -129,7 +141,10 @@ export const useCSVs = () => {
               type: "SET_ERRORS",
               payload: {
                 fileName: file.name,
-                errors: ["想定されている形式と異なるデータが含まれています。"],
+                errors: [
+                  "データが正しくありません。",
+                  ...parsed.error.issues.map(({ message }) => message),
+                ],
               },
             });
             return;

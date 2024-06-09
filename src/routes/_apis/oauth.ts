@@ -9,7 +9,7 @@ app.get(
   "/login",
   googleAuth({
     scope: ["openid"],
-    prompt: "none",
+    prompt: "select_account",
   }),
   async (c) => {
     const token = c.get("token");
