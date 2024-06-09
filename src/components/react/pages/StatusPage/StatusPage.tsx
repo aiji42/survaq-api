@@ -2,17 +2,25 @@ import { ValidationResult } from "../../../../tasks/CMSChecker";
 import { FC, ReactNode } from "react";
 import { PortalContainer } from "../PortalContainer/PortalContainer";
 
-const Section: FC<{ children: ReactNode; title: string; problemCount: number }> = ({
-  children,
-  problemCount,
-  title,
-}) => {
+const Section: FC<{
+  children: ReactNode;
+  title: string;
+  alertsCount?: number;
+  warningCount?: number;
+}> = ({ children, alertsCount = 0, warningCount = 0, title }) => {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-baseline justify-between max-w-96">
         <h2 className="text-lg font-semibold">{title}</h2>
         <p className="text-slate-600">
-          {problemCount ? `🚨 ${problemCount}件の問題が発生中` : "✅ 異常なし"}
+          {alertsCount > 0 && (
+            <span className="text-red-500 font-medium">🚨 {alertsCount}件のエラー</span>
+          )}
+          {alertsCount > 0 && warningCount > 0 && "・"}
+          {warningCount > 0 && (
+            <span className="text-yellow-500 font-medium">📣 {warningCount}件の警告</span>
+          )}
+          {alertsCount === 0 && warningCount === 0 && "✅ 異常なし"}
         </p>
       </div>
       {children}
@@ -20,11 +28,17 @@ const Section: FC<{ children: ReactNode; title: string; problemCount: number }> 
   );
 };
 
-export const StatusPage: FC<ValidationResult> = ({ products, variations, skus, inventories }) => {
+export const StatusPage: FC<ValidationResult> = ({
+  products,
+  variations,
+  skus,
+  inventories,
+  tokens,
+}) => {
   return (
     <PortalContainer h1="商品管理システム 整合性チェック">
       <div className="space-y-12">
-        <Section title="プロダクト" problemCount={products.length}>
+        <Section title="プロダクト" alertsCount={products.length}>
           {products.length > 0 && (
             <div>
               <p className="text-xs mb-2 text-orange-400">
@@ -67,7 +81,7 @@ export const StatusPage: FC<ValidationResult> = ({ products, variations, skus, i
             </div>
           )}
         </Section>
-        <Section title="バリエーション" problemCount={variations.length}>
+        <Section title="バリエーション" alertsCount={variations.length}>
           {variations.length > 0 && (
             <div>
               <p className="text-sm mb-2">
@@ -116,7 +130,7 @@ export const StatusPage: FC<ValidationResult> = ({ products, variations, skus, i
             </div>
           )}
         </Section>
-        <Section title="SKU" problemCount={skus.length}>
+        <Section title="SKU" alertsCount={skus.length}>
           {skus.length > 0 && (
             <div>
               <p className="text-sm mb-2">
@@ -161,7 +175,7 @@ export const StatusPage: FC<ValidationResult> = ({ products, variations, skus, i
             </div>
           )}
         </Section>
-        <Section title="在庫・発注" problemCount={inventories.length}>
+        <Section title="在庫・発注" alertsCount={inventories.length}>
           {inventories.length > 0 && (
             <div>
               <p className="text-sm mb-2">
@@ -209,6 +223,36 @@ export const StatusPage: FC<ValidationResult> = ({ products, variations, skus, i
               </div>
             </div>
           )}
+        </Section>
+        <Section
+          title="各種トークン"
+          alertsCount={tokens.filter(({ level }) => level === "danger").length}
+          warningCount={tokens.filter(({ level }) => level === "warning").length}
+        >
+          <div className="relative overflow-x-auto">
+            <table className="w-full text-sm text-left rtl:text-right text-gray-500">
+              <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                <tr className="whitespace-nowrap">
+                  <th className="px-6 py-3">種別</th>
+                  <th className="px-6 py-3">ステータス</th>
+                  <th className="px-6 py-3">管理画面</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tokens.map((token, index) => (
+                  <tr key={index} className="bg-white border-b">
+                    <th className="px-6 py-4">{token.name}</th>
+                    <td className="px-6 py-3">{token.message}</td>
+                    <td className="px-6 py-3">
+                      <a href={token.cmsLink} target="_blank" className="text-blue-600 underline">
+                        開く
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </Section>
       </div>
     </PortalContainer>

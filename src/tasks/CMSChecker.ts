@@ -33,6 +33,12 @@ export type ValidationResult = {
     cmsLink: string;
     message: string;
   }[];
+  tokens: {
+    name: string;
+    cmsLink: string;
+    message: string;
+    level: "info" | "warning" | "danger";
+  }[];
 };
 
 /**
@@ -89,6 +95,17 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
         SLACK_CHANNEL.ALERT,
       );
 
+    const tokenProblemCount = result.tokens.filter(({ level }) => level === "danger").length;
+    if (tokenProblemCount)
+      this.slack.append(
+        {
+          title: "トークン情報を確認してください",
+          text: `${tokenProblemCount}件の問題が発生中`,
+          color: "danger",
+        },
+        SLACK_CHANNEL.ALERT,
+      );
+
     await this.slack.notify(
       "設定値に問題が発生しています。<https://api.survaq.com/portal/status|ステータスページ>を確認し、適宜対応してください。",
     );
@@ -100,6 +117,7 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
       variations: [],
       skus: [],
       inventories: [],
+      tokens: [],
     };
 
     await this.db.useTransaction(async (tDB) => {
@@ -109,6 +127,7 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
       const getAllVariationsPromise = getAllVariations(tDB.prisma);
       const getAllDuplicatedInventorySKUsPromise = getAllDuplicatedInventorySKUs(tDB.prisma);
       const getNegativeInventorySKUsPromise = getNegativeInventorySKUs(tDB.prisma);
+      const getTokensPromise = getTokens(tDB.prisma);
 
       // 商品グループが設定されていない商品を取得
       (await getNotGroupedProductsPromise).forEach((product) => {
@@ -191,6 +210,35 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
           cmsLink: cmsSKULink(sku.id),
         });
       });
+      await getTokensPromise.then((tokens) => {
+        if (!tokens.rakutenExpireDate) {
+          result.tokens.push({
+            name: "Rakutenライセンスキー",
+            message: "ライセンスキーの有効期限が登録されていません",
+            cmsLink: "https://cms.survaq.com/admin/content/Tokens",
+            level: "danger",
+          });
+          return;
+        }
+        // 有効期限を確認し、残り3日なら警告、残り1日なら危険
+        const expireDate = new Date(tokens.rakutenExpireDate);
+        const today = new Date();
+        const diff = expireDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        const level = diffDays <= 1 ? "danger" : diffDays <= 3 ? "warning" : "info";
+        const message =
+          diffDays < 1
+            ? "有効期限が切れています"
+            : diffDays <= 3
+              ? `有効期限は残り${diffDays}日で切れます。RMSにログインしてライセンスキーを更新してください。`
+              : `有効期限は残り${diffDays}日です`;
+        result.tokens.push({
+          name: "Rakutenライセンスキー",
+          message,
+          cmsLink: cmsTokenLink(),
+          level,
+        });
+      });
     });
 
     return result;
@@ -209,6 +257,8 @@ const cmsInventoryLink = (id: number) =>
   `https://cms.survaq.com/admin/content/ShopifyInventoryOrders/${id}`;
 
 const cmsSKULink = (id: number) => `https://cms.survaq.com/admin/content/ShopifyCustomSKUs/${id}`;
+
+const cmsTokenLink = () => "https://cms.survaq.com/admin/content/Tokens";
 
 const getNotGroupedProducts = async (tDB: DB["prisma"]) => {
   const [shopify, rakuten] = await Promise.all([
@@ -320,6 +370,14 @@ const getNegativeInventorySKUs = async (transactedPrisma: DB["prisma"]) => {
       inventory: {
         lt: 0,
       },
+    },
+  });
+};
+
+const getTokens = async (transactedPrisma: DB["prisma"]) => {
+  return transactedPrisma.tokens.findFirstOrThrow({
+    select: {
+      rakutenExpireDate: true,
     },
   });
 };
