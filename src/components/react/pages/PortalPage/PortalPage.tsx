@@ -6,6 +6,7 @@ import { SiGooglebigquery } from "react-icons/si";
 import { BsFillBagCheckFill } from "react-icons/bs";
 import { SiRakuten } from "react-icons/si";
 import { PortalContainer } from "../PortalContainer/PortalContainer";
+import { RiMoneyCnyCircleFill } from "react-icons/ri";
 
 export const PortalPage: FC = () => {
   return (
@@ -37,6 +38,13 @@ export const PortalPage: FC = () => {
           description="Rakuten広告のパフォーマンスレポートデータ(CSV)をアップロードします。"
           icon={SiRakuten}
         />
+        <LinkCard
+          title="販売コスト管理シート"
+          href="https://docs.google.com/spreadsheets/d/1X_MK81vB0zr2auj-INBZegPe0zl8KcMa_Z7pB6pHbpU/edit#gid=1825690412"
+          icon={RiMoneyCnyCircleFill}
+          description={`各商品の販売にかかるコストのをデータポータルと連携するためのスプレッドシートです。\n※各シート名は変更しないでください(取り込みが失敗します！)`}
+          targetBlank
+        />
       </div>
     </PortalContainer>
   );
@@ -57,7 +65,9 @@ const LinkCard: FC<{
     >
       <Icon size={32} />
       <h2 className="font-semibold">{title}</h2>
-      {description && <p className="text-xs text-slate-500 whitespace-pre-wrap">{description}</p>}
+      {description && (
+        <p className="text-xs text-slate-500 whitespace-pre-wrap text-center">{description}</p>
+      )}
     </a>
   );
 };
