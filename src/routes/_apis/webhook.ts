@@ -91,23 +91,4 @@ app.post("/transaction-mail", async (c) => {
   return c.text("webhook received");
 });
 
-// FIXME: 役目を果たしたら消す。
-app.post("/bundle-js-usage", async (c) => {
-  const data = await c.req.json();
-  await c.env.KIRIBI.enqueue(
-    "NotifyToSlack",
-    {
-      text: "bundle.jsがロードされた。",
-      attachments: [
-        {
-          fields: [{ title: "referrer", value: data.referrer }],
-        },
-      ],
-    },
-    { maxRetries: 1 },
-  );
-
-  return c.text("webhook received");
-});
-
 export default app;
