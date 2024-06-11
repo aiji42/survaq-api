@@ -56,9 +56,7 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
   async perform() {
     const result = await this.validate();
 
-    // FIXME: Rakutenの準備ができたらコメントアウトを外す
-    if (result.products.filter(({ provider }) => provider === "shopify").length)
-      // if (result.products.length)
+    if (result.products.length)
       this.slack.append(
         {
           title: "プロダクトを確認してください",

@@ -40,44 +40,39 @@ export const StatusPage: FC<ValidationResult> = ({
       <div className="space-y-12">
         <Section title="プロダクト" alertsCount={products.length}>
           {products.length > 0 && (
-            <div>
-              <p className="text-xs mb-2 text-orange-400">
-                ※Rakutenの「商品グループの未設定」に関しては、まだ準備中のためSlackへのアラート通知はしていません。
-              </p>
-              <div className="relative overflow-x-auto">
-                <table className="w-full text-sm text-left rtl:text-right text-gray-500">
-                  <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                    <tr className="whitespace-nowrap">
-                      <th className="px-6 py-3">プロダクトID</th>
-                      <th className="px-6 py-3">プロバイダ</th>
-                      <th className="px-6 py-3">プロダクト名</th>
-                      <th className="px-6 py-3">エラー</th>
-                      <th className="px-6 py-3">管理画面</th>
+            <div className="relative overflow-x-auto">
+              <table className="w-full text-sm text-left rtl:text-right text-gray-500">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                  <tr className="whitespace-nowrap">
+                    <th className="px-6 py-3">プロダクトID</th>
+                    <th className="px-6 py-3">プロバイダ</th>
+                    <th className="px-6 py-3">プロダクト名</th>
+                    <th className="px-6 py-3">エラー</th>
+                    <th className="px-6 py-3">管理画面</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.map((product) => (
+                    <tr key={product.id} className="bg-white border-b">
+                      <th className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                        {product.id}
+                      </th>
+                      <th className="px-6 py-4">{product.provider}</th>
+                      <td className="px-6 py-3">{product.name}</td>
+                      <td className="px-6 py-3">{product.message}</td>
+                      <td className="px-6 py-3">
+                        <a
+                          href={product.cmsLink}
+                          target="_blank"
+                          className="text-blue-600 underline"
+                        >
+                          開く
+                        </a>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {products.map((product) => (
-                      <tr key={product.id} className="bg-white border-b">
-                        <th className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                          {product.id}
-                        </th>
-                        <th className="px-6 py-4">{product.provider}</th>
-                        <td className="px-6 py-3">{product.name}</td>
-                        <td className="px-6 py-3">{product.message}</td>
-                        <td className="px-6 py-3">
-                          <a
-                            href={product.cmsLink}
-                            target="_blank"
-                            className="text-blue-600 underline"
-                          >
-                            開く
-                          </a>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </Section>
