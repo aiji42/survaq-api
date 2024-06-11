@@ -5,7 +5,7 @@ import { SlackNotifier } from "../libs/models/slack/SlackNotifier";
 import { sanitizeSkuGroupsJSON, sanitizeSkusJSON } from "../libs/models/cms/Product";
 import { SLACK_CHANNEL } from "../constants";
 
-type Provider = "shopify" | "rakuten";
+type Provider = "shopify" | "rakuten" | "amazon";
 
 export type ValidationResult = {
   products: {
@@ -56,7 +56,9 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
   async perform() {
     const result = await this.validate();
 
-    if (result.products.length)
+    // FIXME: 今はAmazonは無視するが、修正されたら追加する
+    // if (result.products.length)
+    if (result.products.filter(({ provider }) => provider !== "amazon").length)
       this.slack.append(
         {
           title: "プロダクトを確認してください",
@@ -138,10 +140,18 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
             cmsLink: cmsProductLink(product.id, product.provider),
             message: "商品グループが設定されていません",
           });
-        else
+        else if (product.provider === "rakuten")
           result.products.push({
             provider: product.provider,
             id: product.rakutenItemId,
+            name: product.title,
+            cmsLink: cmsProductLink(product.id, product.provider),
+            message: "商品グループが設定されていません",
+          });
+        else
+          result.products.push({
+            provider: product.provider,
+            id: product.amazonItemId,
             name: product.title,
             cmsLink: cmsProductLink(product.id, product.provider),
             message: "商品グループが設定されていません",
@@ -247,7 +257,9 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
 const cmsProductLink = (id: number, provider: Provider) =>
   provider === "shopify"
     ? `https://cms.survaq.com/admin/content/ShopifyProducts/${id}`
-    : `https://cms.survaq.com/admin/content/RakutenItems/${id}`;
+    : provider === "rakuten"
+      ? `https://cms.survaq.com/admin/content/RakutenItems/${id}`
+      : `https://cms.survaq.com/admin/content/AmazonItems/${id}`;
 
 const cmsVariationLink = (id: number) =>
   `https://cms.survaq.com/admin/content/ShopifyVariants/${id}`;
@@ -260,7 +272,7 @@ const cmsSKULink = (id: number) => `https://cms.survaq.com/admin/content/Shopify
 const cmsTokenLink = () => "https://cms.survaq.com/admin/content/Tokens";
 
 const getNotGroupedProducts = async (tDB: DB["prisma"]) => {
-  const [shopify, rakuten] = await Promise.all([
+  const [shopify, rakuten, amazon] = await Promise.all([
     tDB.shopifyProducts.findMany({
       select: {
         id: true,
@@ -274,6 +286,14 @@ const getNotGroupedProducts = async (tDB: DB["prisma"]) => {
         id: true,
         title: true,
         rakutenItemId: true,
+      },
+      where: { productGroupId: null },
+    }),
+    tDB.amazonItems.findMany({
+      select: {
+        id: true,
+        title: true,
+        amazonItemId: true,
       },
       where: { productGroupId: null },
     }),
@@ -292,6 +312,12 @@ const getNotGroupedProducts = async (tDB: DB["prisma"]) => {
       title: string;
       rakutenItemId: string;
     }>((data) => ({ provider: "rakuten", ...data })),
+    ...amazon.map<{
+      provider: "amazon";
+      id: number;
+      title: string;
+      amazonItemId: string;
+    }>((data) => ({ provider: "amazon", ...data })),
   ];
 };
 
