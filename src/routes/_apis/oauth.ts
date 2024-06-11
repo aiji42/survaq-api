@@ -31,10 +31,10 @@ app.get(
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="refresh" content="3;URL=${redirect}">
+  <meta http-equiv="refresh" content="1;URL=${redirect}">
   <title>ログイン成功</title>
 </head>
-<body>ログインに成功しました。3秒後にリダイレクトします。</body>`);
+<body>ログインに成功しました。リダイレクトします。</body>`);
   },
 );
 
