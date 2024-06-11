@@ -113,11 +113,6 @@ export class AmazonAdsClient {
 
     const expireAt = new Date(Date.now() + result.expires_in * 1000);
 
-    // FIXME: ある程度実績が確認できたら消す
-    await this.env.KIRIBI.enqueue("NotifyToSlack", {
-      text: "AmazonAdsのトークンがリフレッシュされました",
-    });
-
     return {
       accessToken: result.access_token,
       refreshToken: result.refresh_token,
