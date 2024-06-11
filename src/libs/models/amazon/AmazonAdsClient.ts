@@ -1,4 +1,5 @@
 import { Bindings } from "../../../../bindings";
+import pako from "pako";
 
 type Env = Pick<
   Bindings,
@@ -22,6 +23,35 @@ type Tokens = {
   expireAt: Date;
   isExpired: boolean;
 };
+
+type GetProfilesResponse = {
+  profileId: number;
+  countryCode: string;
+  currencyCode: string;
+  dailyBudget: number;
+  timezone: string;
+  accountInfo: {
+    marketplaceStringId: string;
+    id: string;
+    type: string;
+    name: string;
+    validPaymentMethod: boolean;
+  };
+}[];
+
+type CreateReportResponse = {
+  reportId: string;
+};
+
+type CheckReportResponse =
+  | {
+      status: "COMPLETED";
+      url: string;
+    }
+  | {
+      status: "PENDING" | "PROCESSING";
+      url?: never;
+    };
 
 export class AmazonAdsClient {
   static expireBufferMinutes = 10;
@@ -123,16 +153,75 @@ export class AmazonAdsClient {
     };
   }
 
-  async getAccounts() {
+  async request<T>(url: string | URL, headers?: Record<string, string>): Promise<T> {
     const tokens = await this.getTokens();
-    const res = await fetch("https://advertising-api-fe.amazon.com/v2/profiles", {
+    const res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
         "Amazon-Advertising-API-ClientId": this.env.AMAZON_ADS_API_CLIENT_ID,
         "content-type": "application/json",
+        ...headers,
       },
     });
+
     if (!res.ok) throw new Error(await res.text());
-    return (await res.json()) as { profiles: { profileId: number }[] };
+    return (await res.json()) as T;
+  }
+
+  async post<T>(
+    url: string | URL,
+    body: Record<string, unknown>,
+    headers?: Record<string, string>,
+  ): Promise<T> {
+    const tokens = await this.getTokens();
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${tokens.accessToken}`,
+        "Amazon-Advertising-API-ClientId": this.env.AMAZON_ADS_API_CLIENT_ID,
+        "content-type": "application/json",
+        ...headers,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+    return (await res.json()) as T;
+  }
+
+  async getProfiles() {
+    return this.request<GetProfilesResponse>("https://advertising-api-fe.amazon.com/v2/profiles");
+  }
+
+  async createReport(profileId: number | string, reportConfig: Record<string, unknown>) {
+    return this.post<CreateReportResponse>(
+      "https://advertising-api-fe.amazon.com/reporting/reports",
+      reportConfig,
+      {
+        "Amazon-Advertising-API-Scope": String(profileId),
+        "content-type": "application/vnd.createasyncreportrequest.v3+json",
+      },
+    );
+  }
+
+  async checkReport(reportId: string, profileId: number | string) {
+    return this.request<CheckReportResponse>(
+      `https://advertising-api-fe.amazon.com/reporting/reports/${reportId}`,
+      {
+        "Amazon-Advertising-API-Scope": String(profileId),
+      },
+    );
+  }
+
+  async downloadReport<T>(reportId: string, profileId: number | string) {
+    const { status, url } = await this.checkReport(reportId, profileId);
+    if (status !== "COMPLETED") throw new Error(`Report is not ready: ${status}`);
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(await res.text());
+
+    const buffer = await res.arrayBuffer();
+    const text = pako.inflate(buffer, { to: "string" });
+    return JSON.parse(text) as T;
   }
 }

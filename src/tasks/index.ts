@@ -29,6 +29,10 @@ import { SyncRakutenOrderToBigQuery } from "./SyncRakutenOrderToBigQuery";
 export { SyncRakutenOrderToBigQuery } from "./SyncRakutenOrderToBigQuery";
 import { SyncRakutenItem } from "./SyncRakutenItem";
 export { SyncRakutenItem } from "./SyncRakutenItem";
+import { SyncAmazonAdPerformanceToBigQuery } from "./SyncAmazonAdPerformanceToBigQuery";
+export { SyncAmazonAdPerformanceToBigQuery } from "./SyncAmazonAdPerformanceToBigQuery";
+import { SyncAmazonItemsToBigQuery } from "./SyncAmazonItemsToBigQuery";
+export { SyncAmazonItemsToBigQuery } from "./SyncAmazonItemsToBigQuery";
 
 type Performers = {
   Cancel: Cancel;
@@ -44,6 +48,8 @@ type Performers = {
   TokensHealthCheck: TokensHealthCheck;
   SyncRakutenOrderToBigQuery: SyncRakutenOrderToBigQuery;
   SyncRakutenItem: SyncRakutenItem;
+  SyncAmazonAdPerformanceToBigQuery: SyncAmazonAdPerformanceToBigQuery;
+  SyncAmazonItemsToBigQuery: SyncAmazonItemsToBigQuery;
 };
 type BindingKeys = keyof Performers;
 
@@ -65,6 +71,9 @@ export default class extends Kiribi<Performers, Bindings> {
     if (cron === "0 * * * *") {
       // Rakutenの商品情報をBigQueryとCMSのDBに同期する
       await this.enqueue("SyncRakutenItem", {}, { maxRetries: 2, retryDelay: 120 });
+
+      // Amazonの商品情報をBigQueryに同期する
+      await this.enqueue("SyncAmazonItemsToBigQuery", { type: "CREATE_REPORT" }, { maxRetries: 1 });
     }
 
     // every hour at 5 minutes (毎時00分のCloud Run側のJOBが終わる頃を狙って実行する)
@@ -85,6 +94,10 @@ export default class extends Kiribi<Performers, Bindings> {
     if (cron === "*/10 * * * *") {
       // re-enqueue zombie jobs
       await this.recover();
+
+      // Amazonの広告費取り込み
+      // MEMO: こんな高頻度で実行しても意味はないが、トークンが1時間で切れてしまうので、高頻度で実行させて自動的にトークンをリフレッシュさせる
+      await this.env.KIRIBI.enqueue("SyncAmazonAdPerformanceToBigQuery", { type: "CREATE_REPORT" });
 
       const retryStrategy = { maxRetries: 2, retryDelay: 120 };
       const min = new Date().getMinutes();

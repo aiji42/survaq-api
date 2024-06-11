@@ -5,7 +5,6 @@ import { Bindings } from "../../../bindings";
 import { DB } from "../../libs/db";
 import { AmazonOrder } from "../../libs/models/amazon/AmazonOrder";
 import { needLogin } from "../../libs/utils";
-import { AmazonAdsClient } from "../../libs/models/amazon/AmazonAdsClient";
 import { Product } from "../../libs/models/cms/Product";
 import { HTTPException } from "hono/http-exception";
 
@@ -64,11 +63,6 @@ app.get("/amazon", async (c) => {
       items: items.find(([id, items]) => id === order.AmazonOrderId)?.[1] ?? [],
     })),
   );
-});
-
-app.get("amazon/ads", async (c) => {
-  const amazon = new AmazonAdsClient(c.env);
-  return c.json(await amazon.getAccounts());
 });
 
 app.get("/shopify/product/:id", async (c) => {

@@ -159,6 +159,7 @@ model ShopifyProductGroups {
   createdAt            DateTime?              @db.Timestamptz(6)
   updatedAt            DateTime?              @db.Timestamptz(6)
   title                String?                @unique(map: "shopifyproductgroups_title_unique") @db.VarChar(255)
+  AmazonItems          AmazonItems[]
   GoogleMerchantCenter GoogleMerchantCenter[]
   RakutenItems         RakutenItems[]
   ShopifyProducts      ShopifyProducts[]
@@ -704,4 +705,14 @@ model RakutenItems {
   productGroupId       Int?
   rakutenItemId        String                @unique(map: "rakutenitems_rakutenitemid_unique") @db.VarChar(255)
   ShopifyProductGroups ShopifyProductGroups? @relation(fields: [productGroupId], references: [id], onUpdate: NoAction, map: "rakutenitems_productgroupid_foreign")
+}
+
+model AmazonItems {
+  id                   Int                   @id @default(autoincrement())
+  createdAt            DateTime?             @db.Timestamptz(6)
+  updatedAt            DateTime?             @db.Timestamptz(6)
+  title                String                @db.VarChar(255)
+  amazonItemId         String                @unique(map: "amazonitems_amazonitemid_unique") @db.VarChar(255)
+  productGroupId       Int?
+  ShopifyProductGroups ShopifyProductGroups? @relation(fields: [productGroupId], references: [id], onUpdate: NoAction, map: "amazonitems_productgroupid_foreign")
 }

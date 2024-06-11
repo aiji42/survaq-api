@@ -10,7 +10,7 @@ type AuthResult = {
 export class AmazonClient {
   protected marketplaceId = "A1VC38T7YXB528"; // JP (https://docs.developer.amazonservices.com/ja_JP/dev_guide/DG_Endpoints.html)
   private tokenCache: AuthResult | null = null;
-  private db: DB;
+  protected db: DB;
 
   constructor(env: Bindings) {
     this.db = new DB(env);
@@ -48,6 +48,23 @@ export class AmazonClient {
         "x-amz-access-token": token.access_token,
         "x-amz-date": new Date().toISOString(),
       },
+    });
+    console.log("x-amzn-RateLimit-Limit", res.headers.get("x-amzn-RateLimit-Limit"));
+
+    if (!res.ok) throw new Error(JSON.stringify(await res.json(), null, 2));
+    return res.json();
+  }
+
+  async post<T>(url: string | URL, body: Record<string, unknown>): Promise<T> {
+    const token = await this.getAccessToken();
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "x-amz-access-token": token.access_token,
+        "x-amz-date": new Date().toISOString(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
     });
     console.log("x-amzn-RateLimit-Limit", res.headers.get("x-amzn-RateLimit-Limit"));
 
