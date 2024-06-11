@@ -121,12 +121,13 @@ export default class extends Kiribi<Performers, Bindings> {
         "NotifyToSlack",
         "ProductSync",
         "PurchaseMeasurementProtocol",
+        "SyncAmazonAdPerformanceToBigQuery",
+        "SyncAmazonItemsToBigQuery",
         "SyncRakutenItem",
         "SyncRakutenOrderToBigQuery",
         "SyncShopifyOrderToBigQuery",
         "TokensHealthCheck",
         "UpdateOrderInventory",
-        "SyncAmazonAdPerformanceToBigQuery",
       ].includes(binding) ||
       (binding === "UpdateSkuOnFulfillment" && !(Array.isArray(result) && result.length > 0))
     )
