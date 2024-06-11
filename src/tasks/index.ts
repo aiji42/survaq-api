@@ -126,6 +126,7 @@ export default class extends Kiribi<Performers, Bindings> {
         "SyncShopifyOrderToBigQuery",
         "TokensHealthCheck",
         "UpdateOrderInventory",
+        "SyncAmazonAdPerformanceToBigQuery",
       ].includes(binding) ||
       (binding === "UpdateSkuOnFulfillment" && !(Array.isArray(result) && result.length > 0))
     )
