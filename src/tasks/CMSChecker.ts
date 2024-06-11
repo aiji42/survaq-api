@@ -130,7 +130,6 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
       const getTokensPromise = getTokens(tDB.prisma);
 
       // 商品グループが設定されていない商品を取得
-      // FIXME: Amazonもついか
       (await getNotGroupedProductsPromise).forEach((product) => {
         if (product.provider === "shopify")
           result.products.push({
