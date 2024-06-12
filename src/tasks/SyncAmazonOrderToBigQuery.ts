@@ -10,6 +10,9 @@ type Payload = {
   nextToken?: string;
 };
 
+/**
+ * Amazonの注文情報をBigQueryに同期するタスク
+ */
 export class SyncAmazonOrderToBigQuery extends KiribiPerformer<Payload, void, Bindings> {
   private amazon: AmazonOrdersSyncToBQ;
   constructor(ctx: ExecutionContext, env: Bindings) {

@@ -110,13 +110,13 @@ export default class extends Kiribi<Performers, Bindings> {
       const min = new Date().getMinutes();
       // 00-09分、30-39分ならRakutenの新規の注文情報をBigQueryに同期する
       if ((min >= 0 && min < 10) || (min >= 30 && min < 40))
-        await this.enqueue("SyncRakutenOrderToBigQuery", { type: "orderedAt" }, retryStrategy);
+        await this.enqueue("SyncRakutenOrderToBigQuery", { type: "ORDERED_AT" }, retryStrategy);
       // 10-19分、40-49分ならRakutenの発送済みの注文情報をBigQueryに同期する
       if ((min >= 10 && min < 20) || (min >= 40 && min < 50))
-        await this.enqueue("SyncRakutenOrderToBigQuery", { type: "fulfilledAt" }, retryStrategy);
+        await this.enqueue("SyncRakutenOrderToBigQuery", { type: "FULFILLED_AT" }, retryStrategy);
       // 20-29分、50-59分ならRakutenのキャンセル済みの注文情報をBigQueryに同期する
       if ((min >= 20 && min < 30) || (min >= 50 && min < 60))
-        await this.enqueue("SyncRakutenOrderToBigQuery", { type: "cancelledAt" }, retryStrategy);
+        await this.enqueue("SyncRakutenOrderToBigQuery", { type: "CANCELLED_AT" }, retryStrategy);
     }
   }
 

@@ -11,6 +11,9 @@ type Payload =
       reportId: string;
     };
 
+/**
+ * Amazonの商品情報をBigQueryに同期するタスク
+ */
 export class SyncAmazonItemsToBigQuery extends KiribiPerformer<Payload, void, Bindings> {
   amazon: AmazonItemsSyncToBQ;
   constructor(ctx: ExecutionContext, env: Bindings) {

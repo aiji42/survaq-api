@@ -9,15 +9,9 @@ export class RakutenItemSync extends RakutenItem {
     this.bq = new BigQueryClient(env);
   }
 
-  async sync() {
-    const items = await this.search({ limit: 100 });
-    let next = items.next;
-    while (next) {
-      // TODO: waitしてレートリミットを回避する
-      const nextItems = await next();
-      items.data.push(...nextItems.data);
-      next = nextItems.next;
-    }
+  async sync(_params?: { limit?: number; offset?: number }) {
+    const params = { ..._params, limit: _params?.limit ?? 100 };
+    const items = await this.search(params);
 
     console.log(`Found ${items.data.length} items`);
 
@@ -79,6 +73,8 @@ export class RakutenItemSync extends RakutenItem {
 
     console.log("Syncing items to BigQuery", bqItemsTableData.length, "items");
     await this.bq.deleteAndInsert("rakuten", "items", "id", bqItemsTableData);
+
+    return items.nextParams;
   }
 }
 

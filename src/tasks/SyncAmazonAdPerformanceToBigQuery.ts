@@ -18,6 +18,9 @@ type Payload =
       };
     };
 
+/**
+ * Amazonの広告情報をBigQueryに同期するタスク
+ */
 export class SyncAmazonAdPerformanceToBigQuery extends KiribiPerformer<Payload, void, Bindings> {
   amazon: AmazonAdsSyncToBQ;
   constructor(ctx: ExecutionContext, env: Bindings) {

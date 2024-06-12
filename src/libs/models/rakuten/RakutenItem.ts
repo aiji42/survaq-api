@@ -50,7 +50,7 @@ export class RakutenItem extends RakutenClient {
 
     return {
       data: res.results.flatMap(({ item }) => item ?? []),
-      next: hasNext ? () => this.search({ ...params, offset: offset + hits }) : undefined,
+      nextParams: hasNext ? { ...params, offset: offset + hits } : undefined,
     };
   }
 }

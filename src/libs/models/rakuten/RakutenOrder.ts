@@ -215,7 +215,7 @@ export class RakutenOrder extends RakutenClient {
       hasNext,
       page,
       totalCount: res.PaginationResponseModel?.totalRecordsAmount ?? 0,
-      next: hasNext ? () => this.search({ ...params, page: page + 1 }) : undefined,
+      nextParams: hasNext ? { ...params, page: page + 1 } : undefined,
     };
 
     if (!orderNumbers.length) return { pagination, data: [] };

@@ -67,28 +67,24 @@ export class RakutenOrderSyncBQ extends RakutenOrder {
     return lastCancelledAt?.cancelled_at;
   }
 
-  async syncNewOrders(beginDate?: string, endDate?: string) {
-    let begin = beginDate;
-    if (!begin) {
+  async syncNewOrders(_params?: { begin?: string; end?: string; limit?: number; page?: number }) {
+    const params = { ..._params };
+
+    if (!params.begin) {
       const lastOrderedAt = await this.lastOrderedAt();
       if (!lastOrderedAt) throw new Error("No last ordered date found");
-      begin = getRakutenDatetimeFormat(lastOrderedAt);
-      console.log(`Last ordered date: ${begin}(JST)`);
+      params.begin = getRakutenDatetimeFormat(lastOrderedAt);
+      console.log(`Last ordered date: ${params.begin}(JST)`);
     }
+    if (!params.end) params.end = getRakutenDatetimeFormat(new Date());
 
     const { data, pagination } = await this.search({
       dateType: SEARCH_DATE_TYPE.ORDER_DATE,
-      begin,
-      end: endDate ?? getRakutenDatetimeFormat(new Date()),
+      begin: params.begin!,
+      end: params.end!,
+      limit: params.limit,
+      page: params.page,
     });
-
-    let next = pagination.next;
-    while (next) {
-      // TODO: waitしてレートリミットを回避する
-      const { data: nextData, pagination: nextPagination } = await next();
-      data.push(...nextData);
-      next = nextPagination.next;
-    }
 
     console.log(`Found ${data.length} new orders`);
 
@@ -101,30 +97,33 @@ export class RakutenOrderSyncBQ extends RakutenOrder {
         data.flatMap(parseForBQOrderItemsTable),
       ),
     ]);
+
+    return pagination.nextParams;
   }
 
-  async syncNewFulfilledOrders(beginDate?: string, endDate?: string) {
-    let begin = beginDate;
-    if (!begin) {
+  async syncNewFulfilledOrders(_params?: {
+    begin?: string;
+    end?: string;
+    limit?: number;
+    page?: number;
+  }) {
+    const params = { ..._params };
+
+    if (!params.begin) {
       const lastFulfilledAt = await this.lastFulfilledAt();
       if (!lastFulfilledAt) throw new Error("No last fulfilled date found");
-      begin = getRakutenDatetimeFormat(lastFulfilledAt);
-      console.log(`Last fulfilled date: ${begin}(JST)`);
+      params.begin = getRakutenDatetimeFormat(lastFulfilledAt);
+      console.log(`Last fulfilled date: ${params.begin}(JST)`);
     }
+    if (!params.end) params.end = getRakutenDatetimeFormat(new Date());
 
     const { data, pagination } = await this.search({
       dateType: SEARCH_DATE_TYPE.SHIPMENT_REPORT_DATE,
-      begin,
-      end: endDate ?? getRakutenDatetimeFormat(new Date()),
+      begin: params.begin!,
+      end: params.end!,
+      limit: params.limit,
+      page: params.page,
     });
-
-    let next = pagination.next;
-    while (next) {
-      // TODO: waitしてレートリミットを回避する
-      const { data: nextData, pagination: nextPagination } = await next();
-      data.push(...nextData);
-      next = nextPagination.next;
-    }
 
     console.log(`Found ${data.length} fulfilled orders`);
 
@@ -137,12 +136,19 @@ export class RakutenOrderSyncBQ extends RakutenOrder {
         data.flatMap(parseForBQOrderItemsTable),
       ),
     ]);
+
+    return pagination.nextParams;
   }
 
-  // MEMO: dateTypeが注文日基準でしか計算できないので、afterを一番最後の日付にしてしまうと本来取りたいデータが取れない。
-  // そのため、全てのキャンセル済みの注文を取得して、その中からafter以降のものを取得する。
-  async syncNewCancelledOrders(beginDate?: string) {
-    let after = beginDate;
+  // MEMO: dateTypeが注文日基準でしか計算できないので、_afterを一番最新のキャンセルの日時にしてしまうと本来取りたいデータは取れない。
+  // そのため、過去60日間の全てのキャンセル済みの注文を取得し、その中からafter以降でキャンセルになったものをフィルタする。
+  async syncNewCancelledOrders(
+    _after?: string,
+    _params?: { begin?: string; end?: string; limit?: number; page?: number },
+  ) {
+    const params = { ..._params };
+
+    let after = _after;
     if (!after) {
       const lastCancelledAt = await this.lastCancelledAt();
       if (!lastCancelledAt) throw new Error("No last cancelled date found");
@@ -151,25 +157,20 @@ export class RakutenOrderSyncBQ extends RakutenOrder {
     }
 
     // 60日前から今日までのデータを取得する
-    const begin = getRakutenDatetimeFormat(
-      new Date(new Date().getTime() - 60 * 24 * 60 * 60 * 1000),
-    );
-    const end = getRakutenDatetimeFormat(new Date());
-    console.log(`Searching cancelled orders from ${begin}(JST) to ${end}(JST)`);
+    if (!params.begin)
+      params.begin = getRakutenDatetimeFormat(
+        new Date(new Date().getTime() - 60 * 24 * 60 * 60 * 1000),
+      );
+    if (!params.end) params.end = getRakutenDatetimeFormat(new Date());
+    console.log(`Searching cancelled orders from ${params.begin}(JST) to ${params.end}(JST)`);
     const { data, pagination } = await this.search({
       dateType: SEARCH_DATE_TYPE.ORDER_DATE,
       statuses: [ORDER_STATUS.CANCEL_CONFIRMED],
-      begin,
-      end,
+      begin: params.begin,
+      end: params.end,
+      limit: params.limit,
+      page: params.page,
     });
-
-    let next = pagination.next;
-    while (next) {
-      // TODO: waitしてレートリミットを回避する
-      const { data: nextData, pagination: nextPagination } = await next();
-      data.push(...nextData);
-      next = nextPagination.next;
-    }
 
     // MEMO: 60日間の注文データの中からafter以降のキャンセル済みの注文を取得する
     const filteredData = data.filter((order) => {
@@ -189,6 +190,8 @@ export class RakutenOrderSyncBQ extends RakutenOrder {
         filteredData.flatMap(parseForBQOrderItemsTable),
       ),
     ]);
+
+    return pagination.nextParams ? ([after, pagination.nextParams] as const) : undefined;
   }
 }
 
