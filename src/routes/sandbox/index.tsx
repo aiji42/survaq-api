@@ -6,7 +6,6 @@ import { DB } from "../../libs/db";
 import { needLogin } from "../../libs/utils";
 import { Product } from "../../libs/models/cms/Product";
 import { HTTPException } from "hono/http-exception";
-import { AmazonOrder } from "../../libs/models/amazon/AmazonOrder";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
