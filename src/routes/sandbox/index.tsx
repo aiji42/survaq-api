@@ -3,10 +3,10 @@ import { Hono } from "hono";
 import { SandboxLayout } from "../../components/hono/Layout";
 import { Bindings } from "../../../bindings";
 import { DB } from "../../libs/db";
-import { AmazonOrder } from "../../libs/models/amazon/AmazonOrder";
 import { needLogin } from "../../libs/utils";
 import { Product } from "../../libs/models/cms/Product";
 import { HTTPException } from "hono/http-exception";
+import { AmazonOrder } from "../../libs/models/amazon/AmazonOrder";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -45,23 +45,6 @@ app.get("/orders/:id", (c) => {
         <survaq-order-cancel orderId={id} />
       </div>
     </SandboxLayout>,
-  );
-});
-
-app.get("/amazon", async (c) => {
-  const amazon = new AmazonOrder(c.env);
-
-  const { data } = await amazon.getOrders({
-    limit: 10,
-    createdAfter: "2024-05-20",
-  });
-  const items = await amazon.getOrderItemsBulk(data.map((order) => order.AmazonOrderId));
-
-  return c.json(
-    data.map((order) => ({
-      ...order,
-      items: items.find(([id, items]) => id === order.AmazonOrderId)?.[1] ?? [],
-    })),
   );
 });
 

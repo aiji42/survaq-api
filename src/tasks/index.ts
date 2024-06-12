@@ -33,6 +33,8 @@ import { SyncAmazonAdPerformanceToBigQuery } from "./SyncAmazonAdPerformanceToBi
 export { SyncAmazonAdPerformanceToBigQuery } from "./SyncAmazonAdPerformanceToBigQuery";
 import { SyncAmazonItemsToBigQuery } from "./SyncAmazonItemsToBigQuery";
 export { SyncAmazonItemsToBigQuery } from "./SyncAmazonItemsToBigQuery";
+import { SyncAmazonOrderToBigQuery } from "./SyncAmazonOrderToBigQuery";
+export { SyncAmazonOrderToBigQuery } from "./SyncAmazonOrderToBigQuery";
 
 type Performers = {
   Cancel: Cancel;
@@ -50,6 +52,7 @@ type Performers = {
   SyncRakutenItem: SyncRakutenItem;
   SyncAmazonAdPerformanceToBigQuery: SyncAmazonAdPerformanceToBigQuery;
   SyncAmazonItemsToBigQuery: SyncAmazonItemsToBigQuery;
+  SyncAmazonOrderToBigQuery: SyncAmazonOrderToBigQuery;
 };
 type BindingKeys = keyof Performers;
 
@@ -100,6 +103,10 @@ export default class extends Kiribi<Performers, Bindings> {
       await this.env.KIRIBI.enqueue("SyncAmazonAdPerformanceToBigQuery", { type: "CREATE_REPORT" });
 
       const retryStrategy = { maxRetries: 2, retryDelay: 120 };
+
+      // Amazonの注文取り込み(前回取り込み以降で追加・変更があったものを取り込む)
+      await this.enqueue("SyncAmazonOrderToBigQuery", {}, retryStrategy);
+
       const min = new Date().getMinutes();
       // 00-09分、30-39分ならRakutenの新規の注文情報をBigQueryに同期する
       if ((min >= 0 && min < 10) || (min >= 30 && min < 40))

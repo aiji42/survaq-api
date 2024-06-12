@@ -11,7 +11,7 @@ type PaymentExecutionDetailItem = {
 };
 
 // https://developer-docs.amazon.com/sp-api/lang-ja_JP/docs/orders-api-v0-reference#order
-type Order = {
+export type Order = {
   AmazonOrderId: string;
   SellerOrderId?: string;
   PurchaseDate: string;
@@ -115,7 +115,7 @@ type GetOrderResponse = {
   };
 };
 
-type OrderItem = {
+export type OrderItem = {
   ASIN: string;
   SellerSKU?: string;
   OrderItemId: string;
@@ -206,10 +206,13 @@ export class AmazonOrder extends AmazonClient {
     "https://sellingpartnerapi-fe.amazon.com/orders/v0/orders/{amazonOrderId}/orderItems";
 
   // https://developer-docs.amazon.com/sp-api/lang-ja_JP/docs/orders-api-v0-reference
+  // MEMO: ドキュメントには書いてないが、lastUpdatedAfterが指定されればアップデート順・createdAfterが指定されれば作成順で取得される
   async getOrders(params: {
     limit?: number;
     createdAfter?: string | Date;
+    createdBefore?: string | Date;
     lastUpdatedAfter?: string | Date;
+    lastUpdatedBefore?: string | Date;
     nextToken?: string;
   }) {
     const url = new URL(AmazonOrder.ordersEndpoint);
@@ -221,14 +224,19 @@ export class AmazonOrder extends AmazonClient {
       url.searchParams.append("CreatedAfter", new Date(params.createdAfter).toISOString());
     if (params.lastUpdatedAfter)
       url.searchParams.append("LastUpdatedAfter", new Date(params.lastUpdatedAfter).toISOString());
+    if (params.createdBefore)
+      url.searchParams.append("CreatedBefore", new Date(params.createdBefore).toISOString());
+    if (params.lastUpdatedBefore)
+      url.searchParams.append(
+        "LastUpdatedBefore",
+        new Date(params.lastUpdatedBefore).toISOString(),
+      );
     if (params.nextToken) url.searchParams.append("NextToken", params.nextToken);
 
     const res = await this.request<GetOrderResponse>(url);
     return {
       data: res.payload.Orders,
-      next: res.payload.NextToken
-        ? () => this.getOrders({ ...params, nextToken: res.payload.NextToken })
-        : undefined,
+      nextToken: res.payload.NextToken,
     };
   }
 
@@ -240,8 +248,9 @@ export class AmazonOrder extends AmazonClient {
   }
 
   async getOrderItemsBulk(amazonOrderIds: string[]) {
-    return Promise.all(
+    const orderItems = await Promise.all(
       amazonOrderIds.map(async (id) => [id, await this.getOrderItems(id)] as const),
     );
+    return Object.fromEntries(orderItems);
   }
 }
