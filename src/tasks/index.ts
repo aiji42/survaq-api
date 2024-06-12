@@ -98,15 +98,7 @@ export default class extends Kiribi<Performers, Bindings> {
       // re-enqueue zombie jobs
       await this.recover();
 
-      // Amazonの広告費取り込み
-      // MEMO: こんな高頻度で実行しても意味はないが、トークンが1時間で切れてしまうので、高頻度で実行させて自動的にトークンをリフレッシュさせる
-      await this.env.KIRIBI.enqueue("SyncAmazonAdPerformanceToBigQuery", { type: "CREATE_REPORT" });
-
       const retryStrategy = { maxRetries: 2, retryDelay: 120 };
-
-      // Amazonの注文取り込み(前回取り込み以降で追加・変更があったものを取り込む)
-      await this.enqueue("SyncAmazonOrderToBigQuery", {}, retryStrategy);
-
       const min = new Date().getMinutes();
       // 00-09分、30-39分ならRakutenの新規の注文情報をBigQueryに同期する
       if ((min >= 0 && min < 10) || (min >= 30 && min < 40))
@@ -117,6 +109,16 @@ export default class extends Kiribi<Performers, Bindings> {
       // 20-29分、50-59分ならRakutenのキャンセル済みの注文情報をBigQueryに同期する
       if ((min >= 20 && min < 30) || (min >= 50 && min < 60))
         await this.enqueue("SyncRakutenOrderToBigQuery", { type: "CANCELLED_AT" }, retryStrategy);
+    }
+
+    // every 30 minutes
+    if (cron === "*/30 * * * *") {
+      // Amazonの注文取り込み(前回取り込み以降で追加・変更があったものを取り込む)
+      await this.enqueue("SyncAmazonOrderToBigQuery", {}, { maxRetries: 2, retryDelay: 120 });
+
+      // Amazonの広告費取り込み
+      // MEMO: こんな高頻度で実行しても意味はないが、トークンが1時間で切れてしまうので、高頻度で実行させて自動的にトークンをリフレッシュさせる
+      await this.env.KIRIBI.enqueue("SyncAmazonAdPerformanceToBigQuery", { type: "CREATE_REPORT" });
     }
   }
 

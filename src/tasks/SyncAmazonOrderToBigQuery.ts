@@ -8,6 +8,7 @@ type Payload = {
   createdAfter?: string;
   createdBefore?: string;
   nextToken?: string;
+  limit?: number;
 };
 
 /**

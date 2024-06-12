@@ -21,6 +21,7 @@ export class AmazonOrdersSyncToBQ extends AmazonOrder {
     lastUpdatedBefore?: string;
     createdAfter?: string;
     createdBefore?: string;
+    limit?: number;
     nextToken?: string;
   }) {
     const params = { ..._params };
@@ -29,9 +30,9 @@ export class AmazonOrdersSyncToBQ extends AmazonOrder {
       params.lastUpdatedAfter = lastUpdatedAt ? `${lastUpdatedAt}Z` : undefined;
       if (params.lastUpdatedAfter) console.log(`Last updated at: ${params.lastUpdatedAfter}`);
     }
+    if (!params.limit) params.limit = 30;
 
     const orders = await this.getOrders({
-      limit: 50,
       ...params,
     });
     const items = await this.getOrderItemsBulk(orders.data.map((order) => order.AmazonOrderId));
