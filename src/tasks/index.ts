@@ -132,6 +132,7 @@ export default class extends Kiribi<Performers, Bindings> {
         "PurchaseMeasurementProtocol",
         "SyncAmazonAdPerformanceToBigQuery",
         "SyncAmazonItemsToBigQuery",
+        "SyncAmazonOrderToBigQuery",
         "SyncRakutenItem",
         "SyncRakutenOrderToBigQuery",
         "SyncShopifyOrderToBigQuery",
