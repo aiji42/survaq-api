@@ -54,7 +54,8 @@ type CheckReportResponse =
     };
 
 export class AmazonAdsClient {
-  static expireBufferMinutes = 10;
+  // トークンの有効期限が1時間、かつ定期タスクは30分間隔で実行されるため、早めに期限切れと判断する
+  static expireBufferMinutes = 40;
 
   constructor(private readonly env: Env) {}
 
