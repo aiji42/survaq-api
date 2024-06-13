@@ -56,9 +56,7 @@ export class CMSChecker extends KiribiPerformer<undefined, void, Bindings> {
   async perform() {
     const result = await this.validate();
 
-    // FIXME: 今はAmazonは無視するが、修正されたら追加する
-    // if (result.products.length)
-    if (result.products.filter(({ provider }) => provider !== "amazon").length)
+    if (result.products.length)
       this.slack.append(
         {
           title: "プロダクトを確認してください",

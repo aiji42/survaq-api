@@ -19,12 +19,6 @@ const app = new Hono();
 
 app.use("*", cors({ origin: "*", maxAge: 600 }));
 
-// MEMO: URLの移管に伴い恒久的リダイレクト
-// FIXME: ある程度時間がたったら削除する
-app.use("/status/data", async (c) => {
-  return c.redirect("/portal/status", 301);
-});
-
 app.get("/static/*", serveStatic({ root: "./", manifest }));
 
 app.route("/products", products);
