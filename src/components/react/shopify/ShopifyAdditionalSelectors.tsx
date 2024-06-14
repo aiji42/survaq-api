@@ -45,7 +45,6 @@ export const ShopifyAdditionalSelectors: FC<Props> = ({ productId, initialVarian
             code={selectedSkus[index] ?? ""}
             options={options}
             onChange={(value) => dispatch({ type: "selectedSKU", payload: { index, value } })}
-            index={index}
             key={index}
           />
         );
@@ -55,6 +54,9 @@ export const ShopifyAdditionalSelectors: FC<Props> = ({ productId, initialVarian
         type="hidden"
         value={JSON.stringify([...selectedSkus, ...baseSkus])}
       />
+      {[...selectedSkus, ...baseSkus].map((sku, index) => (
+        <input key={index} name={`properties[_sku${index + 1}]`} type="hidden" value={sku} />
+      ))}
       {schedule &&
         schedule.text !== product.schedule.text &&
         document.documentElement.lang === "ja" && (

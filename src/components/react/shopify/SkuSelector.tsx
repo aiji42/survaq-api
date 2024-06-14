@@ -5,10 +5,9 @@ type Props = {
   code: string;
   options: { code: string; name: string }[];
   onChange: (value: string) => void;
-  index: number;
 };
 
-export const SkuSelector: FC<Props> = ({ label, code, onChange, options, index }) => {
+export const SkuSelector: FC<Props> = ({ label, code, onChange, options }) => {
   const id = useId();
   return (
     <p className="product-form__item">
@@ -30,7 +29,6 @@ export const SkuSelector: FC<Props> = ({ label, code, onChange, options, index }
         name={`properties[${label}]`}
         value={options.find((o) => o.code === code)?.name ?? ""}
       />
-      <input type="hidden" name={`properties[_sku${index + 1}]`} value={code} />
     </p>
   );
 };
