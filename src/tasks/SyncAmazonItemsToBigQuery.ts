@@ -39,7 +39,7 @@ export class SyncAmazonItemsToBigQuery extends KiribiPerformer<Payload, void, Bi
   // レポートを作成し、SYNC_REPORTをKIRIBI経由で実行することで、同期処理を1分後に実行する
   private async createReport() {
     const report = await this.amazon.createItemsReport();
-    this.env.KIRIBI.enqueue(
+    await this.env.KIRIBI.enqueue(
       "SyncAmazonItemsToBigQuery",
       { type: "SYNC_REPORT", reportId: report.reportId },
       { firstDelay: 60, maxRetries: 2, retryDelay: 60 },
