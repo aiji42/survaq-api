@@ -1,5 +1,7 @@
 import {
+  CHANCE_REASON_DETAIL,
   CHANGE_REASON,
+  CHANGE_TYPE_DETAIL,
   ItemModel,
   ORDER_STATUS,
   OrderModel,
@@ -259,7 +261,12 @@ const datetime = <T extends string | null | undefined>(at: T): T extends string 
 
 const findCancelledAt = (order: OrderModel) => {
   return order.ChangeReasonModelList?.find(
-    (change) => change.changeType === CHANGE_REASON.CANCEL_COMPLETED,
+    (change) =>
+      // 変更理由がキャンセル
+      change.changeType === CHANGE_REASON.CANCEL_COMPLETED ||
+      // もしくは変更理由が、「変更完了」かつ減額
+      (change.changeType === CHANGE_REASON.CHANGE_COMPLETED &&
+        change.changeTypeDetail === CHANGE_TYPE_DETAIL.DECREASE),
   )?.changeCmplDatetime;
 };
 

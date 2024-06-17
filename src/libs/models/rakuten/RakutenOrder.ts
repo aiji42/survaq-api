@@ -75,6 +75,54 @@ export const CHANGE_REASON = {
 
 type ChangeReason = (typeof CHANGE_REASON)[keyof typeof CHANGE_REASON];
 
+/**
+ * 0: 減額
+ * 1: 増額
+ * 2: その他
+ * 10: 支払方法変更
+ * 11: 支払方法変更・減額
+ * 12: 支払方法変更・増額
+ */
+export const CHANGE_TYPE_DETAIL = {
+  DECREASE: 0,
+  INCREASE: 1,
+  OTHER: 2,
+  CHANGE_PAYMENT_METHOD: 10,
+  CHANGE_PAYMENT_METHOD_DECREASE: 11,
+  CHANGE_PAYMENT_METHOD_INCREASE: 12,
+} as const;
+
+export type ChangeTypeDetail = (typeof CHANGE_TYPE_DETAIL)[keyof typeof CHANGE_TYPE_DETAIL];
+
+/**
+ * 1: キャンセル
+ * 2: 受取後の返品
+ * 3: 長期不在による受取拒否
+ * 4: 未入金
+ * 5: 代引決済の受取拒否
+ * 6: お客様都合 - その他
+ * 8: 欠品
+ * 10: 店舗様都合 - その他
+ * 13: 発送遅延
+ * 14: 顧客・配送対応注意表示
+ * 15: 返品(破損・品間違い)
+ */
+export const CHANCE_REASON_DETAIL = {
+  CANCEL: 1,
+  RETURN_AFTER_RECEIPT: 2,
+  REFUSAL_OF_RECEIPT_DUE_TO_LONG_ABSENCE: 3,
+  UNPAID: 4,
+  REFUSAL_OF_RECEIPT_BY_CASH_ON_DELIVERY_PAYMENT: 5,
+  CUSTOMER_CONVENIENCE_OTHER: 6,
+  OUT_OF_STOCK: 8,
+  STORE_CONVENIENCE_OTHER: 10,
+  SHIPPING_DELAY: 13,
+  CUSTOMER_DELIVERY_ATTENTION: 14,
+  RETURN_DAMAGE_OR_WRONG_ITEM: 15,
+} as const;
+
+type ChangeReasonDetail = (typeof CHANCE_REASON_DETAIL)[keyof typeof CHANCE_REASON_DETAIL];
+
 type MessageModel = {
   messageType: "INFO" | "ERROR" | "WARNING";
   messageCode: string; // https://webservice.rms.rakuten.co.jp/merchant-portal/view/ja/common/1-1_service_index/rakutenpayorderapi/rakutenpaymsgcodereference
@@ -131,9 +179,9 @@ export type ItemModel = {
 type ChangeReasonModel = {
   changeId: number; // 変更ID
   changeType: ChangeReason | null; // 変更種別
-  changeTypeDetail: number | null; // 変更種別詳細
+  changeTypeDetail: ChangeTypeDetail | null; // 変更種別詳細
   changeReason: 0 | 1 | null; // 変更理由 (0: 店舗都合, 1: 顧客都合)
-  changeReasonDetail: number | null; // 変更理由詳細
+  changeReasonDetail: ChangeReasonDetail | null; // 変更理由詳細
   changeApplyDatetime: string | null; // 変更申請日時
   changeFixDatetime: string | null; // 変更確定日時
   changeCmplDatetime: string | null; // 変更完了日時
