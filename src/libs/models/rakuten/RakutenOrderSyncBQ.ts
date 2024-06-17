@@ -1,5 +1,4 @@
 import {
-  CHANCE_REASON_DETAIL,
   CHANGE_REASON,
   CHANGE_TYPE_DETAIL,
   ItemModel,
