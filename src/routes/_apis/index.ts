@@ -5,4 +5,4 @@ export { default as cancellation } from "./cancellation";
 export { default as schedule } from "./schedule";
 export { default as amazonAds } from "./amazon-ads";
 export { default as oauth } from "./oauth";
-export { default as rakuten } from "./rakuten";
+export { default as imports } from "./imports";

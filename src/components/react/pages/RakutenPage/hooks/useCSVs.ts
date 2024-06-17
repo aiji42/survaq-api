@@ -1,18 +1,10 @@
 import { CsvData, csvSchema } from "../schema";
 import Papa from "papaparse";
 import { useCallback, useMemo, useReducer, useState } from "react";
+import { ImportableData } from "../../../../../libs/models/rakuten/RakutenAdPerformanceSync";
 
 export type State = {
-  rows: {
-    key: string;
-    date: string;
-    itemId: string;
-    clicks: number;
-    impressions: number;
-    cost: number;
-    cpc: number;
-    ctr: number;
-  }[];
+  rows: ImportableData;
   errors: {
     [fileName: string]: string[];
   };

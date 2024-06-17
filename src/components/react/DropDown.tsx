@@ -10,6 +10,7 @@ export type DragZoneProps = {
   accepts: string[];
   description?: string;
   disabled?: boolean;
+  multiple?: boolean;
 };
 
 export const DragZone: FC<DragZoneProps> = ({
@@ -19,6 +20,7 @@ export const DragZone: FC<DragZoneProps> = ({
   accepts,
   description = [],
   disabled,
+  multiple,
 }) => {
   // ドラッグ中の状態を管理する
   const [dragging, setDragging] = useState(false);
@@ -47,13 +49,18 @@ export const DragZone: FC<DragZoneProps> = ({
       setDragging(false);
       if (event.dataTransfer.files) {
         const prevFiles = files.map(({ file }) => file);
-        onUpload(
-          [...prevFiles, ...event.dataTransfer.files].filter((file) => accepts.includes(file.type)),
+        const filteredFiles = [...event.dataTransfer.files].filter((file) =>
+          accepts.includes(file.type),
         );
+        if (multiple) {
+          onUpload([...prevFiles, ...filteredFiles]);
+        } else {
+          onUpload(filteredFiles.slice(0, 1));
+        }
         event.dataTransfer.clearData();
       }
     },
-    [files, onUpload, disabled],
+    [files, onUpload, disabled, multiple],
   );
 
   const changeHandler = useCallback(
@@ -128,7 +135,7 @@ export const DragZone: FC<DragZoneProps> = ({
           className="hidden"
           onChange={changeHandler}
           accept={accepts.join(",")}
-          multiple
+          multiple={multiple}
           disabled={disabled}
         />
       </label>

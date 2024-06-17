@@ -1,7 +1,7 @@
 import { FC } from "react";
 import { IconType } from "react-icons";
 import { FaBook } from "react-icons/fa6";
-import { BsFileSpreadsheetFill } from "react-icons/bs";
+import { BsFileSpreadsheetFill, BsGoogle } from "react-icons/bs";
 import { SiGooglebigquery } from "react-icons/si";
 import { BsFillBagCheckFill } from "react-icons/bs";
 import { SiRakuten } from "react-icons/si";
@@ -37,6 +37,12 @@ export const PortalPage: FC = () => {
           href="/portal/rakuten"
           description="Rakuten広告のパフォーマンスレポートデータ(CSV)をアップロードします。"
           icon={SiRakuten}
+        />
+        <LinkCard
+          title="スマートショッピング データインポート"
+          href="/portal/smart-shopping"
+          description="スマートショッピングのパフォーマンスレポートデータ(CSV)をアップロードします。"
+          icon={BsGoogle}
         />
         <LinkCard
           title="販売コスト管理シート"

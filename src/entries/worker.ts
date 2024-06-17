@@ -9,7 +9,7 @@ import {
   schedule,
   amazonAds,
   oauth,
-  rakuten,
+  imports,
 } from "../routes/_apis";
 import sandbox from "../routes/sandbox";
 import portal from "../routes/portal";
@@ -27,7 +27,7 @@ app.route("/logiless", logiless);
 app.route("/cancellation", cancellation);
 app.route("/schedule", schedule);
 app.route("/amazon-ads", amazonAds);
-app.route("/rakuten", rakuten);
+app.route("/imports", imports);
 app.route("/oauth", oauth);
 
 app.route("/portal", portal);

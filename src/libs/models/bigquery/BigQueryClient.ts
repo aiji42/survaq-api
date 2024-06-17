@@ -44,7 +44,8 @@ export class BigQueryClient {
     await this.query(query);
   }
 
-  makeDeleteQuery(dataset: string, table: string, key: string, values: (string | number)[]) {
+  makeDeleteQuery(dataset: string, table: string, key: string, _values: (string | number)[]) {
+    const values = [...new Set(_values)];
     return `
       DELETE FROM \`${this.table(dataset, table)}\`
       WHERE \`${key}\` IN (${values.map((value) => this.formatValue(value)).join(", ")})

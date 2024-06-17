@@ -1,7 +1,7 @@
 import { hc } from "hono/client";
 import { AdsImportRoute } from "../../../../../routes/_apis/imports";
 import useSWRMutation from "swr/mutation";
-import { State } from "./useCSVs";
+import { State } from "./useCSV";
 
 const baseUrl = new URL("https://api.survaq.com/imports/");
 if (import.meta.env.DEV) {
@@ -18,8 +18,8 @@ export const useUpload = () => {
     Error,
     string,
     State["rows"]
-  >("rakuten-ads-import", async (_, { arg }) => {
-    const res = await client.ads.rakuten.$post({ json: arg });
+  >("smart-shopping-import", async (_, { arg }) => {
+    const res = await client.ads["smart-shopping"].$post({ json: arg });
     if (!res.ok) throw new Error("インポートに失敗しました。");
     return true;
   });

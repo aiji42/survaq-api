@@ -38,4 +38,15 @@ app.get("/rakuten", async (c) => {
   );
 });
 
+app.get("/smart-shopping", async (c) => {
+  return c.html(
+    <PortalLayout
+      title="スマートショッピング データインポート | サバキュー"
+      dev={!!c.env.DEV}
+      bodyProps={{}}
+      pageCode="smart-shopping"
+    />,
+  );
+});
+
 export default app;

@@ -16,6 +16,7 @@ export class RakutenAdPerformanceSync {
 
 export const importableDataSchema = z.array(
   z.object({
+    key: z.string(),
     date: z.string(),
     itemId: z.string(),
     clicks: z.number(),

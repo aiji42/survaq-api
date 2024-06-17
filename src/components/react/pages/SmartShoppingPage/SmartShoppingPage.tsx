@@ -1,27 +1,26 @@
 import { FC } from "react";
 import { DragZone } from "../../DropDown";
-import { useCSVs } from "./hooks/useCSVs";
+import { useCSV } from "./hooks/useCSV";
 import { useUpload } from "./hooks/useUpload";
 import { PortalContainer } from "../PortalContainer/PortalContainer";
 
-export const RakutenPage: FC = () => {
-  const { data, errors, files, onUpload, onRemove } = useCSVs();
+export const SmartShoppingPage: FC = () => {
+  const { data, errors, files, onUpload, onRemove } = useCSV();
 
   const importable = data.length > 0 && Object.values(errors).length == 0;
 
   const { isUploading, error: uploadError, upload, isSuccessful } = useUpload();
 
   return (
-    <PortalContainer h1="Rakuten Ads データインポート">
+    <PortalContainer h1="スマートショッピング データインポート">
       <div className="space-y-4">
         <DragZone
           files={files.map((file) => ({ file, messages: errors[file.name] || [] }))}
           onUpload={onUpload}
           accepts={["text/csv"]}
-          description="楽天広告のCSVファイルをアップロードしてください。"
+          description="スマートショッピングのCSVファイルをアップロードしてください。"
           onRemove={onRemove}
           disabled={isUploading || isSuccessful}
-          multiple
         />
         <div className="space-y-1">
           <button
@@ -46,29 +45,21 @@ export const RakutenPage: FC = () => {
           <table className="w-full text-sm text-left rtl:text-right text-gray-500">
             <thead className="text-gray-700 uppercase bg-gray-50">
               <tr className="whitespace-nowrap">
-                <th className="py-1">日付</th>
-                <th className="py-1">商品</th>
-                <th className="py-1">CLICK</th>
-                <th className="py-1">
-                  IMP <span className="text-xs font-medium align-middle">(CTRとCLICKより計算)</span>
-                </th>
-                <th className="py-1">Cost</th>
-                <th className="py-1">
-                  CPC<span className="text-xs font-medium align-middle">(￥)</span>
-                </th>
-                <th className="py-1">CTR</th>
+                <th className="py-1">日</th>
+                <th className="py-1">アイテム ID</th>
+                <th className="py-1">商品名</th>
+                <th className="py-1">通貨コード</th>
+                <th className="py-1">費用</th>
               </tr>
             </thead>
             <tbody>
-              {data.sort().map((row) => (
-                <tr key={row.key}>
+              {data.sort().map((row, index) => (
+                <tr key={index}>
                   <td className="py-1">{row.date}</td>
-                  <td className="py-1">{row.itemId}</td>
-                  <td className="py-1">{row.clicks}</td>
-                  <td className="py-1">{row.impressions}</td>
+                  <td className="py-1">{row.merchantCenterId}</td>
+                  <td className="py-1">{row.name}</td>
+                  <td className="py-1">{row.currencyCode}</td>
                   <td className="py-1">{row.cost}</td>
-                  <td className="py-1">{row.cpc}</td>
-                  <td className="py-1">{row.ctr}</td>
                 </tr>
               ))}
             </tbody>

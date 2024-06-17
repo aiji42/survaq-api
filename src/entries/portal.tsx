@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { RakutenPage } from "../components/react/pages/RakutenPage/RakutenPage";
 import { StatusPage } from "../components/react/pages/StatusPage/StatusPage";
 import { PortalPage } from "../components/react/pages/PortalPage/PortalPage";
+import { SmartShoppingPage } from "../components/react/pages/SmartShoppingPage/SmartShoppingPage";
 
 declare global {
   interface Window {
@@ -25,4 +26,9 @@ if (statusRoute) {
 const rakutenRoot = document.getElementById("rakuten");
 if (rakutenRoot) {
   createRoot(rakutenRoot).render(<RakutenPage {...props} />);
+}
+
+const smartShoppingRoot = document.getElementById("smart-shopping");
+if (smartShoppingRoot) {
+  createRoot(smartShoppingRoot).render(<SmartShoppingPage {...props} />);
 }
