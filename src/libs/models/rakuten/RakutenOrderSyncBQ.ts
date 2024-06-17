@@ -167,7 +167,11 @@ export class RakutenOrderSyncBQ extends RakutenOrder {
     console.log(`Searching cancelled orders from ${params.begin}(JST) to ${params.end}(JST)`);
     const { data, pagination } = await this.search({
       dateType: SEARCH_DATE_TYPE.ORDER_DATE,
-      statuses: [ORDER_STATUS.CANCEL_CONFIRMED],
+      statuses: [
+        ORDER_STATUS.CANCEL_CONFIRMED,
+        ORDER_STATUS.SHIPPED,
+        ORDER_STATUS.PAYMENT_PROCESSED,
+      ],
       begin: params.begin,
       end: params.end,
       limit: params.limit,
