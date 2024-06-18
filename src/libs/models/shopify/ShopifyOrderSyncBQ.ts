@@ -163,10 +163,6 @@ export class ShopifyOrderSyncBQ extends ShopifyOrderForNoteAttrs {
         VALUES (${Object.values(data).map(valueToSQL).join(", ")});`;
   }
 
-  async upsertBQOrdersTableData() {
-    await this.bq.query(this.upsertBQOrdersTableDataQuery);
-  }
-
   get upsertBQLineItemsTableDataQuery() {
     const data = this.createBQLineItemsTableData();
     let query = `DELETE FROM \`shopify.line_items\` WHERE order_id = '${this.gid}';`;
@@ -176,10 +172,6 @@ export class ShopifyOrderSyncBQ extends ShopifyOrderForNoteAttrs {
           VALUES ${data.map((d) => `(${Object.values(d).map(valueToSQL).join(", ")})`).join(", ")};`;
     }
     return query;
-  }
-
-  async upsertBQLineItemsTableData() {
-    await this.bq.query(this.upsertBQLineItemsTableDataQuery);
   }
 
   get upsertBQOrderSKUsTableDataQuery() {
@@ -193,11 +185,9 @@ export class ShopifyOrderSyncBQ extends ShopifyOrderForNoteAttrs {
     return query;
   }
 
-  async upsertBQOrderSKUsTableData() {
-    await this.bq.query(this.upsertBQOrderSKUsTableDataQuery);
-  }
-
   async bulkUpsertBQTables() {
+    if (this.lineItems.length === 0) throw new Error("LineItems is empty");
+
     const query = [
       this.upsertBQOrdersTableDataQuery,
       this.upsertBQLineItemsTableDataQuery,
@@ -205,28 +195,6 @@ export class ShopifyOrderSyncBQ extends ShopifyOrderForNoteAttrs {
     ].join("\n");
 
     await this.bq.query(query);
-  }
-
-  // 確認用
-  async getBQOrdersTableData() {
-    const res = await this.bq.query<BQOrdersTable>(
-      `SELECT * FROM \`shopify.orders\` WHERE id = '${this.gid}'`,
-    );
-    return res[0];
-  }
-
-  // 確認用
-  async getBQLineItemsTableData() {
-    return this.bq.query<BQLineItemsTable>(
-      `SELECT * FROM \`shopify.line_items\` WHERE order_id = '${this.gid}'`,
-    );
-  }
-
-  // 確認用
-  async getBQOrderSKUsTableData() {
-    return this.bq.query<BQOrderSKUsTable>(
-      `SELECT * FROM \`shopify.order_skus\` WHERE order_id = '${this.gid}'`,
-    );
   }
 }
 
