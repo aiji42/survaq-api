@@ -35,6 +35,8 @@ import { SyncAmazonItemsToBigQuery } from "./SyncAmazonItemsToBigQuery";
 export { SyncAmazonItemsToBigQuery } from "./SyncAmazonItemsToBigQuery";
 import { SyncAmazonOrderToBigQuery } from "./SyncAmazonOrderToBigQuery";
 export { SyncAmazonOrderToBigQuery } from "./SyncAmazonOrderToBigQuery";
+import { SyncMerchantCenterToBigQuery } from "./SyncMerchantCenterToBigQuery";
+export { SyncMerchantCenterToBigQuery } from "./SyncMerchantCenterToBigQuery";
 
 type Performers = {
   Cancel: Cancel;
@@ -53,6 +55,7 @@ type Performers = {
   SyncAmazonAdPerformanceToBigQuery: SyncAmazonAdPerformanceToBigQuery;
   SyncAmazonItemsToBigQuery: SyncAmazonItemsToBigQuery;
   SyncAmazonOrderToBigQuery: SyncAmazonOrderToBigQuery;
+  SyncMerchantCenterToBigQuery: SyncMerchantCenterToBigQuery;
 };
 type BindingKeys = keyof Performers;
 
@@ -77,6 +80,9 @@ export default class extends Kiribi<Performers, Bindings> {
 
       // Amazonの商品情報をBigQueryに同期する
       await this.enqueue("SyncAmazonItemsToBigQuery", { type: "CREATE_REPORT" }, { maxRetries: 1 });
+
+      // MerchantCenter用のマッピングデータをBigQueryに同期する
+      await this.enqueue("SyncMerchantCenterToBigQuery", {}, { maxRetries: 2 });
     }
 
     // every hour at 5 minutes (毎時00分のCloud Run側のJOBが終わる頃を狙って実行する)

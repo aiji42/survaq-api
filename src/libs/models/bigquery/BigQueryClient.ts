@@ -59,6 +59,15 @@ export class BigQueryClient {
     await this.query(query);
   }
 
+  makeTruncateQuery(dataset: string, table: string) {
+    return `TRUNCATE TABLE \`${this.table(dataset, table)}\``;
+  }
+
+  async truncate(dataset: string, table: string) {
+    const query = this.makeTruncateQuery(dataset, table);
+    await this.query(query);
+  }
+
   async deleteAndInsert<Row extends Record<string, string | number | Date | boolean | null>>(
     dataset: string,
     table: string,

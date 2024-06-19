@@ -113,5 +113,10 @@ binding = "SyncAmazonOrderToBigQuery"
 service = "kiribi-survaq-api"
 entrypoint = "SyncAmazonOrderToBigQuery"
 
+[[services]]
+binding = "SyncMerchantCenterToBigQuery"
+service = "kiribi-survaq-api"
+entrypoint = "SyncMerchantCenterToBigQuery"
+
 [site]
 bucket = "./node_modules/kiribi/client"
