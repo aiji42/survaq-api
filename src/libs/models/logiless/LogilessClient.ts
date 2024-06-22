@@ -103,4 +103,45 @@ export class LogilessClient {
   async purgeTokens() {
     await this.env.CACHE.delete("LOGILESS_TOKEN");
   }
+
+  protected apiPost = async <T>(path: string, body: any) => {
+    const url = new URL("https://app2.logiless.com");
+    url.pathname = `/api/v1/merchant/1394/${path}`.replace(/\/+/g, "/");
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${(await this.getTokens()).accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      console.log(await res.json());
+      throw new Error("Failed to post json");
+    }
+
+    return (await res.json()) as T;
+  };
+
+  protected apiGet = async <T>(path: string, params: Record<string, string | number | boolean>) => {
+    const url = new URL(
+      `https://app2.logiless.com/api/v1/merchant/1394/${path}`.replace(/\/+/g, "/"),
+    );
+    Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, String(v)));
+
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${(await this.getTokens()).accessToken}`,
+      },
+    });
+
+    if (!res.ok) {
+      console.log(await res.json());
+      throw new Error("Failed to get");
+    }
+
+    return (await res.json()) as T;
+  };
 }

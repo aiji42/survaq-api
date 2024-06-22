@@ -25,27 +25,13 @@ export class LogilessSalesOrder extends LogilessClient {
   async setSalesOrderByShopifyOrder(shopifyOrder: ShopifyOrder) {
     // Shopifyのコードは#から始まるため、それを除外
     const code = shopifyOrder.code.replace(/^#/, "");
-
-    const body = JSON.stringify({
+    const res = await this.apiPost<{ data: SalesOrderData[] }>("/sales_orders/search", {
       codes: [code],
     });
-    const res = await fetch(`https://app2.logiless.com/api/v1/merchant/1394/sales_orders/search`, {
-      headers: {
-        Authorization: `Bearer ${(await this.getTokens()).accessToken}`,
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-      body,
-    });
-
-    if (!res.ok) {
-      console.log(await res.json());
-      throw new Error("Failed to get sales order");
-    }
 
     const {
       data: [salesOrder],
-    } = (await res.json()) as { data: SalesOrderData[] };
+    } = res;
     if (!salesOrder) throw new Error("Sales order not found");
 
     this._salesOrder = salesOrder;
@@ -69,25 +55,9 @@ export class LogilessSalesOrder extends LogilessClient {
 
   async cancel() {
     // 同じ受注コードで新規受注の作成を許可しない(デフォルトの挙動の通り)
-    const body = JSON.stringify({
+    await this.apiPost(`/sales_orders/${this.id}/reversal`, {
       clears_code: false,
     });
-    const res = await fetch(
-      `https://app2.logiless.com/api/v1/merchant/1394/sales_orders/${this.id}/reversal`,
-      {
-        headers: {
-          Authorization: `Bearer ${(await this.getTokens()).accessToken}`,
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-        body,
-      },
-    );
-
-    if (!res.ok) {
-      console.log(await res.json());
-      throw new Error("Failed to cancel sales order");
-    }
   }
 }
 

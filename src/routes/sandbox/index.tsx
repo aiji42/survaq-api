@@ -6,6 +6,7 @@ import { DB } from "../../libs/db";
 import { needLogin } from "../../libs/utils";
 import { Product } from "../../libs/models/cms/Product";
 import { HTTPException } from "hono/http-exception";
+import { LogilessInventories } from "../../libs/models/logiless/LogilessInventories";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -100,6 +101,16 @@ app.get("/shopify/product/:id", async (c) => {
       />
     </SandboxLayout>,
   );
+});
+
+app.get("/logiless/inventory", async (c) => {
+  const logilessInventories = new LogilessInventories(c.env);
+  await logilessInventories.setInventories({
+    updated_at_from: "2024-06-18 00:00:00",
+    updated_at_to: "2024-06-29 16:37:00",
+  });
+
+  return c.json(logilessInventories.cmsData);
 });
 
 export default app;

@@ -29,6 +29,7 @@ const cancellationRoute = app
       await shopifyOrder.setOrderById(id);
       if (!shopifyOrder.cancelable.isCancelable) return c.json(shopifyOrder.cancelable);
     } catch (e) {
+      // FIXME: 404以外のエラーは通知する
       throw new HTTPException(404);
     }
 
@@ -37,6 +38,7 @@ const cancellationRoute = app
       await logiless.setSalesOrderByShopifyOrder(shopifyOrder);
       if (!logiless.cancelable.isCancelable) return c.json(logiless.cancelable);
     } catch (e) {
+      // FIXME: 404以外のエラーは通知する
       throw new HTTPException(404);
     }
 
@@ -57,6 +59,7 @@ const cancellationRoute = app
       try {
         await shopifyOrder.setOrderById(id);
       } catch (e) {
+        // FIXME: 404以外のエラーは通知する
         throw new HTTPException(404);
       }
       if (!shopifyOrder.cancelable.isCancelable)
@@ -68,6 +71,7 @@ const cancellationRoute = app
       try {
         await logiless.setSalesOrderByShopifyOrder(shopifyOrder);
       } catch (e) {
+        // FIXME: 404以外のエラーは通知する
         throw new HTTPException(404);
       }
       if (!logiless.cancelable.isCancelable)
