@@ -36,7 +36,7 @@ export const makeScheduleFromDeliverySchedule = <T extends string | null>(
   return schedule(year, month, term, locale) as ResultType<T>;
 };
 
-const schedule = <W extends boolean>(
+const schedule = (
   year: string | number,
   month: string | number,
   term: keyof typeof terms,

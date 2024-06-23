@@ -102,6 +102,7 @@ model ShopifyInventoryOrderSKUs {
   quantity                                                                                  Int                    @default(0)
   heldQuantity                                                                              Int                    @default(0)
   inventoryOrderId                                                                          Int
+  logilessId                                                                                String?                @unique(map: "shopifyinventoryorderskus_logilessid_unique") @db.VarChar(255)
   ShopifyCustomSKUs_ShopifyCustomSKUs_currentInventoryOrderSKUIdToShopifyInventoryOrderSKUs ShopifyCustomSKUs[]    @relation("ShopifyCustomSKUs_currentInventoryOrderSKUIdToShopifyInventoryOrderSKUs")
   ShopifyInventoryOrders                                                                    ShopifyInventoryOrders @relation(fields: [inventoryOrderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "shopifyinventoryorderskus_inventoryorderid_foreign")
   sku                                                                                       ShopifyCustomSKUs?     @relation("ShopifyInventoryOrderSKUs_skuIdToShopifyCustomSKUs", fields: [skuId], references: [id], onUpdate: NoAction, map: "shopifyinventoryorderskus_skuid_foreign")
@@ -112,10 +113,10 @@ model ShopifyInventoryOrders {
   createdAt                 DateTime?                   @db.Timestamptz(6)
   updatedAt                 DateTime?                   @db.Timestamptz(6)
   name                      String                      @db.VarChar(255)
-  orderedDate               DateTime                    @db.Date
-  shippingDate              DateTime                    @db.Date
-  receivingDate             DateTime                    @db.Date
-  deliveryDate              DateTime                    @db.Date
+  orderedDate               DateTime?                   @db.Date
+  shippingDate              DateTime?                   @db.Date
+  receivingDate             DateTime?                   @db.Date
+  deliveryDate              DateTime?                   @db.Date
   deliverySchedule          String?                     @db.VarChar(255)
   note                      String?
   status                    String?                     @db.VarChar(255)
@@ -129,6 +130,8 @@ model ShopifyInventoryOrders {
   free08                    String?                     @db.VarChar(255)
   free09                    String?                     @db.VarChar(255)
   free10                    String?                     @db.VarChar(255)
+  logilessId                String?                     @unique(map: "shopifyinventoryorders_logilessid_unique") @db.VarChar(255)
+  lastSyncedAt              DateTime?                   @db.Timestamp(6)
   ShopifyInventoryOrderSKUs ShopifyInventoryOrderSKUs[]
 }
 

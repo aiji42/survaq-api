@@ -1,6 +1,6 @@
 import { Bindings } from "../../../../bindings";
 
-type Env = Pick<
+export type Env = Pick<
   Bindings,
   "LOGILESS_CLIENT_SECRET" | "LOGILESS_CLIENT_ID" | "LOGILESS_REDIRECT_URI" | "CACHE" | "KIRIBI"
 >;

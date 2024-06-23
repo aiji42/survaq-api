@@ -104,11 +104,17 @@ app.get("/shopify/product/:id", async (c) => {
 });
 
 app.get("/logiless/inventory", async (c) => {
-  const logilessInventories = new LogilessInventories(c.env);
-  await logilessInventories.setInventories({
-    updated_at_from: "2024-06-18 00:00:00",
-    updated_at_to: "2024-06-29 16:37:00",
-  });
+  const logilessInventories = await LogilessInventories.build(
+    c.env,
+    {
+      updated_at_from: "2024-06-18 00:00:00",
+      updated_at_to: "2024-06-29 16:37:00",
+    },
+    {
+      updated_at_from: "2024-06-18 00:00:00",
+      updated_at_to: "2024-06-30 16:37:00",
+    },
+  );
 
   return c.json(logilessInventories.cmsData);
 });
