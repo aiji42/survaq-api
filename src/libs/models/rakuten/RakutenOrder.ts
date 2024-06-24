@@ -187,6 +187,12 @@ type ChangeReasonModel = {
   changeCmplDatetime: string | null; // 変更完了日時
 };
 
+type OrdererModel = {
+  familyName: string; // 姓
+  firstName: string; // 名
+  emailAddress: string; // メールアドレス
+};
+
 // https://webservice.rms.rakuten.co.jp/merchant-portal/view/ja/common/1-1_service_index/rakutenpayorderapi/getorder
 export type OrderModel = {
   orderNumber: string;
@@ -208,6 +214,7 @@ export type OrderModel = {
   PackageModelList: PackageModel[];
   TaxSummaryModelList: TaxSummaryModel[] | null;
   ChangeReasonModelList: ChangeReasonModel[] | null;
+  OrdererModel: OrdererModel;
 };
 
 type RakutenOrderDetailResponse = {

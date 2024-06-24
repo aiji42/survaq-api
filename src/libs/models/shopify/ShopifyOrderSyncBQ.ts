@@ -98,6 +98,7 @@ export class ShopifyOrderSyncBQ extends ShopifyOrderForNoteAttrs {
       created_at: this.createdAt.toISOString(),
       updated_at: this.updatedAt?.toISOString() || null,
       fulfilled_at: this.fulfilledAt?.toISOString() || null,
+      is_test: this.isTest,
       ...this.visit,
     };
   }
@@ -228,6 +229,7 @@ type BQOrdersTable = {
   utm_campaign: string | null;
   utm_content: string | null;
   utm_term: string | null;
+  is_test: boolean | null;
 };
 
 type BQLineItemsTable = {

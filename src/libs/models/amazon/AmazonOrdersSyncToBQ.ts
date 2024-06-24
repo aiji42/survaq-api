@@ -74,6 +74,7 @@ type BQOrdersTableData = {
   updated_at: Date;
   is_fulfilled: boolean;
   is_cancelled: boolean;
+  is_test: boolean | null;
 };
 
 const parseForBQOrdersTableData = (order: Order, items: OrderItem[]): BQOrdersTableData => {
@@ -92,6 +93,8 @@ const parseForBQOrdersTableData = (order: Order, items: OrderItem[]): BQOrdersTa
     updated_at: new Date(order.LastUpdateDate),
     is_fulfilled: order.OrderStatus === "Shipped",
     is_cancelled: order.OrderStatus === "Canceled",
+    // MEMO: AmazonはOrderのAPIではメアドはマスクされており氏名は取得できないのでテスト判定できない
+    is_test: null,
   };
 };
 

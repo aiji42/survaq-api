@@ -1,5 +1,6 @@
 import { ShopifyOrderData } from "../../../types/shopify";
 import { ShopifyClient } from "./ShopifyClient";
+import { isTestOrder } from "../../utils";
 
 export class ShopifyOrder extends ShopifyClient {
   private _order: ShopifyOrderData | undefined;
@@ -129,6 +130,10 @@ export class ShopifyOrder extends ShopifyClient {
 
   get isClosed() {
     return !!this.closedAt;
+  }
+
+  get isTest() {
+    return isTestOrder(this.order.customer.email, this.order.customer.default_address?.name ?? "");
   }
 
   get fulfillments() {

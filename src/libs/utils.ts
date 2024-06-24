@@ -102,3 +102,9 @@ const verify = async (c: Context) => {
   const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${token}`);
   return res.ok;
 };
+
+export const isTestOrder = (email: string, name: string) => {
+  if (name.includes("テスト")) return true;
+  // customer_order@survaq.comは代理注文用なのでテストにしない
+  return email.endsWith("@survaq.com") && !email.startsWith("customer_order@");
+};

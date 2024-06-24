@@ -11,6 +11,7 @@ import {
 } from "./RakutenOrder";
 import { Bindings } from "../../../../bindings";
 import { BigQueryClient } from "../bigquery/BigQueryClient";
+import { isTestOrder } from "../../utils";
 
 type BQOrdersTableData = {
   id: string;
@@ -21,6 +22,7 @@ type BQOrdersTableData = {
   ordered_at: Date;
   fulfilled_at: Date | null;
   cancelled_at: Date | null;
+  is_test: boolean | null;
 };
 
 type BQOrderItemsTableData = {
@@ -224,6 +226,11 @@ const parseForBQTable = (order: OrderModel): BQOrdersTableData => {
     ordered_at: datetime(order.orderDatetime),
     fulfilled_at: datetime(order.shippingCmplRptDatetime),
     cancelled_at: datetime(findCancelledAt(order)),
+    // MEMO: order.OrdererModel.emailAddressはマスクされているので、氏名しか判定に使えない
+    is_test: isTestOrder(
+      order.OrdererModel.emailAddress,
+      `${order.OrdererModel.familyName}${order.OrdererModel.firstName}`,
+    ),
   };
 };
 
