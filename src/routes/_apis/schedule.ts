@@ -1,12 +1,11 @@
 import { Hono } from "hono";
 import { Bindings } from "../../../bindings";
 import { ShopifyOrderDeliverySchedule } from "../../libs/models/shopify/ShopifyOrderDeliverySchedule";
-import { SlackNotifier } from "../../libs/models/slack/SlackNotifier";
 import { HTTPException } from "hono/http-exception";
 import { makeNotifiableErrorHandler } from "../../libs/utils";
 import { timeout } from "hono/timeout";
 
-type Env = { Bindings: Bindings; Variables: { notifier: SlackNotifier; label: string } };
+type Env = { Bindings: Bindings };
 
 const app = new Hono<Env>();
 
@@ -16,22 +15,14 @@ app.onError(makeNotifiableErrorHandler());
 
 const route = app.get("/:id", async (c) => {
   const id = c.req.param("id");
-  c.set("label", `Schedule API for Shopify orderId: ${id}`);
-
-  // TODO: このAPIはレスポンスが遅いので、キャッシュしてもよいかもしれない
 
   const order = new ShopifyOrderDeliverySchedule(c.env);
-  await order.setOrderById(id, false);
-  if (!order.isOrderSet) throw new HTTPException(404);
+  await order.setOrderById(id);
 
-  try {
-    const res = await order.getSchedule();
-    if (res) return c.json(res);
-  } catch (e) {
-    c.get("notifier").appendErrorMessage(e);
-  }
+  const res = await order.getSchedule();
+  if (!res) throw new HTTPException(404);
 
-  throw new HTTPException(404);
+  return c.json(res);
 });
 
 export type ScheduleRoute = typeof route;

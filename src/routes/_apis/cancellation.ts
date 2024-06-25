@@ -24,23 +24,11 @@ const cancellationRoute = app
   .get("/cancelable/:id", async (c) => {
     const id = c.req.param("id");
 
-    const shopifyOrder = new ShopifyOrderForCancel(c.env);
-    try {
-      await shopifyOrder.setOrderById(id);
-      if (!shopifyOrder.cancelable.isCancelable) return c.json(shopifyOrder.cancelable);
-    } catch (e) {
-      // FIXME: 404以外のエラーは通知する
-      throw new HTTPException(404);
-    }
+    const shopifyOrder = await new ShopifyOrderForCancel(c.env).setOrderById(id);
+    if (!shopifyOrder.cancelable.isCancelable) return c.json(shopifyOrder.cancelable);
 
-    const logiless = new LogilessSalesOrder(c.env);
-    try {
-      await logiless.setSalesOrderByShopifyOrder(shopifyOrder);
-      if (!logiless.cancelable.isCancelable) return c.json(logiless.cancelable);
-    } catch (e) {
-      // FIXME: 404以外のエラーは通知する
-      throw new HTTPException(404);
-    }
+    const logiless = await new LogilessSalesOrder(c.env).setSalesOrderByShopifyOrder(shopifyOrder);
+    if (!logiless.cancelable.isCancelable) return c.json(logiless.cancelable);
 
     const db = new DB(c.env);
     const existingRequest = await db.getCancelRequestByOrderKey(id);
@@ -55,25 +43,17 @@ const cancellationRoute = app
     async (c) => {
       const { id, reason } = c.req.valid("json");
 
-      const shopifyOrder = new ShopifyOrderForCancel(c.env);
-      try {
-        await shopifyOrder.setOrderById(id);
-      } catch (e) {
-        // FIXME: 404以外のエラーは通知する
-        throw new HTTPException(404);
-      }
+      const shopifyOrder = await new ShopifyOrderForCancel(c.env).setOrderById(id);
+
       if (!shopifyOrder.cancelable.isCancelable)
         throw new HTTPException(400, {
           message: `Not cancelable (${shopifyOrder.cancelable.reason})`,
         });
 
-      const logiless = new LogilessSalesOrder(c.env);
-      try {
-        await logiless.setSalesOrderByShopifyOrder(shopifyOrder);
-      } catch (e) {
-        // FIXME: 404以外のエラーは通知する
-        throw new HTTPException(404);
-      }
+      const logiless = await new LogilessSalesOrder(c.env).setSalesOrderByShopifyOrder(
+        shopifyOrder,
+      );
+
       if (!logiless.cancelable.isCancelable)
         throw new HTTPException(400, {
           message: `Not cancelable (${logiless.cancelable.reason})`,

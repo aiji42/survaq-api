@@ -4,6 +4,7 @@ import { Bindings } from "../../bindings";
 import { inlineCode, SlackNotifier } from "./models/slack/SlackNotifier";
 import { Context } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
+import { CustomNotFoundError } from "./errors";
 
 export const chunks = <T>(a: T[], size: number): T[][] =>
   Array.from({ length: Math.ceil(a.length / size) }, (_, i) => a.slice(i * size, i * size + size));
@@ -33,7 +34,10 @@ export const makeNotifiableErrorHandler =
     alwaysReturn?: (c: Context<Env>) => Response | Promise<Response>;
   } = {}): ErrorHandler<Env> =>
   async (err, c) => {
-    if (!(err instanceof HTTPException && err.status === 404)) {
+    if (
+      !(err instanceof CustomNotFoundError) &&
+      !(err instanceof HTTPException && err.status === 404)
+    ) {
       console.error(err);
       if (!c.env.DEV)
         await c.env.KIRIBI.enqueue("NotifyToSlack", {
@@ -52,6 +56,8 @@ export const makeNotifiableErrorHandler =
     }
 
     if (alwaysReturn) return alwaysReturn(c);
+
+    if (err instanceof CustomNotFoundError) throw new HTTPException(404, { message: err.message });
     throw err;
   };
 

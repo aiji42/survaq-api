@@ -70,7 +70,7 @@ export class ShopifyOrderSyncBQ extends ShopifyOrderForNoteAttrs {
   }
 
   async prepare(id: number | string) {
-    await this.setOrderById(id, true);
+    await this.setOrderById(id);
     await this.completeLineItem();
     this._graphqlOrder = await this.graphql<OrderGraphQLResponse>(orderGraphQLQuery(this.gid), {});
   }

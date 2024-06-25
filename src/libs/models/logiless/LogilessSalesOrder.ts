@@ -1,5 +1,6 @@
 import { ShopifyOrder } from "../shopify/ShopifyOrder";
 import { LogilessClient } from "./LogilessClient";
+import { CustomNotFoundError } from "../../errors";
 
 export class LogilessSalesOrder extends LogilessClient {
   private _salesOrder: SalesOrderData | undefined;
@@ -32,7 +33,7 @@ export class LogilessSalesOrder extends LogilessClient {
     const {
       data: [salesOrder],
     } = res;
-    if (!salesOrder) throw new Error("Sales order not found");
+    if (!salesOrder) throw new CustomNotFoundError(`Sales order not found: (code: ${code})`);
 
     this._salesOrder = salesOrder;
 

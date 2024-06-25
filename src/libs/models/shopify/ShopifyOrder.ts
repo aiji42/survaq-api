@@ -1,6 +1,7 @@
 import { ShopifyOrderData } from "../../../types/shopify";
 import { ShopifyClient } from "./ShopifyClient";
 import { isTestOrder } from "../../utils";
+import { CustomNotFoundError } from "../../errors";
 
 export class ShopifyOrder extends ShopifyClient {
   private _order: ShopifyOrderData | undefined;
@@ -15,14 +16,16 @@ export class ShopifyOrder extends ShopifyClient {
     return this;
   }
 
-  async setOrderById(_id: number | string, throwIfNotFound = true) {
+  async setOrderById(_id: number | string) {
     const id = Number(_id);
 
     const res = await fetch(
       `https://survaq.myshopify.com/admin/api/${this.API_VERSION}/orders/${id}.json`,
       { headers: this.headers },
     );
-    if (!res.ok && throwIfNotFound) throw new Error(await res.text());
+    if (res.status === 404) throw new CustomNotFoundError(`Order not found: (id: ${id})`);
+    if (!res.ok) throw new Error(await res.text());
+
     this._order = ((await res.json()) as { order: ShopifyOrderData }).order;
 
     return this;

@@ -52,18 +52,12 @@ export class LogilessClient {
     const res = await fetch(
       `https://app2.logiless.com/oauth2/token?client_id=${this.env.LOGILESS_CLIENT_ID}&client_secret=${this.env.LOGILESS_CLIENT_SECRET}&refresh_token=${refreshToken}&grant_type=refresh_token`,
     );
-    // TODO: rest.textを使ってエラーメッセージを出力したほうがいいかもしれない
-    if (!res.ok) throw new Error("Failed to refresh token");
+    if (!res.ok) throw new Error(`Failed to refresh token: ${await res.text()}`);
     const result = (await res.json()) as AuthResult;
 
     await this.storeTokens(result);
 
     const expireAt = new Date(Date.now() + result.expires_in * 1000);
-
-    // FIXME: ある程度実績が確認できたら消す
-    await this.env.KIRIBI.enqueue("NotifyToSlack", {
-      text: "Logilessのトークンがリフレッシュされました",
-    });
 
     return {
       accessToken: result.access_token,
