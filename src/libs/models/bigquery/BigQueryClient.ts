@@ -68,6 +68,25 @@ export class BigQueryClient {
     await this.query(query);
   }
 
+  makeUpdateQuery(
+    dataset: string,
+    table: string,
+    targetKey: string,
+    targets: (string | number)[],
+    row: Record<string, string | number | Date | boolean | null>,
+  ) {
+    const setClause = Object.entries(row)
+      .map(([column, value]) => {
+        return `\`${column}\` = ${this.formatValue(value)}`;
+      })
+      .join(", ");
+    return `
+      UPDATE \`${this.table(dataset, table)}\`
+      SET ${setClause}
+      WHERE \`${targetKey}\` IN (${targets.map((target) => this.formatValue(target)).join(", ")})
+    `;
+  }
+
   async deleteAndInsert<Row extends Record<string, string | number | Date | boolean | null>>(
     dataset: string,
     table: string,

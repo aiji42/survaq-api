@@ -7,7 +7,14 @@ export type ShopifyProductData = {
   variants?: Array<{
     id: number;
     title: string;
+    compare_at_price: string | null;
+    created_at: string;
+    updated_at: string;
+    price: string;
+    taxable: boolean;
   }>;
+  created_at: string;
+  updated_at: string;
 };
 
 export type ShopifyOrderData = {

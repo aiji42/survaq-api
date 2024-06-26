@@ -118,5 +118,15 @@ binding = "SyncMerchantCenterToBigQuery"
 service = "kiribi-survaq-api"
 entrypoint = "SyncMerchantCenterToBigQuery"
 
+[[services]]
+binding = "SyncShopifyProductToBigQuery"
+service = "kiribi-survaq-api"
+entrypoint = "SyncShopifyProductToBigQuery"
+
+[[services]]
+binding = "SyncLatestShopifyProductGroupBigQuery"
+service = "kiribi-survaq-api"
+entrypoint = "SyncLatestShopifyProductGroupBigQuery"
+
 [site]
 bucket = "./node_modules/kiribi/client"

@@ -32,9 +32,14 @@ app.post("/product", async (c) => {
       { productId: data.id },
       { maxRetries: 1, firstDelay: 60 },
     );
+    await c.env.KIRIBI.enqueue(
+      "SyncShopifyProductToBigQuery",
+      { productId: data.id },
+      { maxRetries: 1, firstDelay: 60 },
+    );
   });
 
-  return c.json({ message: "enqueue ProductSync" });
+  return c.json({ message: "enqueue ProductSync and SyncShopifyProductToBigQuery" });
 });
 
 app.post("/order", async (c) => {
