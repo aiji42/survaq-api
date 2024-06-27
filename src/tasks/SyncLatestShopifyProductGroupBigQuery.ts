@@ -11,11 +11,6 @@ export class SyncLatestShopifyProductGroupBigQuery extends KiribiPerformer<{}, v
     const bq = new BigQueryClient(this.env);
     const db = new DB(this.env);
 
-    const [last] = await bq.query<{ syncedAt: Date }>(
-      `SELECT syncedAt FROM \`shopify.products\` ORDER BY syncedAt DESC LIMIT 1`,
-    );
-    if (!last) return;
-
     const groups = await db.prisma.shopifyProductGroups.findMany({
       select: {
         id: true,
@@ -25,18 +20,16 @@ export class SyncLatestShopifyProductGroupBigQuery extends KiribiPerformer<{}, v
             productId: true,
           },
         },
-        updatedAt: true,
       },
       where: {
         updatedAt: {
-          gte: last.syncedAt,
+          // MEMO: 3時間以内に更新されたものを対象にする
+          // あまり効率は良くないが、syncedAtを見て更新すると歯抜けになるので
+          gte: new Date(Date.now() - 1000 * 60 * 60 * 3),
         },
       },
     });
-    if (groups.length < 1) {
-      console.log("no new data found");
-      return;
-    }
+    if (groups.length < 1) return;
 
     const queries = groups.map((group) => {
       const productIds = group.ShopifyProducts.map(
@@ -45,7 +38,6 @@ export class SyncLatestShopifyProductGroupBigQuery extends KiribiPerformer<{}, v
       return bq.makeUpdateQuery("shopify", "products", "id", productIds, {
         productGroupId: group.id.toString(),
         productGroupName: group.title,
-        syncedAt: new Date().toISOString(),
       });
     });
     await bq.query(queries.join(";\n"));
