@@ -152,6 +152,7 @@ export default class extends Kiribi<Performers, Bindings> {
         "SyncRakutenItem",
         "SyncRakutenOrderToBigQuery",
         "SyncShopifyOrderToBigQuery",
+        "SyncShopifyProductToBigQuery",
         "TokensHealthCheck",
         "UpdateOrderInventory",
         "UpdateSkuOnFulfillment",
