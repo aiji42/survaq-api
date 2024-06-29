@@ -173,6 +173,8 @@ export class ShopifyOrderSyncBQ extends ShopifyOrderForNoteAttrs {
 
   get upsertBQOrderSKUsTableDataQuery() {
     const data = this.createBQOrderSKUsTableData();
+    // MEMO: 古い申込みはorder_skusがない
+    if (data.length < 1) return null;
     const deleteQuery = this.bq.makeDeleteQuery("shopify", "order_skus", "order_id", [this.gid]);
     const insertQuery = this.bq.makeInsertQuery("shopify", "order_skus", data);
     return `${deleteQuery};\n${insertQuery}`;
@@ -183,7 +185,9 @@ export class ShopifyOrderSyncBQ extends ShopifyOrderForNoteAttrs {
       this.upsertBQOrdersTableDataQuery,
       this.upsertBQLineItemsTableDataQuery,
       this.upsertBQOrderSKUsTableDataQuery,
-    ].join(";\n");
+    ]
+      .filter(Boolean)
+      .join(";\n");
 
     await this.bq.query(query);
   }

@@ -45,6 +45,7 @@ export class BigQueryClient {
   }
 
   makeDeleteQuery(dataset: string, table: string, key: string, _values: (string | number)[]) {
+    if (_values.length < 1) throw new Error("values must not be empty");
     const values = [...new Set(_values)];
     return `
       DELETE FROM \`${this.table(dataset, table)}\`
