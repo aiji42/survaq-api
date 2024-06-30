@@ -128,5 +128,10 @@ binding = "SyncLatestShopifyProductGroupBigQuery"
 service = "kiribi-survaq-api"
 entrypoint = "SyncLatestShopifyProductGroupBigQuery"
 
+[[services]]
+binding = "SaveDeliveryScheduleGapToBigQuery"
+service = "kiribi-survaq-api"
+entrypoint = "SaveDeliveryScheduleGapToBigQuery"
+
 [site]
 bucket = "./node_modules/kiribi/client"
