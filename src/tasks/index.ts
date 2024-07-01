@@ -162,6 +162,8 @@ export default class extends Kiribi<Performers, Bindings> {
         "TokensHealthCheck",
         "UpdateOrderInventory",
         "UpdateSkuOnFulfillment",
+        "SyncLatestShopifyProductGroupBigQuery",
+        "SaveDeliveryScheduleGapToBigQuery",
       ].includes(binding)
     )
       return;
