@@ -1,5 +1,4 @@
 import { Env, LogilessClient } from "./LogilessClient";
-import { makeScheduleFromDeliverySchedule } from "../../makeSchedule";
 
 class LogilessInventory {
   constructor(private inventoryData: Inventory) {}
@@ -18,9 +17,8 @@ class LogilessInventory {
       inventory: this.inventoryQty,
       unshippedOrderCount: this.waitingShipmentQty,
       lastSyncedAt: new Date(this.inventoryData.updated_at),
-      stockBuffer: 0, // FIXME
-      faultyRate: 0, // FIXME
       logilessId: String(this.inventoryData.id),
+      // faultyRateをcreate時に0.01に設定
     };
   }
 }
@@ -36,18 +34,6 @@ class LogilessInboundDelivery {
   get receivingDate() {
     if (!this.inboundDeliveryData.scheduled_delivery_date) return null;
     return new Date(this.inboundDeliveryData.scheduled_delivery_date);
-  }
-
-  get deliveryDate() {
-    const validDate = this.validDeliverySchedule;
-    const schedule = makeScheduleFromDeliverySchedule(validDate, "ja");
-    return !schedule
-      ? null
-      : new Date(
-          schedule.year,
-          schedule.month - 1,
-          schedule.term === "early" ? 1 : schedule.term === "middle" ? 11 : 21,
-        );
   }
 
   get cmsStatus() {
@@ -67,9 +53,12 @@ class LogilessInboundDelivery {
       receivingDate: this.receivingDate,
       logilessId: String(this.inboundDeliveryData.id),
       status: this.cmsStatus,
-      deliveryDate: this.deliveryDate,
       deliverySchedule: this.validDeliverySchedule,
       lastSyncedAt: new Date(this.inboundDeliveryData.updated_at),
+      note: this.inboundDeliveryData.purchase_order_notes ?? null,
+      free08: this.inboundDeliveryData.receiving_notes ?? null,
+      free09: this.inboundDeliveryData.attr2 ?? null,
+      free10: this.inboundDeliveryData.attr3 ?? null,
       // TODO: その他メモ的なデータを含める
       inventoryOrderSKUs: this.inboundDeliveryData.lines.map((line) => ({
         skuCode: line.article_code,
@@ -262,6 +251,8 @@ type InboundDelivery = {
   created_at: string;
   updated_at: string;
   total: number;
+  purchase_order_notes?: string; // 発注書特記事項
+  receiving_notes?: string; // 入荷予定特記事項
   lines: InboundDeliveryLine[];
 };
 
